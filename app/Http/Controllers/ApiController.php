@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\SensorData;
 use App\Models\Device;
+use App\Models\WorkerStatus; // Wajib untuk akses tabel worker_status
 use App\Models\Command;      // Wajib untuk akses tabel commands
 use App\Models\ActivityLog;  // Wajib untuk akses tabel activity_logs
 
@@ -111,4 +112,25 @@ class ApiController extends Controller
 
         return response()->json(['status' => 'error', 'message' => 'Command tidak ditemukan'], 404);
     }
+
+public function workerHeartbeat(Request $request)
+    {
+        $request->validate([
+            'component_name' => 'required|string',
+            'current_state' => 'required|string',
+        ]);
+
+        // Menggunakan updateOrCreate: 
+        // Jika nama komponen sudah ada, perbarui datanya. Jika belum, buat baris baru.
+        WorkerStatus::updateOrCreate(
+            ['component_name' => $request->component_name],
+            [
+                'current_state' => $request->current_state,
+                'last_heartbeat' => now()
+            ]
+        );
+
+        return response()->json(['status' => 'alive']);
+    }
+
 }
