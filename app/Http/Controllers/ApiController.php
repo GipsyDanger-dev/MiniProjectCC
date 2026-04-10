@@ -5,8 +5,8 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\SensorData;
 use App\Models\Device;
-use App\Models\Command;      // Wajib ditambahkan untuk akses tabel commands
-use App\Models\ActivityLog;  // Wajib ditambahkan untuk akses tabel activity_logs
+use App\Models\Command;      // Wajib untuk akses tabel commands
+use App\Models\ActivityLog;  // Wajib untuk akses tabel activity_logs
 
 class ApiController extends Controller
 {
@@ -21,10 +21,38 @@ class ApiController extends Controller
         ]);
 
         $status_indikasi = 'AMAN';
+        
+        // --- LOGIKA OTOMATISASI (HYBRID CONTROL DENGAN ANTI-SPAM) ---
         if ($request->gas_value > 300 || $request->smoke_value > 200 || $request->temperature > 45) {
             $status_indikasi = 'BAHAYA';
-        }
 
+            // Cek apakah belum ada antrean untuk exhaust_fan supaya database tidak jebol (spam)
+            $cekExhaust = Command::where('target_device', 'exhaust_fan')
+                                 ->where('status', 'pending')
+                                 ->first();
+            if (!$cekExhaust) {
+                Command::create([
+                    'target_device' => 'exhaust_fan',
+                    'action' => 'START',
+                    'status' => 'pending'
+                ]);
+            }
+
+            // Cek apakah belum ada antrean untuk buzzer
+            $cekBuzzer = Command::where('target_device', 'buzzer')
+                                ->where('status', 'pending')
+                                ->first();
+            if (!$cekBuzzer) {
+                Command::create([
+                    'target_device' => 'buzzer',
+                    'action' => 'START',
+                    'status' => 'pending'
+                ]);
+            }
+        }
+        // --- BATAS LOGIKA OTOMATISASI ---
+
+        // Simpan data sensor ke database
         $sensorData = SensorData::create([
             'device_id' => $request->device_id,
             'gas_value' => $request->gas_value,
@@ -43,11 +71,9 @@ class ApiController extends Controller
     // 2. Metode untuk mendistribusikan perintah kepada Worker (Polling)
     public function getPendingCommand()
     {
-        // Mengambil antrean perintah pertama yang berstatus 'pending'
         $command = Command::where('status', 'pending')->first();
 
         if ($command) {
-            // Mengubah status menjadi 'processing' untuk mencegah duplikasi eksekusi
             $command->update(['status' => 'processing']);
 
             return response()->json([
@@ -75,7 +101,6 @@ class ApiController extends Controller
         if ($command) {
             $command->update(['status' => $request->status]);
 
-            // Pencatatan aktivitas untuk kebutuhan observability pada Dashboard
             ActivityLog::create([
                 'action_type' => 'COMMAND_EXECUTED',
                 'description' => "Perangkat {$command->target_device} berhasil diubah statusnya menjadi {$command->action}"
