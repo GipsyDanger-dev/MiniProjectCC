@@ -9,7 +9,7 @@ DEVICE_CREDENTIALS = {
     1: "key-servernih-121",
     2: "key-dapurnih-212",
     3: "key-arsipnih-311",
-    4: "key-koridornih-442"
+    4: "key-koridornih-441"
 }
 
 print("🚀 Memulai Python Simulator dengan Per-Device Security...")
