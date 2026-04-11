@@ -40,5 +40,5 @@ while True:
             print(f"❌ Gagal mengirim data dari device {dev_id}: {e}")
 
     print("-" * 50)
-    # Jeda 5 detik sebelum mengirim data lagi
-    time.sleep(5)
+    # Jeda 10 detik sebelum mengirim data lagi
+    time.sleep(10)

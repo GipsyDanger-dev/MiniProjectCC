@@ -6,4 +6,9 @@ class Device extends Model
 {
     protected $table = 'devices';
     protected $fillable = ['device_name', 'location', 'status'];
+
+    public function actuator()
+    {
+        return $this->hasOne(DeviceActuator::class);
+    }
 }
