@@ -9,6 +9,7 @@ use App\Models\ActivityLog;
 use App\Models\WorkerStatus;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Log;
 
 class ApiController extends Controller
 {
@@ -99,7 +100,7 @@ class ApiController extends Controller
             return response()->json(['status' => 'success', 'data' => $sensorData], 201);
             
         } catch (\Exception $e) {
-            \Log::error("ingestData error: " . $e->getMessage() . " at " . $e->getFile() . ":" . $e->getLine());
+            Log::error("ingestData error: " . $e->getMessage() . " at " . $e->getFile() . ":" . $e->getLine());
             return response()->json(['status' => 'error', 'message' => $e->getMessage()], 500);
         }
     }
