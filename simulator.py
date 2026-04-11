@@ -4,19 +4,26 @@ import random
 
 API_URL = "http://127.0.0.1:8000/api/ingest"
 
-HEADERS = {
-    "x-api-key": "apa-hayo-kuncinya-99"
+# Hapus variabel HEADERS global, kita ganti dengan kamus (dictionary) credential
+DEVICE_CREDENTIALS = {
+    1: "key-servernih-121",
+    2: "key-dapurnih-212",
+    3: "key-arsipnih-311",
+    4: "key-koridornih-442"
 }
 
-# Sekarang menggunakan 4 Device
-device_ids = [1, 2, 3, 4]
-
-print("🚀 Memulai Python Simulator Smart Safety System (Secured)...")
+print("🚀 Memulai Python Simulator dengan Per-Device Security...")
 print("Mengirim data untuk 4 device setiap 5 detik. Tekan Ctrl+C untuk berhenti.\n")
 
 while True:
-    for dev_id in device_ids:
+    # Looping sekarang mengambil dev_id dan api_key sekaligus
+    for dev_id, secret_key in DEVICE_CREDENTIALS.items():
         
+        # Header diset spesifik per device di dalam looping
+        HEADERS = {
+            "x-api-key": secret_key
+        }
+
         # Logika Simulasi Sensor Api (KY-026)
         is_fire = random.choice([True, False, False, False]) 
         simulated_flame = random.uniform(100.0, 499.0) if is_fire else random.uniform(800.0, 1024.0)
