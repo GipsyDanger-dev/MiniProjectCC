@@ -76,12 +76,12 @@ class ApiController extends Controller
                 ->where('sensor_data.device_id', $deviceId)
                 ->orderBy('sensor_data.created_at', 'desc')
                 ->take(20)
-                .get();
+                ->get();
 
             $logs = ActivityLog::orderBy('created_at', 'desc')->take(15)->get();
             $worker = WorkerStatus::first();
             
-            $isEmergency = $sensorData->contains('status_indikasi', 'BAHAYA');
+            $isEmergency = collect($sensorData)->contains('status_indikasi', 'BAHAYA');
             $workerOnline = $worker && $worker->last_heartbeat ? now()->diffInSeconds($worker->last_heartbeat) <= 60 : false;
 
             return response()->json([
@@ -144,7 +144,8 @@ class ApiController extends Controller
 
         ActivityLog::create([
             'action_type' => 'MANUAL_COMMAND',
-            'description' => "Perintah manual {$request->action} dikirim ke {$request->target_device}"
+            'description' => "Perintah manual {$request->action} dikirim ke {$request->target_device}",
+            'message' => "Manual: {$request->action} → {$request->target_device}"
         ]);
 
         return response()->json(['status' => 'success']);
