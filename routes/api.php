@@ -3,10 +3,8 @@
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\ApiController;
-use App\Models\SensorData;
-use App\Models\Command;
+use Illuminate\Support\Facades\Log;
 
-// ingest dari device
 Route::post('/ingest', [ApiController::class, 'ingestData']);
 
 // ambil data terbaru

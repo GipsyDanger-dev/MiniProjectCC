@@ -2,19 +2,20 @@ import requests
 import time
 import random
 
-# Pastikan URL ini sesuai dengan alamat Laravel serve kamu
 API_URL = "http://127.0.0.1:8000/api/ingest"
 
-# ID device sesuai dengan yang kita buat di database tadi
+HEADERS = {
+    "x-api-key": "apa-hayo-kuncinya-99"
+}
+
 device_ids = [1, 2, 3]
 
-print("🚀 Memulai Python Simulator Smart Safety System...")
+print("🚀 Memulai Python Simulator Smart Safety System (Secured)...")
 print("Mengirim data untuk 3 device setiap 5 detik. Tekan Ctrl+C untuk berhenti.\n")
 
 while True:
     for dev_id in device_ids:
-        # Membuat data dummy sensor acak
-        # (Gas normal: < 300, Asap normal: < 200, Suhu normal: < 45)
+
         payload = {
             "device_id": dev_id,
             "gas_value": round(random.uniform(50.0, 350.0), 2),
@@ -23,14 +24,15 @@ while True:
         }
 
         try:
-            # Mengirim request POST dalam format JSON ke REST API Laravel
-            response = requests.post(API_URL, json=payload)
-            
-            # Membaca response JSON dari Laravel
+            response = requests.post(API_URL, json=payload, headers=HEADERS)
+
+            if response.status_code == 401:
+                print(f"⛔ Akses Ditolak untuk Device {dev_id}! Cek API Key kamu.")
+                continue 
+
             data_response = response.json()
             status_indikasi = data_response.get('data', {}).get('status_indikasi', 'UNKNOWN')
-            
-            # Print hasil ke terminal
+
             if status_indikasi == 'BAHAYA':
                 print(f"⚠️  [BAHAYA] Device {dev_id} terkirim! Status HTTP: {response.status_code}")
             else:
@@ -40,5 +42,5 @@ while True:
             print(f"❌ Gagal mengirim data dari device {dev_id}: {e}")
 
     print("-" * 50)
-    # Jeda 10 detik sebelum mengirim data lagi
-    time.sleep(10)
+    # Jeda 5 detik sebelum mengirim data lagi
+    time.sleep(5)

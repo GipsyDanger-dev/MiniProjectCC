@@ -6,5 +6,11 @@ use Illuminate\Database\Eloquent\Model;
 
 class ActivityLog extends Model
 {
-    protected $fillable = ['message'];
+    protected $table = 'activity_logs';
+
+    protected $fillable = [
+        'action_type',
+        'description',
+        'message'
+    ];
 }
