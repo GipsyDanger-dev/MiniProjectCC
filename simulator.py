@@ -5,10 +5,15 @@ import random
 # Pastikan URL ini sesuai dengan alamat Laravel serve kamu
 API_URL = "http://127.0.0.1:8000/api/ingest"
 
+# --- 1. TAMBAHKAN KUNCI RAHASIA DI SINI ---
+HEADERS = {
+    "x-api-key": "apa-hayo-kuncinya-99"
+}
+
 # ID device sesuai dengan yang kita buat di database tadi
 device_ids = [1, 2, 3]
 
-print("🚀 Memulai Python Simulator Smart Safety System...")
+print("🚀 Memulai Python Simulator Smart Safety System (Secured)...")
 print("Mengirim data untuk 3 device setiap 5 detik. Tekan Ctrl+C untuk berhenti.\n")
 
 while True:
@@ -23,9 +28,14 @@ while True:
         }
 
         try:
-            # Mengirim request POST dalam format JSON ke REST API Laravel
-            response = requests.post(API_URL, json=payload)
+            # --- 2. SISIPKAN HEADERS KE DALAM REQUEST POST ---
+            response = requests.post(API_URL, json=payload, headers=HEADERS)
             
+            # Kalau API Key salah, Laravel akan merespons 401. Kita tangkap errornya.
+            if response.status_code == 401:
+                print(f"⛔ Akses Ditolak untuk Device {dev_id}! Cek API Key kamu.")
+                continue # Lanjut ke device berikutnya
+
             # Membaca response JSON dari Laravel
             data_response = response.json()
             status_indikasi = data_response.get('data', {}).get('status_indikasi', 'UNKNOWN')
