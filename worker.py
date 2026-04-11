@@ -6,11 +6,15 @@ GET_COMMAND_URL = "http://127.0.0.1:8000/api/command/get"
 UPDATE_STATUS_URL = "http://127.0.0.1:8000/api/status/update"
 HEARTBEAT_URL = "http://127.0.0.1:8000/api/worker/heartbeat"
 
+# Device ID - Worker ini untuk Device 1
+DEVICE_ID = 1
+
 HEADERS = {
     "x-api-key": "apa-hayo-kuncinya-99"
 }
 
 print("⚙️  Memulai Python Worker (Secured Asynchronous System)...")
+print(f"🏢 Worker untuk Device {DEVICE_ID}...")
 print("Menunggu antrean perintah dari server...\n")
 
 while True:
@@ -22,7 +26,8 @@ while True:
         }, headers=HEADERS)
 
 
-        response = requests.get(GET_COMMAND_URL, headers=HEADERS)
+        # ← Tambah device_id parameter
+        response = requests.get(GET_COMMAND_URL, params={"device_id": DEVICE_ID}, headers=HEADERS)
         
 
         if response.status_code == 401:

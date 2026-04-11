@@ -106,6 +106,14 @@ header .logo svg {
     color: var(--bg);
     border-color: var(--cyan);
 }
+.btn-secondary {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--border);
+}
+.btn-secondary:hover {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(255, 255, 255, 0.15);
+}
 .header-right {
     display: flex;
     align-items: center;
@@ -321,85 +329,11 @@ input[type="range"]::-webkit-slider-thumb {
 .range-temp::-webkit-slider-thumb {
     background: var(--red);
 }
+.range-flame::-webkit-slider-thumb {
+    background: var(--orange);
+}
 
-/* Workers */
-.worker-item {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 10px 12px;
-    border-radius: 8px;
-    border: 1px solid var(--border);
-    margin-bottom: 6px;
-}
-.worker-info {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-}
-.worker-avatar {
-    width: 32px;
-    height: 32px;
-    border-radius: 50%;
-    background: var(--border);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    position: relative;
-    font-size: 14px;
-}
-.worker-status-dot {
-    position: absolute;
-    bottom: -1px;
-    right: -1px;
-    width: 10px;
-    height: 10px;
-    border-radius: 50%;
-    border: 2px solid var(--card);
-}
-.worker-name {
-    font-size: 14px;
-    font-weight: 500;
-}
-.worker-zone {
-    font-size: 11px;
-    color: var(--muted);
-    display: flex;
-    align-items: center;
-    gap: 3px;
-}
-.worker-badge {
-    font-size: 11px;
-    font-family: "JetBrains Mono", monospace;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    font-weight: 600;
-}
-.worker-item.active {
-    background: rgba(34, 197, 94, 0.05);
-    border-color: rgba(34, 197, 94, 0.15);
-}
-.worker-item.idle {
-    background: rgba(59, 130, 246, 0.05);
-    border-color: rgba(59, 130, 246, 0.15);
-}
-.worker-item.alert {
-    background: rgba(234, 179, 8, 0.05);
-    border-color: rgba(234, 179, 8, 0.15);
-}
-.worker-item.offline {
-    background: var(--card);
-}
-.workers-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-}
-.workers-count {
-    font-size: 12px;
-    color: var(--muted);
-    font-family: "JetBrains Mono", monospace;
-}
+/* Workers - REMOVED OLD STYLES - Using simplified layout below */
 
 ::-webkit-scrollbar {
     width: 4px;
@@ -415,17 +349,33 @@ input[type="range"]::-webkit-slider-thumb {
 .sidebar {
     position: fixed;
     top: 0;
-    left: -300px;
-    width: 280px;
-    height: 100%;
+    left: -320px;
+    width: 300px;
+    height: 100vh;
     background: #161b22;
     border-right: 1px solid #30363d;
-    z-index: 999;
-    transition: 0.3s ease;
+    z-index: 1000;
+    transition: left 0.3s ease;
     padding: 20px;
+    overflow-y: auto;
 }
 .sidebar.open {
     left: 0;
+}
+
+/* Push konten ke kanan saat sidebar dibuka */
+header {
+    transition: transform 0.3s ease;
+}
+header.open {
+    transform: translateX(300px);
+}
+
+.container {
+    transition: transform 0.3s ease;
+}
+.container.open {
+    transform: translateX(300px);
 }
 
 .sidebar-header {
@@ -478,4 +428,108 @@ input[type="range"]::-webkit-slider-thumb {
 .status-aman .dot {
     background: #22c55e;
     box-shadow: 0 0 10px #22c55e;
+}
+
+/* Worker Status Card - Simplified with proper constraints */
+.worker-list-container {
+    min-height: 80px;
+}
+
+.worker-item {
+    padding: 12px;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+    font-size: 13px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.worker-item.status-online {
+    background: rgba(34, 197, 94, 0.08);
+    border-color: rgba(34, 197, 94, 0.2);
+}
+
+.worker-item.status-offline {
+    background: rgba(239, 68, 68, 0.08);
+    border-color: rgba(239, 68, 68, 0.2);
+}
+
+.worker-row {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 12px;
+    align-items: center;
+}
+
+.worker-row:first-child {
+    grid-template-columns: 1fr auto;
+}
+
+.worker-row:nth-child(2) {
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+}
+
+.worker-name {
+    font-weight: 600;
+    color: var(--cyan);
+    font-size: 14px;
+    white-space: normal;
+    word-break: break-word;
+}
+
+.worker-status-badge {
+    font-weight: 600;
+    font-size: 12px;
+    white-space: nowrap;
+}
+
+.worker-detail {
+    font-size: 12px;
+    color: var(--fg);
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.worker-detail .detail-label {
+    color: var(--muted);
+    font-size: 11px;
+    flex-shrink: 0;
+}
+
+.worker-command {
+    margin-top: 0;
+    padding: 8px;
+    background: rgba(234, 179, 8, 0.1);
+    border: 1px solid rgba(234, 179, 8, 0.2);
+    border-radius: 4px;
+    color: var(--yellow);
+    font-size: 12px;
+    font-weight: 500;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    width: 100%;
+}
+
+.worker-badge {
+    font-size: 11px;
+    padding: 4px 6px;
+}
+
+.worker-badge.status-online {
+    background: rgba(34, 197, 94, 0.15);
+    color: #22c55e;
+    border: 1px solid rgba(34, 197, 94, 0.3);
+}
+
+.worker-badge.status-offline {
+    background: rgba(239, 68, 68, 0.15);
+    color: #ef4444;
+    border: 1px solid rgba(239, 68, 68, 0.3);
 }

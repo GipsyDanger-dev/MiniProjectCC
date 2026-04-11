@@ -24,7 +24,7 @@
     </ul>
 </div>
 
-<header>
+<header id="mainHeader">
   <div class="logo">
     <button onclick="toggleMenu()" class="menu-trigger">☰</button>
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
@@ -104,8 +104,12 @@
 
     <!-- Workers -->
     <div class="card">
-      <div class="card-title">👷 Worker Status <span id="workerCount" class="badge">--</span></div>
-      <div id="workerList"></div>
+      <div class="card-title">
+        👷 Worker Status
+        <span id="workerCount" class="badge worker-badge status-offline">0</span>
+      </div>
+      <div id="workerList" class="worker-list-container"></div>
+      <button id="clearWorkerBtn" onclick="clearWorkerStatus()" class="btn btn-secondary" style="width:100%;margin-top:10px;font-size:12px">Clear Worker</button>
     </div>
   </div>
 </div>

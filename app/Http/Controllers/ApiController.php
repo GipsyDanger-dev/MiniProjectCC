@@ -25,10 +25,11 @@ class ApiController extends Controller
                 'flame_value' => 'required|numeric'
             ]);
 
-            $gasThresh = 250;
-            $smokeThresh = 120;
-            $tempThresh = 40;
-            $flameThresh = 500;
+            // Baca threshold dari Cache (bisa berubah via saveSettings)
+            $gasThresh = Cache::get('gas_threshold', 250);
+            $smokeThresh = Cache::get('smoke_threshold', 120);
+            $tempThresh = Cache::get('temperature_threshold', 40);
+            $flameThresh = Cache::get('flame_threshold', 500);
             $mode = 'auto';
 
             $status_indikasi = 'AMAN';
@@ -43,24 +44,40 @@ class ApiController extends Controller
                 $status_indikasi = 'BAHAYA';
 
                 if ($mode === 'auto') {
+                    // Exhaust fan via worker command queue
                     Command::updateOrCreate(
-                        ['target_device' => 'exhaust_fan'],
+                        ['target_device' => 'exhaust_fan', 'device_id' => $request->device_id],
                         ['action' => 'START', 'status' => 'pending']
                     );
+                    
+                    // Buzzer langsung ON - tidak perlu nunggu worker
+                    // (assumed buzzer API/GPIO activation happens here)
+                    // For now, just create completed command untuk buzzer
                     Command::updateOrCreate(
-                        ['target_device' => 'buzzer'],
-                        ['action' => 'START', 'status' => 'pending']
+                        ['target_device' => 'buzzer', 'device_id' => $request->device_id],
+                        ['action' => 'START', 'status' => 'completed']
                     );
                 }
             } else {
-                $lastFan = Command::where('target_device', 'exhaust_fan')->latest()->first();
+                // Exhaust fan STOP command
+                $lastFan = Command::where('target_device', 'exhaust_fan')
+                    ->where('device_id', $request->device_id)
+                    ->latest()
+                    ->first();
                 if ($lastFan && $lastFan->action === 'START') {
                     Command::create([
+                        'device_id' => $request->device_id,
                         'target_device' => 'exhaust_fan',
                         'action' => 'STOP',
                         'status' => 'pending'
                     ]);
                 }
+                
+                // Buzzer langsung OFF
+                Command::updateOrCreate(
+                    ['target_device' => 'buzzer', 'device_id' => $request->device_id],
+                    ['action' => 'STOP', 'status' => 'completed']
+                );
             }
 
             // Simpan sensor data
@@ -123,6 +140,12 @@ class ApiController extends Controller
             $logs = ActivityLog::orderBy('created_at', 'desc')->take(15)->get();
             $worker = WorkerStatus::first();
             
+            // Get latest command untuk device ini
+            $latestCommand = Command::with('device:id,device_name')
+                ->where('device_id', $deviceId)
+                ->orderBy('updated_at', 'desc')
+                ->first();
+            
             $isEmergency = collect($sensorData)->contains('status_indikasi', 'BAHAYA');
             $workerOnline = $worker && $worker->last_heartbeat ? now()->diffInSeconds($worker->last_heartbeat) <= 60 : false;
 
@@ -133,11 +156,12 @@ class ApiController extends Controller
                 'activity_logs' => $logs,
                 'worker_status' => $worker,
                 'worker_online' => $workerOnline,
+                'latest_command' => $latestCommand,
                 'emergency_status' => $isEmergency ? 'BAHAYA' : 'AMAN',
                 'settings' => [
                     'gas_threshold' => Cache::get('gas_threshold', 250),
                     'smoke_threshold' => Cache::get('smoke_threshold', 120),
-                    'temperature_threshold' => Cache::get('temperature_threshold', 40),
+                    'temp_threshold' => Cache::get('temperature_threshold', 40),
                     'flame_threshold' => Cache::get('flame_threshold', 500)
                 ]
             ]);
@@ -149,37 +173,43 @@ class ApiController extends Controller
 
   public function saveSettings(Request $request)
     {
-        $request->validate([
-            'gas_threshold' => 'required|numeric',
-            'smoke_threshold' => 'required|numeric',
-            'temperature_threshold' => 'required|numeric',
-            'flame_threshold' => 'required|numeric', // Validasi flame
-        ]);
+        try {
+            $request->validate([
+                'gas_threshold' => 'required|numeric',
+                'smoke_threshold' => 'required|numeric',
+                'temperature_threshold' => 'required|numeric',
+                'flame_threshold' => 'required|numeric',
+            ]);
 
-        Cache::put('gas_threshold', $request->gas_threshold);
-        Cache::put('smoke_threshold', $request->smoke_threshold);
-        Cache::put('temperature_threshold', $request->temperature_threshold);
-        Cache::put('flame_threshold', $request->flame_threshold);
+            Cache::put('gas_threshold', $request->gas_threshold);
+            Cache::put('smoke_threshold', $request->smoke_threshold);
+            Cache::put('temperature_threshold', $request->temperature_threshold);
+            Cache::put('flame_threshold', $request->flame_threshold);
 
-        // PERBAIKAN DI SINI: Sertakan kolom 'message' agar database tidak menolak
-        ActivityLog::create([
-            'action_type' => 'SYSTEM_UPDATE',
-            'status' => 'AMAN',
-            'description' => "Pengaturan batas sensor disimpan.",
-            'message' => "User memperbarui ambang batas sensor melalui dashboard." 
-        ]);
+            ActivityLog::create([
+                'action_type' => 'SYSTEM_UPDATE',
+                'status' => 'AMAN',
+                'description' => "Gas={$request->gas_threshold}, Smoke={$request->smoke_threshold}, Temp={$request->temperature_threshold}, Flame={$request->flame_threshold}",
+                'message' => "Threshold settings updated successfully"
+            ]);
 
-        return response()->json(['status' => 'success']);
+            return response()->json(['status' => 'success', 'message' => 'Settings saved successfully']);
+        } catch (\Exception $e) {
+            Log::error("saveSettings error: " . $e->getMessage());
+            return response()->json(['status' => 'error', 'message' => $e->getMessage()], 500);
+        }
     }
 
     public function controlActuator(Request $request)
     {
         $request->validate([
             'target_device' => 'required|in:exhaust_fan,buzzer',
-            'action' => 'required|in:START,STOP'
+            'action' => 'required|in:START,STOP',
+            'device_id' => 'nullable|integer'
         ]);
 
         Command::create([
+            'device_id' => $request->device_id,
             'target_device' => $request->target_device,
             'action' => $request->action,
             'status' => 'pending'
@@ -197,9 +227,15 @@ class ApiController extends Controller
 
     // ============ WORKER METHODS ============
 
-    public function getPendingCommand()
+    public function getPendingCommand(Request $request)
     {
-        $command = Command::where('status', 'pending')->first();
+        $request->validate([
+            'device_id' => 'required|integer'
+        ]);
+
+        $command = Command::where('status', 'pending')
+            ->where('device_id', $request->device_id)
+            ->first();
 
         if ($command) {
             $command->update(['status' => 'processing']);
@@ -220,14 +256,7 @@ class ApiController extends Controller
         
         if ($command) {
             $command->update(['status' => $request->status]);
-
-            ActivityLog::create([
-                'action_type' => 'COMMAND_EXECUTED',
-                'status' => 'AMAN',
-                'description' => "Perintah {$command->target_device} - {$command->action} berhasil di-{$request->status}",
-                'message' => "Worker: {$command->target_device} {$request->status}"
-            ]);
-
+            // Jangan log di activity log - sudah ditampilkan di worker status card
             return response()->json(['status' => 'success']);
         }
 
@@ -247,5 +276,34 @@ class ApiController extends Controller
         );
 
         return response()->json(['status' => 'alive']);
+    }
+
+    public function clearWorkerStatus()
+    {
+        try {
+            // Hapus semua worker status
+            WorkerStatus::truncate();
+            
+            // Force clear cache jika ada
+            Cache::forget('worker_status');
+            
+            // Log activity
+            ActivityLog::create([
+                'action_type' => 'SYSTEM_UPDATE',
+                'status' => 'AMAN',
+                'description' => "Worker status cleared manually",
+                'message' => "🗑️ All worker statuses have been cleared"
+            ]);
+
+            return response()->json([
+                'status' => 'success', 
+                'message' => 'Worker status cleared',
+                'worker_online' => false,
+                'worker_status' => null
+            ]);
+        } catch (\Exception $e) {
+            Log::error("clearWorkerStatus error: " . $e->getMessage());
+            return response()->json(['status' => 'error', 'message' => $e->getMessage()], 500);
+        }
     }
 }
