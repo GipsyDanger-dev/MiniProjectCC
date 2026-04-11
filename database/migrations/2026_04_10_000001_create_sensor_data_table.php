@@ -14,6 +14,7 @@ return new class extends Migration
             $table->float('gas_value');
             $table->float('smoke_value');
             $table->float('temperature');
+            $table->float('flame_value')->default('0');
             $table->string('status_indikasi');
             $table->timestamps();
         });

@@ -8,19 +8,25 @@ HEADERS = {
     "x-api-key": "apa-hayo-kuncinya-99"
 }
 
-device_ids = [1, 2, 3]
+# Sekarang menggunakan 4 Device
+device_ids = [1, 2, 3, 4]
 
 print("🚀 Memulai Python Simulator Smart Safety System (Secured)...")
-print("Mengirim data untuk 3 device setiap 5 detik. Tekan Ctrl+C untuk berhenti.\n")
+print("Mengirim data untuk 4 device setiap 5 detik. Tekan Ctrl+C untuk berhenti.\n")
 
 while True:
     for dev_id in device_ids:
+        
+        # Logika Simulasi Sensor Api (KY-026)
+        is_fire = random.choice([True, False, False, False]) 
+        simulated_flame = random.uniform(100.0, 499.0) if is_fire else random.uniform(800.0, 1024.0)
 
         payload = {
             "device_id": dev_id,
             "gas_value": round(random.uniform(50.0, 350.0), 2),
             "smoke_value": round(random.uniform(20.0, 220.0), 2),
-            "temperature": round(random.uniform(25.0, 50.0), 2)
+            "temperature": round(random.uniform(25.0, 50.0), 2),
+            "flame_value": round(simulated_flame, 2) 
         }
 
         try:
@@ -32,15 +38,30 @@ while True:
 
             data_response = response.json()
             status_indikasi = data_response.get('data', {}).get('status_indikasi', 'UNKNOWN')
+            
+            # ---------------------------------------------------------
+            # FORMATTING LOG TERMINAL PROFESIONAL
+            # ---------------------------------------------------------
+            g_val = payload['gas_value']
+            s_val = payload['smoke_value']
+            t_val = payload['temperature']
+            f_val = payload['flame_value']
+            
+            # Indikator visual khusus untuk sensor api
+            fire_alert = "🔥 (API!)" if f_val < 500 else "(Aman)"
 
+            # Menyusun string log lengkap
+            log_text = f"Gas: {g_val} | Asap: {s_val} | Suhu: {t_val}°C | Api: {f_val} {fire_alert}"
+
+            # Mencetak ke terminal berdasarkan status dari API
             if status_indikasi == 'BAHAYA':
-                print(f"⚠️  [BAHAYA] Device {dev_id} terkirim! Status HTTP: {response.status_code}")
+                print(f"⚠️  [BAHAYA] Dev {dev_id} -> {log_text}")
             else:
-                print(f"✅  [AMAN] Device {dev_id} terkirim! Status HTTP: {response.status_code}")
+                print(f"✅  [AMAN]   Dev {dev_id} -> {log_text}")
                 
         except Exception as e:
             print(f"❌ Gagal mengirim data dari device {dev_id}: {e}")
 
-    print("-" * 50)
+    print("-" * 80)
     # Jeda 5 detik sebelum mengirim data lagi
     time.sleep(5)

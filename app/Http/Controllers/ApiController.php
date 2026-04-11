@@ -19,6 +19,7 @@ class ApiController extends Controller
             'gas_value' => 'required|numeric',
             'smoke_value' => 'required|numeric',
             'temperature' => 'required|numeric',
+            'flame_value' => 'required|numeric'
         ]);
 
         $gasThresh = Cache::get('gas_threshold', 300);
@@ -28,7 +29,7 @@ class ApiController extends Controller
 
         $status_indikasi = 'AMAN';
 
-        if ($request->gas_value > $gasThresh || $request->smoke_value > $smokeThresh || $request->temperature > $tempThresh) {
+        if ($request->gas_value > $gasThresh || $request->smoke_value > $smokeThresh || $request->temperature > $tempThresh || $request->flame_value < 500) {
             $status_indikasi = 'BAHAYA';
             if ($mode === 'auto') {
                 $lastExhaust = Command::where('target_device', 'exhaust_fan')->latest()->first();
@@ -58,6 +59,7 @@ class ApiController extends Controller
             'gas_value' => $request->gas_value,
             'smoke_value' => $request->smoke_value,
             'temperature' => $request->temperature,
+            'flame_value' => $request->flame_value,
             'status_indikasi' => $status_indikasi
         ]);
 
