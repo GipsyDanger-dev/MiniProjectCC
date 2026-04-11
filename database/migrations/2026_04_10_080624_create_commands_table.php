@@ -6,12 +6,13 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    public function up(): void
+public function up(): void
     {
         Schema::create('commands', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('device_id');
-            $table->string('command');
+            $table->string('target_device');
+            $table->string('action');
+            $table->string('status')->default('pending');
             $table->timestamps();
         });
     }

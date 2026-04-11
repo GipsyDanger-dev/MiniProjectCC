@@ -3,24 +3,35 @@
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\ApiController;
-use Illuminate\Support\Facades\Log;
+use App\Http\Middleware\CheckApiKey;
 
-Route::post('/ingest', [ApiController::class, 'ingestData']);
+/*
+|--------------------------------------------------------------------------
+| Jalur Komunikasi Mesin (Simulator & Worker) - WAJIB PAKAI API KEY
+|--------------------------------------------------------------------------
+*/
+Route::middleware([CheckApiKey::class])->group(function () {
+    // Simulator mengirim data
+    Route::post('/ingest', [ApiController::class, 'ingestData']);
 
-// ambil data terbaru
-Route::get('/latest', function () {
-    return SensorData::latest()->take(10)->get();
+    // Worker mengambil perintah & lapor status
+    Route::get('/command/get', [ApiController::class, 'getPendingCommand']);
+    Route::post('/status/update', [ApiController::class, 'updateWorkerStatus']);
+    
+    // Worker mengirim detak jantung (Heartbeat)
+    Route::post('/worker/heartbeat', [ApiController::class, 'workerHeartbeat']);
 });
 
-// kirim command dari dashboard
-Route::post('/command', function (Request $request) {
-    return Command::create($request->all());
-});
+/*
+|--------------------------------------------------------------------------
+| Jalur Komunikasi Dashboard (Web Frontend) - TIDAK PERLU API KEY
+|--------------------------------------------------------------------------
+*/
+// Mengambil data untuk tabel & log di web
+Route::get('/dashboard/data', [ApiController::class, 'dashboard']);
 
-// route untuk testing (simulasi data tanpa Python)
-Route::get('/test', [ApiController::class, 'testData']);
+// Menyimpan pengaturan batas sensor (Threshold)
+Route::put('/settings', [ApiController::class, 'saveSettings']);
 
-// Dashboard API endpoints
-Route::get('/dashboard', [ApiController::class, 'getDashboard']);
-Route::put('/settings', [ApiController::class, 'updateSettings']);
+// Tombol manual START/STOP di web
 Route::post('/actuator', [ApiController::class, 'controlActuator']);
