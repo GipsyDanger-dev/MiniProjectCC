@@ -120,17 +120,24 @@ class ApiController extends Controller
         $worker = WorkerStatus::first();
         $isEmergency = $sensorData->contains('status_indikasi', 'BAHAYA');
 
+        $workerOnline = false;
+        if ($worker && $worker->last_heartbeat) {
+            $workerOnline = now()->diffInSeconds($worker->last_heartbeat) < 90;
+        }
+
         return response()->json([
             'status' => 'success',
             'sensor_data' => $sensorData,
             'activity_logs' => $logs,
             'worker_status' => $worker,
+            'worker_online' => $workerOnline,
             'emergency_status' => $isEmergency ? 'BAHAYA' : 'AMAN',
             'settings' => [
                 'mode' => Cache::get('system_mode', 'auto'),
                 'gas_threshold' => Cache::get('gas_threshold', 300),
                 'smoke_threshold' => Cache::get('smoke_threshold', 200),
-                'temperature_threshold' => Cache::get('temperature_threshold', 45)
+                'temperature_threshold' => Cache::get('temperature_threshold', 45),
+                'flame_threshold' => Cache::get('flame_threshold', 500)
             ]
         ]);
     }

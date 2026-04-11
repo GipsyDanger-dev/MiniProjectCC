@@ -13,4 +13,8 @@ class WorkerStatus extends Model
         'current_state', 
         'last_heartbeat'
     ];
+
+    protected $casts = [
+        'last_heartbeat' => 'datetime',
+    ];
 }
