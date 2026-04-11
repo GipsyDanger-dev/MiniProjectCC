@@ -12,6 +12,7 @@ return new class extends Migration
             $table->id();
             $table->string('device_name');
             $table->string('location')->nullable();
+            $table->string('api_key')->unique()->nullable();
             $table->string('status')->default('offline');
             $table->timestamps();
         });

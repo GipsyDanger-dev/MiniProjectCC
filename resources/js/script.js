@@ -90,27 +90,23 @@ function refreshUI(data) {
     const logList = document.getElementById("logList");
     if (logList) {
         const systemLogs = data.activity_logs.map((log) => ({
-            msg: log.description,
+            msg: log.message || log.description,
+            sensorData: log.description,
             time: new Date(log.created_at),
-            type: log.action_type === "SENSOR_ALERT" ? "danger" : "system",
+            status: log.status,
+            type: log.status === "BAHAYA" ? "danger" : (log.action_type === "SENSOR_ALERT" ? "danger" : "system"),
         }));
-        const sensorLogs = data.sensor_data
-            .filter((s) => s.status_indikasi === "AMAN")
-            .map((s) => ({
-                msg: "Lingkungan Aman",
-                time: new Date(s.created_at),
-                type: "ok",
-            }));
 
-        const combined = [...systemLogs, ...sensorLogs]
+        const combined = systemLogs
             .sort((a, b) => b.time - a.time)
             .slice(0, 10);
         logList.innerHTML = combined
             .map(
                 (item) => `
-            <div class="log-item ${item.type === "danger" ? "danger" : "warning"}">
+            <div class="log-item ${item.status === "BAHAYA" ? "danger" : "ok"}">
                 <div style="flex:1">
                     <div class="log-msg">${item.msg}</div>
+                    <div class="log-time" style="font-size:11px;color:#888;margin-top:4px">${item.sensorData}</div>
                     <div class="log-time">${item.time.toLocaleTimeString("id-ID")}</div>
                 </div>
             </div>`,
@@ -159,7 +155,18 @@ function updateCard(type, value, thresh, inverse = false) {
     const barEl = document.getElementById(`bar-${type}`);
     if (barEl) barEl.style.width = Math.min((value / thresh) * 100, 100) + "%";
     const card = document.getElementById(`card-${type}`);
-    if (value > thresh) card.classList.add("danger");
+    
+    // Determine if sensor is in danger state
+    let isDanger = false;
+    if (inverse) {
+        // For FLAME: danger jika value < threshold (api terdeteksi)
+        isDanger = value < thresh;
+    } else {
+        // Untuk Gas, Smoke, Temp: danger jika value > threshold
+        isDanger = value > thresh;
+    }
+    
+    if (isDanger) card.classList.add("danger");
     else card.classList.remove("danger");
 }
 
