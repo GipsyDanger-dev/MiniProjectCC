@@ -29,9 +29,4 @@ Route::middleware([CheckApiKey::class])->group(function () {
 */
 // Mengambil data untuk tabel & log di web
 Route::get('/dashboard/data', [ApiController::class, 'dashboard']);
-
-// Menyimpan pengaturan batas sensor (Threshold)
-Route::put('/settings', [ApiController::class, 'saveSettings']);
-
-// Tombol manual START/STOP di web
-Route::post('/actuator', [ApiController::class, 'controlActuator']);
+Route::get('/sensor/flame', [ApiController::class, 'flameSensor']);
