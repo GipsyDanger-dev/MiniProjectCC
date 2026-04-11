@@ -9,12 +9,20 @@ use Symfony\Component\HttpFoundation\Response;
 class CheckApiKey
 {
     /**
-     * Handle an incoming request.
-     *
-     * @param  Closure(Request): (Response)  $next
+     * Menangani permintaan yang masuk.
      */
     public function handle(Request $request, Closure $next): Response
     {
+
+        $apiKey = $request->header('x-api-key');
+
+        if ($apiKey !== env('IOT_API_KEY')) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Akses Ditolak! API Key tidak valid.'
+            ], 401);
+        }
+
         return $next($request);
     }
 }

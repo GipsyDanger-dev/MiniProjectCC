@@ -5,13 +5,12 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\SensorData;
 use App\Models\Device;
-use App\Models\WorkerStatus; // Wajib untuk akses tabel worker_status
-use App\Models\Command;      // Wajib untuk akses tabel commands
-use App\Models\ActivityLog;  // Wajib untuk akses tabel activity_logs
+use App\Models\WorkerStatus; 
+use App\Models\Command;      
+use App\Models\ActivityLog;  
 
 class ApiController extends Controller
 {
-    // 1. Metode untuk menerima data dari Python Simulator
     public function ingestData(Request $request)
     {
         $request->validate([
@@ -22,12 +21,10 @@ class ApiController extends Controller
         ]);
 
         $status_indikasi = 'AMAN';
-        
-        // --- LOGIKA OTOMATISASI (HYBRID CONTROL DENGAN ANTI-SPAM) ---
+
         if ($request->gas_value > 300 || $request->smoke_value > 200 || $request->temperature > 45) {
             $status_indikasi = 'BAHAYA';
 
-            // Cek apakah belum ada antrean untuk exhaust_fan supaya database tidak jebol (spam)
             $cekExhaust = Command::where('target_device', 'exhaust_fan')
                                  ->where('status', 'pending')
                                  ->first();
@@ -39,7 +36,6 @@ class ApiController extends Controller
                 ]);
             }
 
-            // Cek apakah belum ada antrean untuk buzzer
             $cekBuzzer = Command::where('target_device', 'buzzer')
                                 ->where('status', 'pending')
                                 ->first();
@@ -51,9 +47,8 @@ class ApiController extends Controller
                 ]);
             }
         }
-        // --- BATAS LOGIKA OTOMATISASI ---
 
-        // Simpan data sensor ke database
+
         $sensorData = SensorData::create([
             'device_id' => $request->device_id,
             'gas_value' => $request->gas_value,
@@ -69,7 +64,7 @@ class ApiController extends Controller
         ], 201);
     }
 
-    // 2. Metode untuk mendistribusikan perintah kepada Worker (Polling)
+
     public function getPendingCommand()
     {
         $command = Command::where('status', 'pending')->first();
@@ -89,7 +84,7 @@ class ApiController extends Controller
         ]);
     }
 
-    // 3. Metode untuk menerima log penyelesaian tugas dari Worker
+
     public function updateWorkerStatus(Request $request)
     {
         $request->validate([
@@ -120,8 +115,7 @@ public function workerHeartbeat(Request $request)
             'current_state' => 'required|string',
         ]);
 
-        // Menggunakan updateOrCreate: 
-        // Jika nama komponen sudah ada, perbarui datanya. Jika belum, buat baris baru.
+
         WorkerStatus::updateOrCreate(
             ['component_name' => $request->component_name],
             [
