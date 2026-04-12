@@ -13,7 +13,6 @@ use Illuminate\Support\Facades\Log;
 
 class ApiController extends Controller
 {
-    // ingestData, getPendingCommand, dll tetap sama seperti sebelumnya...
     public function ingestData(Request $request)
     {
         try {
@@ -25,7 +24,6 @@ class ApiController extends Controller
                 'flame_value' => 'required|numeric'
             ]);
 
-            // Baca threshold dari Cache (bisa berubah via saveSettings)
             $gasThresh = Cache::get('gas_threshold', 250);
             $smokeThresh = Cache::get('smoke_threshold', 120);
             $tempThresh = Cache::get('temperature_threshold', 40);
@@ -44,22 +42,18 @@ class ApiController extends Controller
                 $status_indikasi = 'BAHAYA';
 
                 if ($mode === 'auto') {
-                    // Exhaust fan via worker command queue
+
                     Command::updateOrCreate(
                         ['target_device' => 'exhaust_fan', 'device_id' => $request->device_id],
                         ['action' => 'START', 'status' => 'pending']
                     );
                     
-                    // Buzzer langsung ON - tidak perlu nunggu worker
-                    // (assumed buzzer API/GPIO activation happens here)
-                    // For now, just create completed command untuk buzzer
                     Command::updateOrCreate(
                         ['target_device' => 'buzzer', 'device_id' => $request->device_id],
                         ['action' => 'START', 'status' => 'completed']
                     );
                 }
             } else {
-                // Exhaust fan STOP command
                 $lastFan = Command::where('target_device', 'exhaust_fan')
                     ->where('device_id', $request->device_id)
                     ->latest()
@@ -72,15 +66,14 @@ class ApiController extends Controller
                         'status' => 'pending'
                     ]);
                 }
-                
-                // Buzzer langsung OFF
+
                 Command::updateOrCreate(
                     ['target_device' => 'buzzer', 'device_id' => $request->device_id],
                     ['action' => 'STOP', 'status' => 'completed']
                 );
             }
 
-            // Simpan sensor data
+            //nyimpen data sensor
             $sensorData = SensorData::create([
                 'device_id' => $request->device_id,
                 'gas_value' => $request->gas_value,
@@ -90,7 +83,7 @@ class ApiController extends Controller
                 'status_indikasi' => $status_indikasi
             ]);
 
-            // Log Activity - tetap log meski ada error, jangan hentikan respons
+            // Log Activity
             if ($status_indikasi === 'BAHAYA') {
                 $sensorDetails = [];
                 if ($request->gas_value > $gasThresh) 
@@ -125,7 +118,6 @@ class ApiController extends Controller
     public function dashboard(Request $request)
     {
         try {
-            // Ambil device_id dari request, default ke 1
             $deviceId = $request->query('device_id', 1);
 
             // Filter data sensor berdasarkan device_id
@@ -139,8 +131,7 @@ class ApiController extends Controller
 
             $logs = ActivityLog::orderBy('created_at', 'desc')->take(15)->get();
             $worker = WorkerStatus::first();
-            
-            // Get latest command untuk device ini
+
             $latestCommand = Command::with('device:id,device_name')
                 ->where('device_id', $deviceId)
                 ->orderBy('updated_at', 'desc')
@@ -225,7 +216,6 @@ class ApiController extends Controller
         return response()->json(['status' => 'success']);
     }
 
-    // ============ WORKER METHODS ============
 
     public function getPendingCommand(Request $request)
     {
@@ -281,13 +271,11 @@ class ApiController extends Controller
     public function clearWorkerStatus()
     {
         try {
-            // Hapus semua worker status
+
             WorkerStatus::truncate();
-            
-            // Force clear cache jika ada
+
             Cache::forget('worker_status');
-            
-            // Log activity
+
             ActivityLog::create([
                 'action_type' => 'SYSTEM_UPDATE',
                 'status' => 'AMAN',

@@ -4,7 +4,6 @@ import random
 
 API_URL = "http://127.0.0.1:8000/api/ingest"
 
-# Hapus variabel HEADERS global, kita ganti dengan kamus (dictionary) credential
 DEVICE_CREDENTIALS = {
     1: "key-servernih-121",
     2: "key-dapurnih-212",
@@ -12,19 +11,17 @@ DEVICE_CREDENTIALS = {
     4: "key-koridornih-441"
 }
 
-print("🚀 Memulai Python Simulator dengan Per-Device Security...")
+print("Memulai Python Simulator dengan Per-Device Security...")
 print("Mengirim data untuk 4 device setiap 5 detik. Tekan Ctrl+C untuk berhenti.\n")
 
 while True:
-    # Looping sekarang mengambil dev_id dan api_key sekaligus
+
     for dev_id, secret_key in DEVICE_CREDENTIALS.items():
-        
-        # Header diset spesifik per device di dalam looping
+
         HEADERS = {
             "x-api-key": secret_key
         }
 
-        # Logika Simulasi Sensor Api (KY-026)
         is_fire = random.choice([True, False, False, False]) 
         simulated_flame = random.uniform(100.0, 499.0) if is_fire else random.uniform(800.0, 1024.0)
 
@@ -45,22 +42,16 @@ while True:
 
             data_response = response.json()
             status_indikasi = data_response.get('data', {}).get('status_indikasi', 'UNKNOWN')
-            
-            # ---------------------------------------------------------
-            # FORMATTING LOG TERMINAL PROFESIONAL
-            # ---------------------------------------------------------
+
             g_val = payload['gas_value']
             s_val = payload['smoke_value']
             t_val = payload['temperature']
             f_val = payload['flame_value']
-            
-            # Indikator visual khusus untuk sensor api
+
             fire_alert = "🔥 (API!)" if f_val < 500 else "(Aman)"
 
-            # Menyusun string log lengkap
             log_text = f"Gas: {g_val} | Asap: {s_val} | Suhu: {t_val}°C | Api: {f_val} {fire_alert}"
 
-            # Mencetak ke terminal berdasarkan status dari API
             if status_indikasi == 'BAHAYA':
                 print(f"⚠️  [BAHAYA] Dev {dev_id} -> {log_text}")
             else:
@@ -70,5 +61,5 @@ while True:
             print(f"❌ Gagal mengirim data dari device {dev_id}: {e}")
 
     print("-" * 80)
-    # Jeda 5 detik sebelum mengirim data lagi
+
     time.sleep(5)

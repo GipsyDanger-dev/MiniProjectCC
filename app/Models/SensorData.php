@@ -9,16 +9,14 @@ class SensorData extends Model
 {
     use HasFactory;
 
-    // Tabel yang digunakan
     protected $table = 'sensor_data';
 
-    // WAJIB DAFTARKAN SEMUA KOLOM DI SINI
     protected $fillable = [
         'device_id',
         'gas_value',
         'smoke_value',
         'temperature',
-        'flame_value', // <--- INI YANG BIKIN DATA KAMU JADI 0 TADI
+        'flame_value', 
         'status_indikasi'
     ];
 }

@@ -26,7 +26,6 @@ while True:
         }, headers=HEADERS)
 
 
-        # ← Tambah device_id parameter
         response = requests.get(GET_COMMAND_URL, params={"device_id": DEVICE_ID}, headers=HEADERS)
         
 
@@ -70,5 +69,4 @@ while True:
         print(f"❌ Gagal memproses perintah: {e}")
         pass
 
-    # Jeda 3 detik
     time.sleep(3)

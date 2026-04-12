@@ -7,7 +7,6 @@ let refreshInterval;
 let isFormFocused = false;
 let isSimulationRunning = true;
 
-// 1. Chart Init
 function initChart() {
     const ctx = document.getElementById("chart").getContext("2d");
     sensorChart = new Chart(ctx, {
@@ -57,9 +56,7 @@ function initChart() {
     });
 }
 
-// 2. Fetch Data with Device ID
 async function updateDashboard() {
-    // ⚠️ SKIP update jika form sedang di-focus - prevent nilai reset
     if (isFormFocused) {
         console.log("Form focused - skipping dashboard update");
         return;
@@ -72,7 +69,7 @@ async function updateDashboard() {
         const data = await response.json();
 
         if (data.status === "success") {
-            // Selalu sync threshold UI setiap kali ada update
+  
             syncThresholdUI(data.settings);
             refreshUI(data);
         }
@@ -90,13 +87,13 @@ function refreshUI(data) {
         updateCard("smoke", latest.smoke_value, settings.smoke_threshold);
         updateCard("temp", latest.temperature, settings.temp_threshold);
         updateCard("flame", latest.flame_value, settings.flame_threshold, true);        
-        // Update max threshold display di progress labels
+
         document.getElementById("max-gas").innerText = settings.gas_threshold;
         document.getElementById("max-smoke").innerText = settings.smoke_threshold;
         document.getElementById("max-temp").innerText = settings.temp_threshold;
         document.getElementById("max-flame").innerText = settings.flame_threshold;    }
 
-    // Logs Merge
+
     const logList = document.getElementById("logList");
     if (logList) {
         const systemLogs = data.activity_logs.map((log) => ({
@@ -124,13 +121,11 @@ function refreshUI(data) {
             .join("");
     }
 
-    // Header Status
     const statusEl = document.getElementById("liveIndicator");
     if (data.emergency_status === "BAHAYA")
         statusEl.className = "live-dot status-bahaya";
     else statusEl.className = "live-dot status-aman";
 
-    // Worker Status Display
     const workerList = document.getElementById("workerList");
     const workerCount = document.getElementById("workerCount");
     
@@ -140,8 +135,7 @@ function refreshUI(data) {
         const statusEmoji = isOnline ? '🟢' : '🔴';
         const statusText = isOnline ? 'Online' : 'Offline';
         const statusClass = isOnline ? 'status-online' : 'status-offline';
-        
-        // Format latest command
+
         let commandHTML = '';
         if (data.latest_command) {
             const cmd = data.latest_command;
@@ -181,7 +175,6 @@ function refreshUI(data) {
         }
     }
 
-    // Chart update
     const chartData = [...data.sensor_data].reverse();
     sensorChart.data.labels = chartData.map((d) =>
         new Date(d.created_at).toLocaleTimeString([], {
@@ -196,13 +189,12 @@ function refreshUI(data) {
     sensorChart.update("none");
 }
 
-// 3. Selection Logic
 window.selectDevice = (id) => {
     currentDeviceId = id;
     document.getElementById("currentDeviceTitle").innerText = `Device ${id}`;
     document.getElementById("chartDeviceName").innerText = `Device ${id}`;
     toggleMenu();
-    updateDashboard(); // Langsung update tanpa nunggu interval
+    updateDashboard(); 
 };
 
 window.toggleMenu = () => {
@@ -215,29 +207,27 @@ window.toggleMenu = () => {
     container.classList.toggle("open");
 };
 
-// Toggle Simulation (Pause/Resume)
 window.toggleSimulation = () => {
     const toggleBtn = document.getElementById("toggleBtn");
     
     if (isSimulationRunning) {
-        // Pause - stop the interval
+
         clearInterval(refreshInterval);
         isSimulationRunning = false;
         toggleBtn.innerText = "▶ Resume";
         toggleBtn.style.backgroundColor = "var(--orange)";
         console.log("✋ Dashboard paused");
     } else {
-        // Resume - restart the interval
+
         refreshInterval = setInterval(updateDashboard, 3000);
         isSimulationRunning = true;
         toggleBtn.innerText = "⏸ Pause";
         toggleBtn.style.backgroundColor = "";
         console.log("▶️ Dashboard resumed");
-        updateDashboard(); // Immediate update
+        updateDashboard(); 
     }
 };
 
-// Clear Worker Status
 window.clearWorkerStatus = async () => {
     if (!confirm("Yakin ingin clear worker status?")) return;
     
@@ -254,8 +244,7 @@ window.clearWorkerStatus = async () => {
         const result = await response.json();
         if (result.status === "success") {
             alert("✅ Worker status cleared!");
-            
-            // Update UI immediately
+
             const workerList = document.getElementById("workerList");
             const workerCount = document.getElementById("workerCount");
             
@@ -266,8 +255,7 @@ window.clearWorkerStatus = async () => {
                 workerCount.innerText = '0';
                 workerCount.className = 'badge worker-badge status-offline';
             }
-            
-            // Then refresh dashboard data
+
             updateDashboard();
         } else {
             alert("❌ Error: " + (result.message || "Failed to clear"));
@@ -278,7 +266,6 @@ window.clearWorkerStatus = async () => {
     }
 };
 
-// ... function updateCard, syncThresholdUI, Event Listeners tetap sama ...
 function updateCard(type, value, thresh, inverse = false) {
     const valEl = document.getElementById(`val-${type}`);
     if (valEl) valEl.innerText = parseFloat(value).toFixed(1);
@@ -291,20 +278,18 @@ function updateCard(type, value, thresh, inverse = false) {
     
     const card = document.getElementById(`card-${type}`);
     if (card) {
-        // Tentukan apakah sensor dalam kondisi bahaya
+  
         let isDanger = false;
         if (inverse) {
-            // Untuk FLAME: danger jika value < threshold (api terdeteksi)
+
             isDanger = value < thresh;
         } else {
-            // Untuk Gas, Smoke, Temp: danger jika value > threshold
+
             isDanger = value > thresh;
         }
-        
-        // Debug log
+
         console.log(`${type}: value=${value}, thresh=${thresh}, isDanger=${isDanger}`);
-        
-        // Update class danger
+
         if (isDanger) {
             card.classList.add("danger");
         } else {
@@ -322,37 +307,32 @@ function syncThresholdUI(settings) {
     });
 }
 
-// 4. Threshold Slider Listeners and Save
 function setupThresholdListeners() {
     const settingsForm = document.getElementById("settingsForm");
-    
-    // Slider drag listeners - pause refresh saat drag
+
     ["gas", "smoke", "temp", "flame"].forEach((type) => {
         const slider = document.getElementById(`range-${type}`);
         const display = document.getElementById(`th-${type}-val`);
         
         if (slider) {
-            // Update display saat input
+
             slider.addEventListener("input", (e) => {
                 if (display) display.innerText = e.target.value;
             });
-            
-            // Pause refresh saat mulai drag (jangan resume sampe focusout)
+
             slider.addEventListener("pointerdown", () => {
                 isFormFocused = true;
                 if (refreshInterval) clearInterval(refreshInterval);
                 console.log("Slider drag started - auto-refresh paused");
             });
-            
-            // Fallback untuk mouse
+
             slider.addEventListener("mousedown", () => {
                 isFormFocused = true;
                 if (refreshInterval) clearInterval(refreshInterval);
             });
         }
     });
-    
-    // Form focus listeners - ONLY resume on focusout dari entire form
+
     if (settingsForm) {
         settingsForm.addEventListener("focusin", () => {
             isFormFocused = true;
@@ -362,9 +342,9 @@ function setupThresholdListeners() {
         
         settingsForm.addEventListener("focusout", () => {
             isFormFocused = false;
-            // Resume after focusout (user truly left the form)
+
             setTimeout(() => {
-                if (!isFormFocused) { // Double check it's still false
+                if (!isFormFocused) { 
                     refreshInterval = setInterval(updateDashboard, 3000);
                     console.log("Form completely unfocused - auto-refresh resumed");
                 }
@@ -372,7 +352,6 @@ function setupThresholdListeners() {
         });
     }
 
-    // Form submit handler
     if (settingsForm) {
         settingsForm.addEventListener("submit", async (e) => {
             e.preventDefault();
@@ -405,7 +384,7 @@ function setupThresholdListeners() {
                 
                 if (result.status === "success") {
                     alert("⚙️ Pengaturan berhasil disimpan!");
-                    // Jangan langsung update, tunggu user selesai
+
                 } else {
                     alert("❌ Error: " + (result.message || "Gagal menyimpan"));
                 }
