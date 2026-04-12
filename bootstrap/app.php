@@ -1,5 +1,10 @@
 <?php
 
+// Increase max execution time for API endpoints
+if (php_sapi_name() !== 'cli') {
+    set_time_limit(60);  // 60 detik untuk API requests
+}
+
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;

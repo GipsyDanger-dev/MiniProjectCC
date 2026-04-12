@@ -32,11 +32,22 @@ while True:
         if response.status_code == 401:
             print("⛔ [ERROR] Akses Ditolak! Cek API Key di Worker kamu.")
             time.sleep(3)
+            continue
+
+        if response.status_code != 200:
+            print(f"❌ [ERROR] Status {response.status_code}: {response.text}")
+            time.sleep(3)
+            continue
 
         data = response.json()
 
         if data.get('status') == 'success':
-            command = data['data']
+            command = data.get('data')
+            if not command:
+                print("⏳ Tidak ada perintah baru, polling ulang...")
+                time.sleep(3)
+                continue
+            
             cmd_id = command['id']
             target = command['target_device']
             action = command['action']
@@ -67,6 +78,7 @@ while True:
         
     except Exception as e:
         print(f"❌ Gagal memproses perintah: {e}")
-        pass
+        time.sleep(3)
+        continue
 
     time.sleep(3)

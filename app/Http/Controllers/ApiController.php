@@ -120,24 +120,26 @@ class ApiController extends Controller
         try {
             $deviceId = $request->query('device_id', 1);
 
-            // Filter data sensor berdasarkan device_id
-            $sensorData = DB::table('sensor_data')
-                ->leftJoin('devices', 'sensor_data.device_id', '=', 'devices.id')
-                ->select('sensor_data.*', 'devices.device_name')
-                ->where('sensor_data.device_id', $deviceId)
-                ->orderBy('sensor_data.created_at', 'desc')
-                ->take(20)
+            // Query sensor data dengan timeout dan index optimization
+            $sensorData = SensorData::where('device_id', $deviceId)
+                ->orderBy('created_at', 'desc')
+                ->limit(20)
                 ->get();
 
-            $logs = ActivityLog::orderBy('created_at', 'desc')->take(15)->get();
+            // Separate query untuk activity logs (no join needed)
+            $logs = ActivityLog::orderBy('created_at', 'desc')
+                ->limit(15)
+                ->get();
+
             $worker = WorkerStatus::first();
 
-            $latestCommand = Command::with('device:id,device_name')
-                ->where('device_id', $deviceId)
+            // Separate query untuk latest command
+            $latestCommand = Command::where('device_id', $deviceId)
                 ->orderBy('updated_at', 'desc')
+                ->select('id', 'device_id', 'target_device', 'action', 'status', 'updated_at')
                 ->first();
             
-            $isEmergency = collect($sensorData)->contains('status_indikasi', 'BAHAYA');
+            $isEmergency = $sensorData->contains('status_indikasi', 'BAHAYA');
             $workerOnline = $worker && $worker->last_heartbeat ? now()->diffInSeconds($worker->last_heartbeat) <= 60 : false;
 
             return response()->json([
@@ -157,7 +159,8 @@ class ApiController extends Controller
                 ]
             ]);
         } catch (\Exception $e) {
-            return response()->json(['status' => 'error', 'message' => $e->getMessage()], 500);
+            Log::error("Dashboard error: " . $e->getMessage());
+            return response()->json(['status' => 'error', 'message' => 'Database connection timeout or error'], 503);
         }
     }
 
