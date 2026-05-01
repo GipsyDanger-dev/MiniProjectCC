@@ -50,7 +50,7 @@ class ApiController extends Controller
                     
                     Command::updateOrCreate(
                         ['target_device' => 'buzzer', 'device_id' => $request->device_id],
-                        ['action' => 'START', 'status' => 'completed']
+                        ['action' => 'START', 'status' => 'pending']
                     );
                 }
             } else {
@@ -69,7 +69,7 @@ class ApiController extends Controller
 
                 Command::updateOrCreate(
                     ['target_device' => 'buzzer', 'device_id' => $request->device_id],
-                    ['action' => 'STOP', 'status' => 'completed']
+                    ['action' => 'STOP', 'status' => 'pending']
                 );
             }
 
@@ -139,7 +139,12 @@ class ApiController extends Controller
                 ->select('id', 'device_id', 'target_device', 'action', 'status', 'updated_at')
                 ->first();
             
-            $isEmergency = $sensorData->contains('status_indikasi', 'BAHAYA');
+            // Cek hanya sensor data TERAKHIR, bukan 20 data semuanya
+            $latestSensorData = SensorData::where('device_id', $deviceId)
+                ->orderBy('created_at', 'desc')
+                ->first();
+            
+            $isEmergency = $latestSensorData && $latestSensorData->status_indikasi === 'BAHAYA';
             $workerOnline = $worker && $worker->last_heartbeat ? now()->diffInSeconds($worker->last_heartbeat) <= 60 : false;
 
             return response()->json([

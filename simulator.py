@@ -38,9 +38,18 @@ while True:
 
             if response.status_code == 401:
                 print(f"⛔ Akses Ditolak untuk Device {dev_id}! Cek API Key kamu.")
-                continue 
+                continue
+            
+            if response.status_code != 201 and response.status_code != 200:
+                print(f"❌ Device {dev_id} Error {response.status_code}: {response.text[:100]}")
+                continue
 
-            data_response = response.json()
+            try:
+                data_response = response.json()
+            except:
+                print(f"❌ Device {dev_id} Invalid JSON response: {response.text[:100]}")
+                continue
+            
             status_indikasi = data_response.get('data', {}).get('status_indikasi', 'UNKNOWN')
 
             g_val = payload['gas_value']
