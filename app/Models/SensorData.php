@@ -17,6 +17,10 @@ class SensorData extends Model
         'smoke_value',
         'temperature',
         'flame_value', 
-        'status_indikasi'
+        'status_indikasi',
+        'fuzzy_score',
+        'fan_status',
+        'fan_speed',
+        'decision_profile',
     ];
 }

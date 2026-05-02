@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use App\Models\SensorData;
 use App\Models\Command;
 use App\Models\ActivityLog;
+use App\Models\DeviceActuator;
 use App\Models\WorkerStatus;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Cache;
@@ -13,6 +14,164 @@ use Illuminate\Support\Facades\Log;
 
 class ApiController extends Controller
 {
+    private function triangularMembership(float $value, float $left, float $peak, float $right): float
+    {
+        if ($value <= $left || $value >= $right) {
+            return 0.0;
+        }
+
+        if ($value === $peak) {
+            return 1.0;
+        }
+
+        if ($value < $peak) {
+            $denominator = $peak - $left;
+            return $denominator > 0 ? max(0.0, min(1.0, ($value - $left) / $denominator)) : 1.0;
+        }
+
+        $denominator = $right - $peak;
+        return $denominator > 0 ? max(0.0, min(1.0, ($right - $value) / $denominator)) : 1.0;
+    }
+
+    private function buildFuzzyDecision(float $gas, float $smoke, float $temperature, float $flame, float $flameThreshold): array
+    {
+        if ($flame < $flameThreshold) {
+            return [
+                'score' => 100.0,
+                'fan_status' => 'HIGH',
+                'fan_speed' => 100,
+                'buzzer_action' => 'START',
+                'profile' => 'FLAME_OVERRIDE',
+                'rules' => [['Flame override', 1.0, 100]],
+                'reason' => 'Flame sensor crossed the emergency threshold'
+            ];
+        }
+
+        $gasLow = $this->triangularMembership($gas, 0, 0, 200);
+        $gasMedium = $this->triangularMembership($gas, 150, 275, 400);
+        $gasHigh = $this->triangularMembership($gas, 350, 600, 600);
+
+        $smokeLow = $this->triangularMembership($smoke, 0, 0, 100);
+        $smokeMedium = $this->triangularMembership($smoke, 80, 165, 250);
+        $smokeHigh = $this->triangularMembership($smoke, 200, 400, 400);
+
+        $tempNormal = $this->triangularMembership($temperature, 20, 20, 35);
+        $tempWarm = $this->triangularMembership($temperature, 30, 40, 50);
+        $tempHot = $this->triangularMembership($temperature, 45, 70, 70);
+
+        $rules = [
+            ['SAFE', min($gasLow, $smokeLow, $tempNormal), 0],
+            ['LOW', min($gasLow, $smokeMedium), 30],
+            ['LOW', min($gasMedium, $smokeLow), 30],
+            ['LOW', min($gasLow, $tempWarm), 30],
+            ['MEDIUM', min($gasMedium, $smokeMedium), 60],
+            ['MEDIUM', min($gasMedium, $tempWarm), 60],
+            ['MEDIUM', min($smokeMedium, $tempWarm), 60],
+            ['HIGH', $gasHigh, 100],
+            ['HIGH', $smokeHigh, 100],
+            ['HIGH', $tempHot, 100],
+            ['HIGH', min($gasMedium, $tempHot), 100],
+            ['HIGH', min($smokeHigh, $tempWarm), 100],
+        ];
+
+        $weightedSum = 0.0;
+        $weightTotal = 0.0;
+        $activeRules = [];
+
+        foreach ($rules as [$label, $strength, $output]) {
+            $strength = (float) $strength;
+
+            if ($strength <= 0) {
+                continue;
+            }
+
+            $weightedSum += $strength * $output;
+            $weightTotal += $strength;
+            $activeRules[] = [$label, round($strength, 4), $output];
+        }
+
+        $score = $weightTotal > 0 ? $weightedSum / $weightTotal : 0.0;
+
+        if ($score > 70) {
+            $fanStatus = 'HIGH';
+            $fanSpeed = 100;
+            $buzzerAction = 'START';
+            $profile = 'HIGH';
+        } elseif ($score > 40) {
+            $fanStatus = 'MEDIUM';
+            $fanSpeed = 60;
+            $buzzerAction = 'START';
+            $profile = 'MEDIUM';
+        } elseif ($score > 20) {
+            $fanStatus = 'LOW';
+            $fanSpeed = 30;
+            $buzzerAction = 'STOP';
+            $profile = 'LOW';
+        } else {
+            $fanStatus = 'OFF';
+            $fanSpeed = 0;
+            $buzzerAction = 'STOP';
+            $profile = 'SAFE';
+        }
+
+        return [
+            'score' => round($score, 2),
+            'fan_status' => $fanStatus,
+            'fan_speed' => $fanSpeed,
+            'buzzer_action' => $buzzerAction,
+            'profile' => $profile,
+            'rules' => $activeRules,
+            'reason' => 'Sugeno weighted average on gas, smoke, and temperature',
+        ];
+    }
+
+    private function syncActuatorCommands(int $deviceId, array $decision): void
+    {
+        DeviceActuator::updateOrCreate(
+            ['device_id' => $deviceId],
+            [
+                'fan_status' => $decision['fan_status'],
+                'alarm_status' => $decision['buzzer_action'] === 'START' ? 'ON' : 'OFF',
+                'fan_speed' => $decision['fan_speed'],
+            ]
+        );
+
+        Command::updateOrCreate(
+            ['target_device' => 'exhaust_fan', 'device_id' => $deviceId],
+            ['action' => $decision['fan_status'], 'status' => 'pending']
+        );
+
+        Command::updateOrCreate(
+            ['target_device' => 'buzzer', 'device_id' => $deviceId],
+            ['action' => $decision['buzzer_action'], 'status' => 'pending']
+        );
+    }
+
+    private function buildActivityMessage(int $deviceId, array $decision, float $gas, float $smoke, float $temperature, float $flame, float $flameThreshold): array
+    {
+        if (($decision['profile'] ?? null) === 'FLAME_OVERRIDE') {
+            return [
+                'status' => 'BAHAYA',
+                'message' => "[🔴 BAHAYA] Device {$deviceId} | Flame override triggered (Flame={$flame} < threshold={$flameThreshold})",
+                'description' => "Device {$deviceId}: fuzzy_override=flame, gas={$gas}, smoke={$smoke}, temp={$temperature}, flame={$flame}",
+            ];
+        }
+
+        $status = ($decision['fan_status'] === 'OFF') ? 'AMAN' : 'BAHAYA';
+        $ruleSummary = collect($decision['rules'] ?? [])
+            ->take(4)
+            ->map(function ($rule) {
+                return "{$rule[0]}@{$rule[1]}→{$rule[2]}";
+            })
+            ->implode(' | ');
+
+        return [
+            'status' => $status,
+            'message' => "[" . ($status === 'BAHAYA' ? '🔴 BAHAYA' : '🟢 AMAN') . "] Device {$deviceId} | Sugeno={$decision['score']} → {$decision['fan_status']}" . ($ruleSummary ? " | {$ruleSummary}" : ''),
+            'description' => "Device {$deviceId}: fuzzy={$decision['score']}, fan={$decision['fan_status']}, speed={$decision['fan_speed']}, gas={$gas}, smoke={$smoke}, temp={$temperature}, flame={$flame}",
+        ];
+    }
+
     public function ingestData(Request $request)
     {
         try {
@@ -28,50 +187,18 @@ class ApiController extends Controller
             $smokeThresh = Cache::get('smoke_threshold', 120);
             $tempThresh = Cache::get('temperature_threshold', 40);
             $flameThresh = Cache::get('flame_threshold', 500);
-            $mode = 'auto';
 
-            $status_indikasi = 'AMAN';
-            $triggers = [];
+            $decision = $this->buildFuzzyDecision(
+                (float) $request->gas_value,
+                (float) $request->smoke_value,
+                (float) $request->temperature,
+                (float) $request->flame_value,
+                (float) $flameThresh
+            );
 
-            if ($request->gas_value > $gasThresh) $triggers[] = "Gas Tinggi";
-            if ($request->smoke_value > $smokeThresh) $triggers[] = "Asap Pekat";
-            if ($request->temperature > $tempThresh) $triggers[] = "Suhu Panas";
-            if ($request->flame_value < $flameThresh) $triggers[] = "Api Terdeteksi";
+            $status_indikasi = $decision['fan_status'] === 'OFF' ? 'AMAN' : 'BAHAYA';
 
-            if (!empty($triggers)) {
-                $status_indikasi = 'BAHAYA';
-
-                if ($mode === 'auto') {
-
-                    Command::updateOrCreate(
-                        ['target_device' => 'exhaust_fan', 'device_id' => $request->device_id],
-                        ['action' => 'START', 'status' => 'pending']
-                    );
-                    
-                    Command::updateOrCreate(
-                        ['target_device' => 'buzzer', 'device_id' => $request->device_id],
-                        ['action' => 'START', 'status' => 'pending']
-                    );
-                }
-            } else {
-                $lastFan = Command::where('target_device', 'exhaust_fan')
-                    ->where('device_id', $request->device_id)
-                    ->latest()
-                    ->first();
-                if ($lastFan && $lastFan->action === 'START') {
-                    Command::create([
-                        'device_id' => $request->device_id,
-                        'target_device' => 'exhaust_fan',
-                        'action' => 'STOP',
-                        'status' => 'pending'
-                    ]);
-                }
-
-                Command::updateOrCreate(
-                    ['target_device' => 'buzzer', 'device_id' => $request->device_id],
-                    ['action' => 'STOP', 'status' => 'pending']
-                );
-            }
+            $this->syncActuatorCommands($request->device_id, $decision);
 
             //nyimpen data sensor
             $sensorData = SensorData::create([
@@ -80,34 +207,35 @@ class ApiController extends Controller
                 'smoke_value' => $request->smoke_value,
                 'temperature' => $request->temperature,
                 'flame_value' => $request->flame_value,
-                'status_indikasi' => $status_indikasi
+                'status_indikasi' => $status_indikasi,
+                'fuzzy_score' => $decision['score'],
+                'fan_status' => $decision['fan_status'],
+                'fan_speed' => $decision['fan_speed'],
+                'decision_profile' => $decision['profile']
             ]);
 
-            // Log Activity
-            if ($status_indikasi === 'BAHAYA') {
-                $sensorDetails = [];
-                if ($request->gas_value > $gasThresh) 
-                    $sensorDetails[] = "Gas={$request->gas_value}ppm (threshold={$gasThresh})";
-                if ($request->smoke_value > $smokeThresh) 
-                    $sensorDetails[] = "Smoke={$request->smoke_value}ppm (threshold={$smokeThresh})";
-                if ($request->temperature > $tempThresh) 
-                    $sensorDetails[] = "Temp={$request->temperature}°C (threshold={$tempThresh})";
-                if ($request->flame_value < $flameThresh) 
-                    $sensorDetails[] = "Flame={$request->flame_value} (threshold={$flameThresh})";
-                $triggerDetails = implode(" | ", $sensorDetails);
-                $message = "[🔴 BAHAYA] Device {$request->device_id} | Sensors: {$triggerDetails}";
-            } else {
-                $message = "[🟢 AMAN] Device {$request->device_id} | All sensors within safe range";
-            }
+            $activity = $this->buildActivityMessage(
+                $request->device_id,
+                $decision,
+                (float) $request->gas_value,
+                (float) $request->smoke_value,
+                (float) $request->temperature,
+                (float) $request->flame_value,
+                (float) $flameThresh
+            );
 
             ActivityLog::create([
                 'action_type' => 'SENSOR_DATA',
-                'status' => $status_indikasi,
-                'description' => "Device {$request->device_id}: G={$request->gas_value}, S={$request->smoke_value}, T={$request->temperature}, F={$request->flame_value}",
-                'message' => $message
+                'status' => $activity['status'],
+                'description' => $activity['description'],
+                'message' => $activity['message']
             ]);
 
-            return response()->json(['status' => 'success', 'data' => $sensorData], 201);
+            return response()->json([
+                'status' => 'success',
+                'data' => $sensorData,
+                'decision' => $decision,
+            ], 201);
             
         } catch (\Exception $e) {
             Log::error("ingestData error: " . $e->getMessage() . " at " . $e->getFile() . ":" . $e->getLine());
@@ -143,6 +271,10 @@ class ApiController extends Controller
             $latestSensorData = SensorData::where('device_id', $deviceId)
                 ->orderBy('created_at', 'desc')
                 ->first();
+
+            $latestActuator = DeviceActuator::where('device_id', $deviceId)
+                ->orderBy('updated_at', 'desc')
+                ->first();
             
             $isEmergency = $latestSensorData && $latestSensorData->status_indikasi === 'BAHAYA';
             $workerOnline = $worker && $worker->last_heartbeat ? now()->diffInSeconds($worker->last_heartbeat) <= 60 : false;
@@ -155,6 +287,7 @@ class ApiController extends Controller
                 'worker_status' => $worker,
                 'worker_online' => $workerOnline,
                 'latest_command' => $latestCommand,
+                'device_actuator' => $latestActuator,
                 'emergency_status' => $isEmergency ? 'BAHAYA' : 'AMAN',
                 'settings' => [
                     'gas_threshold' => Cache::get('gas_threshold', 250),
@@ -203,22 +336,43 @@ class ApiController extends Controller
     {
         $request->validate([
             'target_device' => 'required|in:exhaust_fan,buzzer',
-            'action' => 'required|in:START,STOP',
+            'action' => 'required|string',
             'device_id' => 'nullable|integer'
         ]);
+
+        if ($request->target_device === 'exhaust_fan') {
+            $allowedActions = ['START', 'STOP', 'OFF', 'LOW', 'MEDIUM', 'HIGH'];
+        } else {
+            $allowedActions = ['START', 'STOP'];
+        }
+
+        if (!in_array($request->action, $allowedActions, true)) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Invalid action for selected target device'
+            ], 422);
+        }
+
+        $action = $request->action;
+        if ($request->target_device === 'exhaust_fan' && $action === 'START') {
+            $action = 'HIGH';
+        }
+        if ($request->target_device === 'exhaust_fan' && $action === 'STOP') {
+            $action = 'OFF';
+        }
 
         Command::create([
             'device_id' => $request->device_id,
             'target_device' => $request->target_device,
-            'action' => $request->action,
+            'action' => $action,
             'status' => 'pending'
         ]);
 
         ActivityLog::create([
             'action_type' => 'MANUAL_COMMAND',
             'status' => 'AMAN',
-            'description' => "Perintah manual {$request->action} dikirim ke {$request->target_device}",
-            'message' => "Manual: {$request->action} → {$request->target_device}"
+            'description' => "Perintah manual {$action} dikirim ke {$request->target_device}",
+            'message' => "Manual: {$action} → {$request->target_device}"
         ]);
 
         return response()->json(['status' => 'success']);

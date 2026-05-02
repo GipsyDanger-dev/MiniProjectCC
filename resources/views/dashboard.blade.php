@@ -5,6 +5,19 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>Fire & Gas Detection | Enterprise Dashboard</title>
+    <script>
+        (function () {
+            try {
+                const storedTheme = localStorage.getItem('smart-safety-theme');
+                const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+                const theme = storedTheme === 'dark' || storedTheme === 'light' ? storedTheme : (prefersDark ? 'dark' : 'light');
+                document.documentElement.classList.toggle('theme-dark', theme === 'dark');
+                document.documentElement.style.colorScheme = theme;
+            } catch (error) {
+                // Ignore storage access issues and fall back to the default theme.
+            }
+        })();
+    </script>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
@@ -13,20 +26,81 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
     
     <style>
-        body { font-family: 'Inter', sans-serif; background-color: #f8fafc; color: #0f172a; }
+        :root {
+            --page-bg: #f8fafc;
+            --page-fg: #0f172a;
+            --card-bg: #ffffff;
+            --border-color: #e2e8f0;
+            --muted-fg: #64748b;
+            --soft-bg: #f1f5f9;
+            --soft-bg-2: #e2e8f0;
+            --header-bg: rgba(248, 250, 252, 0.9);
+            --scrollbar-thumb: #cbd5e1;
+        }
+
+        html.theme-dark {
+            --page-bg: #0b1220;
+            --page-fg: #e2e8f0;
+            --card-bg: #111827;
+            --border-color: #243244;
+            --muted-fg: #94a3b8;
+            --soft-bg: #0f172a;
+            --soft-bg-2: #1f2937;
+            --header-bg: rgba(15, 23, 42, 0.92);
+            --scrollbar-thumb: #475569;
+        }
+
+        body { font-family: 'Inter', sans-serif; background-color: var(--page-bg); color: var(--page-fg); transition: background-color 0.25s ease, color 0.25s ease; }
         .mono { font-family: 'JetBrains Mono', monospace; }
+
+        header {
+            background: var(--header-bg);
+            border: 1px solid var(--border-color);
+            backdrop-filter: blur(12px);
+        }
+
+        .theme-toggle-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.6rem 0.9rem;
+            border-radius: 0.75rem;
+            border: 1px solid var(--border-color);
+            background: var(--card-bg);
+            color: var(--page-fg);
+            font-size: 0.75rem;
+            font-weight: 600;
+            transition: transform 0.2s ease, background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+        }
+
+        .theme-toggle-btn:hover {
+            transform: translateY(-1px);
+        }
+
+        .theme-toggle-dot {
+            width: 0.625rem;
+            height: 0.625rem;
+            border-radius: 9999px;
+            background: #f59e0b;
+            box-shadow: 0 0 0 4px rgba(245, 158, 11, 0.15);
+        }
+
+        html.theme-dark .theme-toggle-dot {
+            background: #60a5fa;
+            box-shadow: 0 0 0 4px rgba(96, 165, 250, 0.18);
+        }
         
         /* Custom Scrollbar */
         ::-webkit-scrollbar { width: 4px; }
-        ::-webkit-scrollbar-track { background: #f8fafc; }
-        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+        ::-webkit-scrollbar-track { background: var(--page-bg); }
+        ::-webkit-scrollbar-thumb { background: var(--scrollbar-thumb); border-radius: 10px; }
 
         /* Card Styling */
-        .glass-card { background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; box-shadow: 0 10px 30px rgba(15, 23, 42, 0.04); }
+        .glass-card { background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 12px; box-shadow: 0 10px 30px rgba(15, 23, 42, 0.04); transition: background-color 0.25s ease, border-color 0.25s ease, color 0.25s ease; }
         
         /* Input Range Styling */
-        input[type=range] { -webkit-appearance: none; background: #dbe4f0; height: 4px; border-radius: 5px; }
-        input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; height: 16px; width: 16px; border-radius: 50%; background: #ffffff; cursor: pointer; border: 2px solid #94a3b8; box-shadow: 0 1px 4px rgba(15, 23, 42, 0.15); }
+        input[type=range] { -webkit-appearance: none; background: var(--soft-bg-2); height: 4px; border-radius: 5px; }
+        input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; height: 16px; width: 16px; border-radius: 50%; background: var(--card-bg); cursor: pointer; border: 2px solid #94a3b8; box-shadow: 0 1px 4px rgba(15, 23, 42, 0.15); }
 
         /* Status Badge */
         .badge-safe { background: rgba(34, 197, 94, 0.1); border: 1px solid rgba(34, 197, 94, 0.2); color: #4ade80; }
@@ -35,6 +109,42 @@
         /* Container constraints */
         body { overflow-x: hidden; max-width: 100vw; }
         main { width: 100%; }
+
+        html.theme-dark .text-slate-400,
+        html.theme-dark .text-slate-500,
+        html.theme-dark .text-zinc-500 {
+            color: var(--muted-fg) !important;
+        }
+
+        html.theme-dark .text-slate-600,
+        html.theme-dark .text-slate-700,
+        html.theme-dark .text-slate-800,
+        html.theme-dark .text-slate-900 {
+            color: var(--page-fg) !important;
+        }
+
+        html.theme-dark .border-slate-200,
+        html.theme-dark .border-slate-300 {
+            border-color: var(--border-color) !important;
+        }
+
+        html.theme-dark .bg-white,
+        html.theme-dark .bg-slate-50,
+        html.theme-dark .bg-slate-100 {
+            background-color: var(--card-bg) !important;
+        }
+
+        html.theme-dark .bg-slate-200 {
+            background-color: var(--soft-bg-2) !important;
+        }
+
+        html.theme-dark .hover\:border-slate-300:hover {
+            border-color: #334155 !important;
+        }
+
+        html.theme-dark #canvas-container {
+            background-image: linear-gradient(135deg, #0f172a 0%, #111827 100%) !important;
+        }
     </style>
 </head>
 <body class="p-6">
@@ -56,6 +166,10 @@
                 </select>
                 <i data-lucide="chevron-down" class="absolute right-3 top-2.5 w-4 h-4 text-slate-400"></i>
             </div>
+            <button id="theme-toggle" type="button" class="theme-toggle-btn" onclick="toggleTheme()">
+                <span class="theme-toggle-dot"></span>
+                <span id="theme-toggle-label">Dark Mode</span>
+            </button>
             <div id="statusBadge" class="badge-safe px-4 py-1.5 rounded-full text-xs font-bold flex items-center gap-2">
                 <span class="w-2 h-2 bg-green-500 rounded-full"></span> SAFE
             </div>
@@ -179,6 +293,41 @@
                             <span>0</span>
                             <span id="threshold-flame-large">Threshold: 500</span>
                         </div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="glass-card p-6">
+                <h3 class="text-[10px] font-bold text-slate-500 uppercase tracking-[0.2em] mb-6">Fuzzy Decision</h3>
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="rounded-xl border border-slate-200 bg-slate-50/80 p-4">
+                        <div class="flex justify-between items-start mb-2">
+                            <span class="text-[10px] uppercase tracking-[0.2em] text-slate-500 font-bold">Exhaust Fan</span>
+                            <span id="fan-status-badge" class="px-2 py-1 rounded-full text-[10px] font-bold bg-slate-200 text-slate-600">OFF</span>
+                        </div>
+                        <div class="flex items-baseline gap-2 mb-3">
+                            <span id="fan-speed-value" class="text-3xl font-bold mono">0</span>
+                            <span class="text-xs text-slate-500">%</span>
+                        </div>
+                        <div class="w-full bg-slate-200 h-2 rounded-full overflow-hidden">
+                            <div id="fan-speed-bar" class="h-full w-0 bg-sky-500"></div>
+                        </div>
+                        <div id="fan-speed-text" class="text-[11px] text-slate-500 mt-2">Fan Speed: OFF</div>
+                    </div>
+
+                    <div class="rounded-xl border border-slate-200 bg-slate-50/80 p-4">
+                        <div class="flex justify-between items-start mb-2">
+                            <span class="text-[10px] uppercase tracking-[0.2em] text-slate-500 font-bold">Fuzzy Score</span>
+                            <span id="fuzzy-profile-text" class="px-2 py-1 rounded-full text-[10px] font-bold bg-amber-100 text-amber-700">SAFE</span>
+                        </div>
+                        <div class="flex items-baseline gap-2 mb-3">
+                            <span id="fuzzy-score-value" class="text-3xl font-bold mono">0.0</span>
+                            <span class="text-xs text-slate-500">/100</span>
+                        </div>
+                        <div class="w-full bg-slate-200 h-2 rounded-full overflow-hidden">
+                            <div id="fuzzy-score-bar" class="h-full w-0 bg-amber-500"></div>
+                        </div>
+                        <div id="fuzzy-score-text" class="text-[11px] text-slate-500 mt-2">Decision value from Sugeno engine</div>
                     </div>
                 </div>
             </section>

@@ -11,8 +11,163 @@ let currentDeviceId = 1;
 let refreshInterval = null;
 let scene, camera, renderer, twinObject;
 let isInitialized = false; // Prevent double initialization
+const THEME_STORAGE_KEY = 'smart-safety-theme';
 
 console.log('Dashboard JS loaded');
+
+function isDarkTheme() {
+    return document.documentElement.classList.contains('theme-dark');
+}
+
+function getThemeColors() {
+    const dark = isDarkTheme();
+
+    return {
+        text: dark ? '#e2e8f0' : '#0f172a',
+        muted: dark ? '#94a3b8' : '#64748b',
+        border: dark ? '#334155' : '#e2e8f0',
+        canvasBg: dark ? 0x0f172a : 0xf8fafc
+    };
+}
+
+function formatFanStatusLabel(status) {
+    const normalized = String(status || 'OFF').toUpperCase();
+    if (normalized === 'HIGH') return 'HIGH';
+    if (normalized === 'MEDIUM') return 'MEDIUM';
+    if (normalized === 'LOW') return 'LOW';
+    return 'OFF';
+}
+
+function getFanStatusStyle(status) {
+    const normalized = formatFanStatusLabel(status);
+
+    if (normalized === 'HIGH') {
+        return { background: 'rgba(239, 68, 68, 0.12)', color: '#ef4444', border: 'rgba(239, 68, 68, 0.24)', bar: '#ef4444' };
+    }
+
+    if (normalized === 'MEDIUM') {
+        return { background: 'rgba(245, 158, 11, 0.12)', color: '#f59e0b', border: 'rgba(245, 158, 11, 0.24)', bar: '#f59e0b' };
+    }
+
+    if (normalized === 'LOW') {
+        return { background: 'rgba(14, 165, 233, 0.12)', color: '#0ea5e9', border: 'rgba(14, 165, 233, 0.24)', bar: '#0ea5e9' };
+    }
+
+    return { background: 'rgba(148, 163, 184, 0.12)', color: '#64748b', border: 'rgba(148, 163, 184, 0.24)', bar: '#94a3b8' };
+}
+
+function syncThemeButton() {
+    const label = document.getElementById('theme-toggle-label');
+    const button = document.getElementById('theme-toggle');
+
+    if (!label || !button) {
+        return;
+    }
+
+    const dark = isDarkTheme();
+    label.textContent = dark ? 'Light Mode' : 'Dark Mode';
+    button.setAttribute('aria-pressed', dark ? 'true' : 'false');
+}
+
+function syncThemeVisuals() {
+    const colors = getThemeColors();
+
+    if (sensorChart) {
+        sensorChart.options.scales.y.grid.color = colors.border;
+        sensorChart.options.scales.x.grid.color = colors.border;
+        sensorChart.options.scales.y.ticks.color = colors.muted;
+        sensorChart.options.scales.x.ticks.color = colors.muted;
+
+        if (sensorChart.options.plugins?.legend?.labels) {
+            sensorChart.options.plugins.legend.labels.color = colors.text;
+        }
+
+        sensorChart.update({ duration: 0 });
+    }
+
+    if (scene) {
+        scene.background = new THREE.Color(colors.canvasBg);
+    }
+
+    if (renderer) {
+        renderer.setClearColor(colors.canvasBg, 1);
+    }
+}
+
+function updateDecisionPanel(data) {
+    const latest = data.sensor_data?.[0];
+    const actuator = data.device_actuator || latest || {};
+
+    const fanSpeedValue = document.getElementById('fan-speed-value');
+    const fanSpeedBar = document.getElementById('fan-speed-bar');
+    const fanStatusBadge = document.getElementById('fan-status-badge');
+    const fanSpeedText = document.getElementById('fan-speed-text');
+    const fuzzyScoreValue = document.getElementById('fuzzy-score-value');
+    const fuzzyScoreBar = document.getElementById('fuzzy-score-bar');
+    const fuzzyProfileText = document.getElementById('fuzzy-profile-text');
+    const fuzzyScoreText = document.getElementById('fuzzy-score-text');
+
+    const fanStatus = formatFanStatusLabel(actuator.fan_status || latest?.fan_status);
+    const fanSpeed = Number(actuator.fan_speed ?? latest?.fan_speed ?? 0);
+    const fuzzyScore = Number(latest?.fuzzy_score ?? 0);
+    const profile = String(latest?.decision_profile || (fanStatus === 'OFF' ? 'SAFE' : fanStatus)).toUpperCase();
+    const fanStyle = getFanStatusStyle(fanStatus);
+
+    if (fanSpeedValue) fanSpeedValue.textContent = Number.isFinite(fanSpeed) ? fanSpeed.toFixed(0) : '0';
+    if (fanSpeedBar) {
+        fanSpeedBar.style.width = `${Math.max(0, Math.min(100, fanSpeed))}%`;
+        fanSpeedBar.style.background = fanStyle.bar;
+    }
+    if (fanStatusBadge) {
+        fanStatusBadge.textContent = fanStatus;
+        fanStatusBadge.style.background = fanStyle.background;
+        fanStatusBadge.style.color = fanStyle.color;
+        fanStatusBadge.style.border = `1px solid ${fanStyle.border}`;
+    }
+    if (fanSpeedText) {
+        fanSpeedText.textContent = `Fan Speed: ${fanStatus} (${Number.isFinite(fanSpeed) ? fanSpeed.toFixed(0) : '0'}%)`;
+        fanSpeedText.style.color = fanStyle.color;
+    }
+
+    if (fuzzyScoreValue) fuzzyScoreValue.textContent = Number.isFinite(fuzzyScore) ? fuzzyScore.toFixed(1) : '0.0';
+    if (fuzzyScoreBar) {
+        fuzzyScoreBar.style.width = `${Math.max(0, Math.min(100, fuzzyScore))}%`;
+        fuzzyScoreBar.style.background = fanStyle.bar;
+    }
+    if (fuzzyProfileText) {
+        fuzzyProfileText.textContent = profile;
+        fuzzyProfileText.style.background = fanStyle.background;
+        fuzzyProfileText.style.color = fanStyle.color;
+        fuzzyProfileText.style.border = `1px solid ${fanStyle.border}`;
+    }
+    if (fuzzyScoreText) {
+        fuzzyScoreText.textContent = latest?.decision_profile
+            ? `Profile: ${profile} • ${latest.fuzzy_score ?? 0} / 100`
+            : 'Decision value from Sugeno engine';
+    }
+}
+
+function applyTheme(theme, persist = true) {
+    const normalizedTheme = theme === 'dark' ? 'dark' : 'light';
+
+    document.documentElement.classList.toggle('theme-dark', normalizedTheme === 'dark');
+    document.documentElement.style.colorScheme = normalizedTheme;
+
+    if (persist) {
+        try {
+            localStorage.setItem(THEME_STORAGE_KEY, normalizedTheme);
+        } catch (error) {
+            console.warn('Unable to persist theme preference:', error.message);
+        }
+    }
+
+    syncThemeButton();
+    syncThemeVisuals();
+}
+
+window.toggleTheme = () => {
+    applyTheme(isDarkTheme() ? 'light' : 'dark');
+};
 
 // Initialize Sparkline Charts
 function initSparklines() {
@@ -214,9 +369,11 @@ function init3DTwin() {
     }
 
     try {
+        const colors = getThemeColors();
+
         // Scene setup
         scene = new THREE.Scene();
-        scene.background = new THREE.Color(0xf8fafc);
+        scene.background = new THREE.Color(colors.canvasBg);
         
         camera = new THREE.PerspectiveCamera(75, container.clientWidth / container.clientHeight, 0.1, 1000);
         camera.position.z = 5;
@@ -224,6 +381,7 @@ function init3DTwin() {
         renderer = new THREE.WebGLRenderer({ antialias: true });
         renderer.setSize(container.clientWidth, container.clientHeight);
         renderer.setPixelRatio(window.devicePixelRatio);
+        renderer.setClearColor(colors.canvasBg, 1);
         container.appendChild(renderer.domElement);
         
         // Create a simple box representing the facility
@@ -290,6 +448,8 @@ function initChart() {
     }
     
     try {
+        const colors = getThemeColors();
+
         // Destroy existing chart if any
         if (sensorChart) {
             try {
@@ -325,14 +485,14 @@ function initChart() {
                 },
                 plugins: { 
                     legend: { 
-                        labels: { color: '#475569', font: { size: 11 } },
+                        labels: { color: colors.text, font: { size: 11 } },
                         display: true,
                         position: 'top'
                     } 
                 },
                 scales: { 
-                    y: { ticks: { color: '#475569', font: { size: 10 } }, grid: { color: '#e2e8f0' } }, 
-                    x: { ticks: { color: '#475569', font: { size: 10 } }, grid: { color: '#e2e8f0' } } 
+                    y: { ticks: { color: colors.muted, font: { size: 10 } }, grid: { color: colors.border } }, 
+                    x: { ticks: { color: colors.muted, font: { size: 10 } }, grid: { color: colors.border } } 
                 }
             }
         });
@@ -358,6 +518,7 @@ async function updateDashboard() {
         
         if (data && data.status === 'success') {
             updateSensorUI(data);
+            updateDecisionPanel(data);
             updateChartData(data.sensor_data);
             updateActivityLogs(data.activity_logs);
             updateWorkerStatus(data.worker_status, data.worker_online);
@@ -455,11 +616,13 @@ function updateChartData(sensorData) {
 function updateActivityLogs(logs) {
     const logList = document.getElementById('logList');
     if (!logList) return;
+
+    const colors = getThemeColors();
     
     logList.innerHTML = logs.slice(0, 8).map(log => `
-        <div class="log-item" style="padding: 12px 0; border-bottom: 1px solid #e2e8f0; last:border-b-0;">
-            <div style="font-size: 13px; color: #0f172a; font-weight: 500;">${log.message || log.description}</div>
-            <div style="font-size: 11px; color: #64748b; margin-top: 4px; display: flex; align-items: center; gap: 6px;">
+        <div class="log-item" style="padding: 12px 0; border-bottom: 1px solid ${colors.border}; last:border-b-0;">
+            <div style="font-size: 13px; color: ${colors.text}; font-weight: 500;">${log.message || log.description}</div>
+            <div style="font-size: 11px; color: ${colors.muted}; margin-top: 4px; display: flex; align-items: center; gap: 6px;">
                 <span style="display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: ${log.status === 'BAHAYA' ? '#ef4444' : '#10b981'};"></span>
                 ${new Date(log.created_at).toLocaleTimeString()} • ${log.status}
             </div>
@@ -470,6 +633,8 @@ function updateActivityLogs(logs) {
 function updateWorkerStatus(worker, online) {
     const panel = document.getElementById('workerPanel');
     if (!panel) return;
+
+    const colors = getThemeColors();
     
     if (worker && online) {
         panel.innerHTML = `
@@ -477,8 +642,8 @@ function updateWorkerStatus(worker, online) {
                 <div style="margin-bottom: 8px;">
                     <span style="color: #10b981; font-weight: 600; font-size: 12px;">● Online</span>
                 </div>
-                <div style="font-size: 12px; color: #0f172a;">State: ${worker.current_state || 'Idle'}</div>
-                <div style="font-size: 11px; color: #94a3b8; margin-top: 4px;">Last: ${new Date(worker.last_heartbeat).toLocaleTimeString()}</div>
+                <div style="font-size: 12px; color: ${colors.text};">State: ${worker.current_state || 'Idle'}</div>
+                <div style="font-size: 11px; color: ${colors.muted}; margin-top: 4px;">Last: ${new Date(worker.last_heartbeat).toLocaleTimeString()}</div>
             </div>
         `;
     } else {
@@ -639,6 +804,7 @@ document.addEventListener('DOMContentLoaded', () => {
     
     console.log('Initializing dashboard...');
     try {
+        applyTheme(document.documentElement.classList.contains('theme-dark') ? 'dark' : 'light', false);
         init3DTwin();
         initSparklines();
         setupRangeListeners();
@@ -675,6 +841,7 @@ if (document.readyState !== 'loading') {
         setTimeout(() => {
             isInitialized = true;
             try {
+                applyTheme(document.documentElement.classList.contains('theme-dark') ? 'dark' : 'light', false);
                 init3DTwin();
                 initSparklines();
                 setupRangeListeners();

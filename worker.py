@@ -80,7 +80,22 @@ while True:
                 }, headers=HEADERS, timeout=5)
 
                 print(f"🔄 Sedang mengeksekusi hardware {target}...")
-                if target == "buzzer":
+                if target == "exhaust_fan":
+                    fan_action = action.upper()
+                    if fan_action == "START":
+                        fan_action = "HIGH"
+                    elif fan_action == "STOP":
+                        fan_action = "OFF"
+
+                    if fan_action == "HIGH":
+                        print("   -> Set exhaust fan ke KECEPATAN TINGGI (100%)")
+                    elif fan_action == "MEDIUM":
+                        print("   -> Set exhaust fan ke KECEPATAN SEDANG (60%)")
+                    elif fan_action == "LOW":
+                        print("   -> Set exhaust fan ke KECEPATAN RENDAH (30%)")
+                    else:
+                        print("   -> Matikan exhaust fan (OFF)")
+                elif target == "buzzer":
                     print("   -> Mengirim sinyal HIGH ke pin D26 (Buzzer)...")
                 else:
                     print(f"   -> Mengirim sinyal ke {target}...")
