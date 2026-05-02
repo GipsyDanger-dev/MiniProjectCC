@@ -7,9 +7,12 @@ use App\Models\SensorData;
 use App\Models\Command;
 use App\Models\ActivityLog;
 use App\Models\WorkerStatus;
+use App\Models\User;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Hash;
 
 class ApiController extends Controller
 {
@@ -296,7 +299,7 @@ class ApiController extends Controller
             ]);
 
             return response()->json([
-                'status' => 'success', 
+                'status' => 'success',
                 'message' => 'Worker status cleared',
                 'worker_online' => false,
                 'worker_status' => null
@@ -305,5 +308,66 @@ class ApiController extends Controller
             Log::error("clearWorkerStatus error: " . $e->getMessage());
             return response()->json(['status' => 'error', 'message' => $e->getMessage()], 500);
         }
+    }
+
+    public function login(Request $request)
+    {
+        $request->validate([
+            'email' => 'required|email',
+            'password' => 'required|string'
+        ]);
+
+        $user = User::where('email', $request->email)->first();
+
+        if (!$user || !Hash::check($request->password, $user->password)) {
+            return response()->json(['status' => 'error', 'message' => 'Invalid credentials'], 401);
+        }
+
+        session()->put('user_id', $user->id);
+        session()->put('user_name', $user->name);
+        session()->put('user_email', $user->email);
+
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Login successful',
+            'user' => [
+                'id' => $user->id,
+                'name' => $user->name,
+                'email' => $user->email
+            ]
+        ]);
+    }
+
+    public function logout(Request $request)
+    {
+        session()->forget(['user_id', 'user_name', 'user_email']);
+        session()->flush();
+
+        return response()->json(['status' => 'success', 'message' => 'Logout successful']);
+    }
+
+    public function getUser(Request $request)
+    {
+        $userId = session()->get('user_id');
+
+        if (!$userId) {
+            return response()->json(['status' => 'error', 'message' => 'Unauthorized'], 401);
+        }
+
+        $user = User::find($userId);
+
+        if (!$user) {
+            session()->flush();
+            return response()->json(['status' => 'error', 'message' => 'User not found'], 404);
+        }
+
+        return response()->json([
+            'status' => 'success',
+            'user' => [
+                'id' => $user->id,
+                'name' => $user->name,
+                'email' => $user->email
+            ]
+        ]);
     }
 }

@@ -1,11 +1,312 @@
-@import 'tailwindcss';
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
-@source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
-@source '../../storage/framework/views/*.php';
-@source '../**/*.blade.php';
-@source '../**/*.js';
+/* SentinelIoT Design System — fintech-inspired IoT dashboard.
+   All colors MUST be HSL. */
 
-@theme {
-    --font-sans: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
-        'Segoe UI Symbol', 'Noto Color Emoji';
+@layer base {
+    :root {
+        /* Full dark mode surfaces */
+        --background: 240 40% 4%;
+        --foreground: 0 0% 100%;
+
+        --card: 240 30% 10%;
+        --card-foreground: 0 0% 100%;
+
+        --popover: 240 30% 8%;
+        --popover-foreground: 0 0% 100%;
+
+        /* Dark metric card */
+        --dark-card: 240 2% 11%; /* #1C1C1E */
+        --dark-card-foreground: 0 0% 98%;
+
+        /* Lime accent */
+        --accent-lime: 72 100% 50%; /* #CCFF00 */
+        --accent-lime-foreground: 0 0% 7%;
+
+        /* Deep green for "New Report" */
+        --deep-green: 155 45% 18%;
+        --deep-green-foreground: 72 100% 75%;
+
+        /* Roles */
+        --primary: 0 0% 100%;
+        --primary-foreground: 0 0% 7%;
+
+        --secondary: 240 20% 12%;
+        --secondary-foreground: 0 0% 100%;
+
+        --muted: 240 20% 12%;
+        --muted-foreground: 0 0% 65%;
+
+        --accent: 72 100% 50%;
+        --accent-foreground: 0 0% 7%;
+
+        --danger: 4 100% 59%; /* #FF3B30 */
+        --danger-foreground: 0 0% 100%;
+
+        --success: 142 71% 45%; /* #34C759 */
+        --success-foreground: 0 0% 100%;
+
+        --warning: 32 100% 50%;
+        --warning-foreground: 0 0% 100%;
+
+        --destructive: 4 100% 59%;
+        --destructive-foreground: 0 0% 100%;
+
+        --border: 240 20% 18%;
+        --input: 240 20% 14%;
+        --ring: 72 100% 50%;
+
+        --radius: 1.25rem; /* 20px */
+
+        /* Sidebar */
+        --sidebar-background: 240 35% 6%;
+        --sidebar-foreground: 0 0% 92%;
+        --sidebar-muted: 0 0% 65%;
+        --sidebar-active: 72 100% 50%;
+        --sidebar-active-foreground: 0 0% 7%;
+        --sidebar-border: 240 20% 14%;
+
+        /* Gradients & shadows */
+        --gradient-lime: linear-gradient(
+            135deg,
+            hsl(72 100% 55%),
+            hsl(72 100% 45%)
+        );
+        --gradient-dark: linear-gradient(
+            140deg,
+            hsl(240 2% 14%),
+            hsl(240 3% 8%)
+        );
+
+        --shadow-card: 0 4px 24px rgba(0, 0, 0, 0.45);
+        --shadow-card-hover: 0 12px 40px rgba(0, 0, 0, 0.6);
+        --shadow-lime: 0 8px 24px hsl(72 100% 50% / 0.35);
+        --shadow-dark: 0 10px 30px rgba(0, 0, 0, 0.25);
+
+        --transition-smooth: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+}
+
+/* ----- Base background ----- */
+body {
+    background-color: hsl(var(--background));
+    background-image:
+        radial-gradient(
+            ellipse 75% 55% at 70% 10%,
+            hsla(72, 100%, 50%, 0.06) 0%,
+            transparent 55%
+        ),
+        radial-gradient(
+            ellipse 70% 50% at 100% 35%,
+            hsla(220, 95%, 55%, 0.14) 0%,
+            transparent 55%
+        ),
+        radial-gradient(
+            ellipse 60% 55% at 0% 90%,
+            hsla(265, 95%, 60%, 0.12) 0%,
+            transparent 55%
+        ),
+        radial-gradient(
+            ellipse 40% 30% at 40% 105%,
+            hsla(72, 100%, 50%, 0.04) 0%,
+            transparent 60%
+        );
+    background-attachment: fixed;
+}
+
+/* Subtle noise/grain overlay for premium feel */
+body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.5'/%3E%3C/svg%3E");
+    opacity: 0.04;
+    mix-blend-mode: overlay;
+}
+
+/* ----- Dashboard cards ----- */
+.card-surface,
+.glass {
+    background: linear-gradient(
+        180deg,
+        rgba(24, 24, 32, 0.92) 0%,
+        rgba(14, 14, 20, 0.96) 100%
+    );
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    box-shadow:
+        0 12px 30px rgba(0, 0, 0, 0.5),
+        inset 0 1px 0 0 rgba(255, 255, 255, 0.05);
+}
+
+.card-surface:hover {
+    border-color: rgba(204, 255, 0, 0.22);
+    box-shadow:
+        0 18px 38px rgba(0, 0, 0, 0.58),
+        inset 0 1px 0 0 rgba(255, 255, 255, 0.1);
+}
+
+/* Header & sidebar glass */
+header {
+    background: rgba(13, 10, 30, 0.6) !important;
+    border-color: rgba(255, 255, 255, 0.06) !important;
+}
+
+/* Iridescent gradient text for headings in dark mode */
+.dark .iridescent {
+    background: linear-gradient(
+        135deg,
+        #ccff00 0%,
+        #a78bfa 35%,
+        #67e8f9 70%,
+        #f0abfc 100%
+    );
+    background-size: 200% 200%;
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    animation: iridescent-shift 8s ease-in-out infinite;
+}
+
+@keyframes iridescent-shift {
+    0%,
+    100% {
+        background-position: 0% 50%;
+    }
+    50% {
+        background-position: 100% 50%;
+    }
+}
+
+/* Make all main content sit above noise overlay */
+main,
+aside,
+header {
+    position: relative;
+    z-index: 1;
+}
+
+.glass {
+    @apply bg-card rounded-[20px];
+    box-shadow: var(--shadow-card);
+}
+
+@layer base {
+    * {
+        @apply border-border;
+    }
+
+    html,
+    body {
+        font-family:
+            "Plus Jakarta Sans",
+            "Segoe UI",
+            ui-sans-serif,
+            system-ui,
+            -apple-system,
+            sans-serif;
+        font-feature-settings: "cv02", "cv11";
+        -webkit-font-smoothing: antialiased;
+    }
+
+    body {
+        @apply bg-background text-foreground;
+    }
+
+    h1,
+    h2,
+    h3,
+    h4,
+    h5,
+    h6 {
+        font-family:
+            "Plus Jakarta Sans",
+            "Segoe UI",
+            ui-sans-serif,
+            system-ui,
+            -apple-system,
+            sans-serif;
+    }
+}
+
+@layer components {
+    .card-surface {
+        @apply rounded-[20px];
+        box-shadow: var(--shadow-card);
+        transition: var(--transition-smooth);
+    }
+    .card-surface:hover {
+        box-shadow: var(--shadow-card-hover);
+    }
+
+    .pill-bar {
+        border-radius: 999px;
+    }
+}
+
+@layer utilities {
+    .shadow-card {
+        box-shadow: var(--shadow-card);
+    }
+    .shadow-card-hover {
+        box-shadow: var(--shadow-card-hover);
+    }
+    .shadow-lime {
+        box-shadow: var(--shadow-lime);
+    }
+    .shadow-dark {
+        box-shadow: var(--shadow-dark);
+    }
+    .gradient-lime {
+        background-image: var(--gradient-lime);
+    }
+    .gradient-dark {
+        background-image: var(--gradient-dark);
+    }
+    .transition-smooth {
+        transition: var(--transition-smooth);
+    }
+}
+
+/* Pulse animation for danger state */
+@keyframes danger-pulse {
+    0%,
+    100% {
+        box-shadow: 0 0 0 0 hsl(var(--danger) / 0.55);
+    }
+    50% {
+        box-shadow: 0 0 0 16px hsl(var(--danger) / 0);
+    }
+}
+.animate-danger-pulse {
+    animation: danger-pulse 1.6s ease-out infinite;
+}
+
+@keyframes soft-pulse {
+    0%,
+    100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.55;
+    }
+}
+.animate-soft-pulse {
+    animation: soft-pulse 1.8s ease-in-out infinite;
+}
+
+/* Custom scrollbar */
+.thin-scroll::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+.thin-scroll::-webkit-scrollbar-thumb {
+    background: hsl(var(--border));
+    border-radius: 999px;
+}
+.thin-scroll::-webkit-scrollbar-track {
+    background: transparent;
 }
