@@ -111,7 +111,7 @@ export default function Settings({
                 </p>
             </div>
 
-            <section className="relative isolate overflow-hidden rounded-[20px] border border-white/10 bg-[linear-gradient(160deg,rgba(255,255,255,0.09),rgba(255,255,255,0.03)_58%,rgba(99,102,241,0.12))] p-5">
+            <section className="relative isolate overflow-hidden rounded-[20px] border border-white/15 backdrop-blur-md bg-gradient-to-br from-white/10 to-white/5 p-5 shadow-xl">
                 <h2 className="text-xl font-semibold">
                     Threshold Configuration
                 </h2>
@@ -219,7 +219,7 @@ export default function Settings({
                 </button>
             </section>
 
-            <section className="relative isolate overflow-hidden rounded-[20px] border border-white/10 bg-[linear-gradient(160deg,rgba(255,255,255,0.09),rgba(255,255,255,0.03)_58%,rgba(99,102,241,0.12))] p-5">
+            <section className="relative isolate overflow-hidden rounded-[20px] border border-white/15 backdrop-blur-md bg-gradient-to-br from-white/10 to-white/5 p-5 shadow-xl">
                 <h2 className="text-xl font-semibold">Fuzzy Logic Rules</h2>
                 <p className="text-xs text-muted-foreground mt-1">
                     Read-only mapping of inputs to fan speed output (13 rules)
@@ -266,7 +266,7 @@ export default function Settings({
 
             <section className="grid gap-5 xl:grid-cols-2">
                 <div className="space-y-5">
-                    <article className="rounded-[20px] border border-white/10 bg-[linear-gradient(160deg,rgba(255,255,255,0.09),rgba(255,255,255,0.03)_58%,rgba(99,102,241,0.12))] p-5">
+                    <article className="rounded-[20px] border border-white/15 backdrop-blur-md bg-gradient-to-br from-white/10 to-white/5 p-5 shadow-xl">
                         <h2 className="text-xl font-semibold">
                             Notification Settings
                         </h2>
@@ -356,7 +356,7 @@ export default function Settings({
                         </div>
                     </article>
 
-                    <article className="rounded-[20px] border border-white/10 bg-[linear-gradient(160deg,rgba(255,255,255,0.09),rgba(255,255,255,0.03)_58%,rgba(99,102,241,0.12))] p-5">
+                    <article className="rounded-[20px] border border-white/15 backdrop-blur-md bg-gradient-to-br from-white/10 to-white/5 p-5 shadow-xl">
                         <h2 className="text-xl font-semibold">
                             Device Management
                         </h2>
@@ -406,7 +406,7 @@ export default function Settings({
                     </article>
                 </div>
 
-                <article className="rounded-[20px] border border-white/10 bg-[linear-gradient(160deg,rgba(255,255,255,0.09),rgba(255,255,255,0.03)_58%,rgba(99,102,241,0.12))] p-5 h-fit">
+                <article className="rounded-[20px] border border-white/15 backdrop-blur-md bg-gradient-to-br from-white/10 to-white/5 p-5 shadow-xl h-fit">
                     <h2 className="text-xl font-semibold">Appearance</h2>
                     <p className="text-xs text-muted-foreground mt-1">
                         Theme and interface preferences

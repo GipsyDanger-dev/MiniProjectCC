@@ -71,7 +71,7 @@
                                             type="email"
                                             name="email"
                                             id="emailInput"
-                                            value="admin@sentinel.io"
+                                            placeholder="Enter your email"
                                             class="bg-transparent outline-none border-0 w-full text-sm caret-lime"
                                             required
                                         >
@@ -91,7 +91,7 @@
                                             type="password"
                                             name="password"
                                             id="passwordInput"
-                                            value="admin123"
+                                            placeholder="Enter your password"
                                             class="bg-transparent outline-none border-0 w-full text-sm caret-lime"
                                             required
                                         >

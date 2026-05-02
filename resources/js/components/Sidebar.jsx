@@ -32,6 +32,17 @@ export default function Sidebar({
     theme,
     toggleTheme,
 }) {
+    const handleLogout = async () => {
+        try {
+            const response = await fetch("/api/logout", { method: "POST" });
+            const data = await response.json();
+            if (data.status === "success") {
+                window.location.href = "/login";
+            }
+        } catch (error) {
+            console.error("Logout error:", error);
+        }
+    };
     return (
         <aside
             className={cn(
@@ -110,6 +121,7 @@ export default function Sidebar({
                     </button>
                     <button
                         type="button"
+                        onClick={handleLogout}
                         className={cn(
                             "w-full flex items-center gap-3 h-11 rounded-full text-sm font-medium transition-smooth hover:bg-muted text-danger",
                             collapsed ? "justify-center px-0" : "px-4",
