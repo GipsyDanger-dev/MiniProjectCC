@@ -3,19 +3,38 @@ import time
 import random
 
 API_URL = "http://127.0.0.1:8000/api/ingest"
+DEVICES_URL = "http://127.0.0.1:8000/api/devices"
 
 
-DEVICE_CREDENTIALS = {
-    1: "key-servernih-121",
-    2: "key-dapurnih-212",
-    3: "key-arsipnih-311",
-    4: "key-koridornih-441"
-}
+def load_devices():
+    try:
+        response = requests.get(DEVICES_URL, headers={"Accept": "application/json"})
+        payload = response.json()
+        if payload.get("status") != "success":
+            print("⚠️  Gagal mengambil daftar device dari API.")
+            return {}
+        devices = payload.get("devices", [])
+        return {
+            device["id"]: device["api_key"]
+            for device in devices
+            if device.get("api_key")
+        }
+    except Exception as exc:
+        print(f"❌ Gagal mengambil daftar device: {exc}")
+        return {}
+
 
 print("🚀 Memulai Python Simulator dengan Per-Device Security...")
-print("Mengirim data untuk 4 device setiap 5 detik. Tekan Ctrl+C untuk berhenti.\n")
+print("Mengirim data untuk setiap device setiap 5 detik. Tekan Ctrl+C untuk berhenti.\n")
+
+DEVICE_CREDENTIALS = load_devices()
 
 while True:
+    if not DEVICE_CREDENTIALS:
+        print("⚠️  Belum ada device dengan API key. Menunggu 5 detik...")
+        time.sleep(5)
+        DEVICE_CREDENTIALS = load_devices()
+        continue
 
     for dev_id, secret_key in DEVICE_CREDENTIALS.items():
         
@@ -68,5 +87,7 @@ while True:
             print(f"❌ Gagal mengirim data dari device {dev_id}: {e}")
 
     print("-" * 80)
-    # Jeda 5 detik 
+    # Refresh list device tiap siklus
+    DEVICE_CREDENTIALS = load_devices()
+    # Jeda 5 detik
     time.sleep(5)

@@ -1,7 +1,12 @@
 import React from "react";
 import RoomTabs from "./RoomTabs";
 
-export default function RoomSelectionBanner({ rooms, activeRoom, onChange }) {
+export default function RoomSelectionBanner({
+    rooms,
+    activeRoomId,
+    loading = false,
+    onChange,
+}) {
     return (
         <section className="py-5">
             <div className="relative overflow-hidden rounded-[20px] border border-white/15 backdrop-blur-md min-h-[132px] shadow-xl">
@@ -19,11 +24,17 @@ export default function RoomSelectionBanner({ rooms, activeRoom, onChange }) {
                     <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs text-muted-foreground border border-white/20 bg-white/10 backdrop-blur-sm hover:bg-white/15 transition-smooth">
                         Monitoring zone
                     </span>
-                    <RoomTabs
-                        rooms={rooms}
-                        activeRoom={activeRoom}
-                        onChange={onChange}
-                    />
+                    {rooms.length ? (
+                        <RoomTabs
+                            rooms={rooms}
+                            activeRoomId={activeRoomId}
+                            onChange={onChange}
+                        />
+                    ) : (
+                        <p className="text-xs text-muted-foreground">
+                            {loading ? "Loading rooms..." : "No rooms found"}
+                        </p>
+                    )}
                 </div>
             </div>
         </section>

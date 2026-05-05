@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
     Bell,
     Copy,
@@ -35,6 +35,12 @@ const fanOutputClass = (value) => {
     return "bg-danger/20 text-danger border-danger/40";
 };
 
+const maskApiKey = (value) => {
+    if (!value) return "-";
+    if (value.length <= 8) return value;
+    return `${value.slice(0, 6)}••••${value.slice(-4)}`;
+};
+
 export default function Settings({
     theme,
     toggleTheme,
@@ -50,8 +56,15 @@ export default function Settings({
     const [dangerOnly, setDangerOnly] = useState(false);
     const [polling, setPolling] = useState(3);
     const [saving, setSaving] = useState(false);
-    const [deviceName, setDeviceName] = useState("Sentinel Main Gateway");
-    const [apiKey, setApiKey] = useState("sntl_live••••••••••••••••s5ea");
+    const [devices, setDevices] = useState([]);
+    const [devicesLoading, setDevicesLoading] = useState(true);
+    const [selectedDeviceId, setSelectedDeviceId] = useState(null);
+    const [deviceName, setDeviceName] = useState("");
+    const [deviceLocation, setDeviceLocation] = useState("");
+    const [apiKey, setApiKey] = useState("");
+    const [deviceSaving, setDeviceSaving] = useState(false);
+    const [deviceResetting, setDeviceResetting] = useState(false);
+    const initSelectionRef = useRef(false);
 
     useEffect(() => {
         const settings = iot.data?.settings;
@@ -60,6 +73,64 @@ export default function Settings({
         setSmoke(Number(settings.smoke_threshold || 300));
         setTemp(Number(settings.temp_threshold || 50));
     }, [iot.data?.settings]);
+
+    useEffect(() => {
+        let active = true;
+        const loadDevices = async () => {
+            setDevicesLoading(true);
+            try {
+                const res = await fetch("/api/devices", {
+                    headers: { Accept: "application/json" },
+                });
+                const payload = await res.json();
+                if (!active) return;
+                if (payload.status === "success") {
+                    setDevices(payload.devices || []);
+                } else {
+                    setDevices([]);
+                }
+            } catch (_error) {
+                if (active) setDevices([]);
+            } finally {
+                if (active) setDevicesLoading(false);
+            }
+        };
+        loadDevices();
+        return () => {
+            active = false;
+        };
+    }, []);
+
+    useEffect(() => {
+        if (!devices.length) return;
+        const hasSelected =
+            selectedDeviceId &&
+            devices.some((device) => device.id === selectedDeviceId);
+        if (hasSelected) {
+            initSelectionRef.current = true;
+            return;
+        }
+
+        const preferredId = Number(iot?.data?.device_id);
+        const matched = devices.find((device) => device.id === preferredId);
+        const nextId = matched?.id || devices[0]?.id || null;
+        if (nextId) {
+            setSelectedDeviceId(nextId);
+        }
+        initSelectionRef.current = true;
+    }, [devices, iot?.data?.device_id, selectedDeviceId]);
+
+    const selectedDevice = useMemo(
+        () => devices.find((device) => device.id === selectedDeviceId) || null,
+        [devices, selectedDeviceId],
+    );
+
+    useEffect(() => {
+        if (!selectedDevice) return;
+        setDeviceName(selectedDevice.device_name || "");
+        setDeviceLocation(selectedDevice.location || "");
+        setApiKey(selectedDevice.api_key || "");
+    }, [selectedDevice]);
 
     const previewStatus = useMemo(() => {
         if (gas > 700 || smoke > 350 || temp > 55 || flame === "High") {
@@ -97,6 +168,69 @@ export default function Settings({
             });
         } finally {
             setSaving(false);
+        }
+    };
+
+    const handleSaveDevice = async () => {
+        if (!selectedDevice) return;
+        setDeviceSaving(true);
+        try {
+            const res = await fetch(`/api/devices/${selectedDevice.id}`, {
+                method: "PUT",
+                headers: {
+                    "Content-Type": "application/json",
+                    Accept: "application/json",
+                    "X-CSRF-TOKEN":
+                        document
+                            .querySelector('meta[name="csrf-token"]')
+                            ?.getAttribute("content") || "",
+                },
+                body: JSON.stringify({
+                    device_name: deviceName.trim(),
+                    location: deviceLocation.trim(),
+                }),
+            });
+            const payload = await res.json();
+            if (payload.status === "success") {
+                setDevices((prev) =>
+                    prev.map((device) =>
+                        device.id === selectedDevice.id
+                            ? payload.device
+                            : device,
+                    ),
+                );
+            }
+        } finally {
+            setDeviceSaving(false);
+        }
+    };
+
+    const handleResetDevice = async () => {
+        if (!selectedDevice) return;
+        setDeviceResetting(true);
+        try {
+            const res = await fetch(`/api/devices/${selectedDevice.id}/reset`, {
+                method: "POST",
+                headers: {
+                    Accept: "application/json",
+                    "X-CSRF-TOKEN":
+                        document
+                            .querySelector('meta[name="csrf-token"]')
+                            ?.getAttribute("content") || "",
+                },
+            });
+            const payload = await res.json();
+            if (payload.status === "success") {
+                setDevices((prev) =>
+                    prev.map((device) =>
+                        device.id === selectedDevice.id
+                            ? { ...device, status: payload.device.status }
+                            : device,
+                    ),
+                );
+            }
+        } finally {
+            setDeviceResetting(false);
         }
     };
 
@@ -364,22 +498,65 @@ export default function Settings({
                             API key and hardware controls
                         </p>
                         <div className="mt-4 space-y-3">
+                            <div className="rounded-xl border border-white/10 bg-black/20 px-3 py-3">
+                                <p className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
+                                    Device
+                                </p>
+                                <select
+                                    value={selectedDeviceId || ""}
+                                    onChange={(e) =>
+                                        setSelectedDeviceId(Number(e.target.value))
+                                    }
+                                    disabled={devicesLoading || !devices.length}
+                                    className="device-select text-sm mt-2 w-full bg-transparent outline-none border-b border-white/10 text-foreground pb-1 focus:border-lime/50 transition-smooth"
+                                >
+                                    {!devices.length ? (
+                                        <option value="">
+                                            {devicesLoading
+                                                ? "Loading devices..."
+                                                : "No devices available"}
+                                        </option>
+                                    ) : null}
+                                    {devices.map((device) => (
+                                        <option key={device.id} value={device.id}>
+                                            {device.location ||
+                                                device.device_name ||
+                                                `Device ${device.id}`}
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
+                            <div className="rounded-xl border border-white/10 bg-black/20 px-3 py-3 flex items-center justify-between">
+                                <div>
+                                    <p className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
+                                        Status
+                                    </p>
+                                    <p className="text-sm mt-1">
+                                        {selectedDevice?.status || "unknown"}
+                                    </p>
+                                </div>
+                                <span className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
+                                    ID #{selectedDevice?.id || "-"}
+                                </span>
+                            </div>
                             <div className="rounded-xl border border-white/10 bg-black/20 px-3 py-3 flex items-center justify-between gap-3">
                                 <div>
                                     <p className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
                                         API Key
                                     </p>
                                     <p className="text-sm mt-1">
-                                        {apiKey}
+                                        {maskApiKey(apiKey)}
                                     </p>
                                 </div>
                                 <button
                                     type="button"
                                     onClick={() => {
+                                        if (!apiKey) return;
                                         navigator.clipboard.writeText(apiKey);
-                                        alert('API Key copied!');
+                                        alert("API Key copied!");
                                     }}
-                                    className="h-9 px-3 rounded-full border border-white/10 bg-black/20 inline-flex items-center gap-2 text-sm hover:border-lime/50 transition-smooth"
+                                    disabled={!apiKey}
+                                    className="h-9 px-3 rounded-full border border-white/10 bg-black/20 inline-flex items-center gap-2 text-sm hover:border-lime/50 transition-smooth disabled:opacity-60 disabled:cursor-not-allowed"
                                 >
                                     <Copy className="w-4 h-4" />
                                     Copy
@@ -392,15 +569,48 @@ export default function Settings({
                                 <input
                                     type="text"
                                     value={deviceName}
-                                    onChange={(e) => setDeviceName(e.target.value)}
+                                    onChange={(e) =>
+                                        setDeviceName(e.target.value)
+                                    }
+                                    disabled={!selectedDevice}
                                     className="text-sm mt-2 w-full bg-transparent outline-none border-b border-white/10 text-foreground pb-1 focus:border-lime/50 transition-smooth"
+                                />
+                            </div>
+                            <div className="rounded-xl border border-white/10 bg-black/20 px-3 py-3">
+                                <p className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
+                                    Location
+                                </p>
+                                <input
+                                    type="text"
+                                    value={deviceLocation}
+                                    onChange={(e) =>
+                                        setDeviceLocation(e.target.value)
+                                    }
+                                    disabled={!selectedDevice}
+                                    className="text-sm mt-2 w-full bg-transparent outline-none border-b border-white/10 text-foreground pb-1 focus:border-lime/50 transition-smooth"
+                                    placeholder="Warehouse"
                                 />
                             </div>
                             <button
                                 type="button"
-                                className="h-10 px-4 rounded-full bg-danger/20 text-danger border border-danger/35 font-semibold hover:bg-danger/30 transition-smooth"
+                                onClick={handleSaveDevice}
+                                disabled={
+                                    !selectedDevice ||
+                                    deviceSaving ||
+                                    !deviceName.trim() ||
+                                    !deviceLocation.trim()
+                                }
+                                className="h-10 px-4 rounded-full bg-lime/20 text-lime border border-lime/35 font-semibold hover:bg-lime/30 transition-smooth disabled:opacity-60 disabled:cursor-not-allowed"
                             >
-                                Reset Device
+                                {deviceSaving ? "Saving..." : "Save Device"}
+                            </button>
+                            <button
+                                type="button"
+                                onClick={handleResetDevice}
+                                disabled={!selectedDevice || deviceResetting}
+                                className="h-10 px-4 rounded-full bg-danger/20 text-danger border border-danger/35 font-semibold hover:bg-danger/30 transition-smooth disabled:opacity-60 disabled:cursor-not-allowed"
+                            >
+                                {deviceResetting ? "Resetting..." : "Reset Device"}
                             </button>
                         </div>
                     </article>

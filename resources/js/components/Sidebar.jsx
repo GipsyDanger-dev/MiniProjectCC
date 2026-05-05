@@ -46,7 +46,7 @@ export default function Sidebar({
     return (
         <aside
             className={cn(
-                "hidden lg:flex flex-col h-screen sticky top-0 bg-sidebar border-r border-sidebar-border transition-all duration-300 ease-out",
+                "hidden lg:flex flex-col h-screen sticky top-0 border-r transition-all duration-300 ease-out glass-sidebar",
                 collapsed ? "w-[84px] px-3" : "w-[270px] px-5",
             )}
         >
@@ -101,10 +101,11 @@ export default function Sidebar({
                 {!collapsed && (
                     <button
                         type="button"
+                        onClick={() => setCurrentPage("new-device")}
                         className="w-full flex items-center justify-center gap-2 h-11 rounded-full bg-deep-green text-deep-green-foreground font-semibold hover:shadow-lime transition-smooth"
                     >
                         <Plus className="w-4 h-4" />
-                        New Report
+                        New Device
                     </button>
                 )}
 

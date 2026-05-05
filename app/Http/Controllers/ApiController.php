@@ -7,6 +7,7 @@ use App\Models\SensorData;
 use App\Models\Command;
 use App\Models\ActivityLog;
 use App\Models\WorkerStatus;
+use App\Models\Device;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Cache;
@@ -174,7 +175,7 @@ class ApiController extends Controller
     }
 
 
-  public function saveSettings(Request $request)
+    public function saveSettings(Request $request)
     {
         try {
             $request->validate([
@@ -201,6 +202,87 @@ class ApiController extends Controller
             Log::error("saveSettings error: " . $e->getMessage());
             return response()->json(['status' => 'error', 'message' => $e->getMessage()], 500);
         }
+    }
+
+    public function devices()
+    {
+        $devices = Device::query()
+            ->orderBy('id')
+            ->get(['id', 'device_name', 'location', 'status', 'api_key']);
+
+        return response()->json([
+            'status' => 'success',
+            'devices' => $devices,
+        ]);
+    }
+
+    public function createDevice(Request $request)
+    {
+        $validated = $request->validate([
+            'device_name' => 'required|string|max:255',
+            'location' => 'required|string|max:255',
+            'api_key' => 'required|string|max:255|unique:devices,api_key',
+            'status' => 'nullable|in:online,offline',
+        ]);
+
+        $device = Device::create([
+            'device_name' => $validated['device_name'],
+            'location' => $validated['location'],
+            'api_key' => $validated['api_key'],
+            'status' => $validated['status'] ?? 'offline',
+        ]);
+
+        return response()->json([
+            'status' => 'success',
+            'device' => $device->only([
+                'id',
+                'device_name',
+                'location',
+                'status',
+                'api_key',
+            ]),
+        ]);
+    }
+
+    public function updateDevice(Request $request, Device $device)
+    {
+        $validated = $request->validate([
+            'device_name' => 'required|string|max:255',
+            'location' => 'nullable|string|max:255',
+            'status' => 'nullable|string|max:50',
+        ]);
+
+        $device->fill($validated);
+        $device->save();
+
+        return response()->json([
+            'status' => 'success',
+            'device' => $device->only([
+                'id',
+                'device_name',
+                'location',
+                'status',
+                'api_key',
+            ]),
+        ]);
+    }
+
+    public function resetDevice(Device $device)
+    {
+        $device->status = 'offline';
+        $device->save();
+
+        ActivityLog::create([
+            'action_type' => 'SYSTEM_UPDATE',
+            'status' => 'AMAN',
+            'description' => "Device {$device->id} reset",
+            'message' => "Device {$device->device_name} reset to offline",
+        ]);
+
+        return response()->json([
+            'status' => 'success',
+            'device' => $device->only(['id', 'status']),
+        ]);
     }
 
     public function controlActuator(Request $request)
