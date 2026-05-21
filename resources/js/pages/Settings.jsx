@@ -399,7 +399,7 @@ export default function Settings({
             </section>
 
             <section className="grid gap-5 xl:grid-cols-2">
-                <div className="space-y-5">
+                <div>
                     <article className="rounded-[20px] border border-white/15 backdrop-blur-md bg-gradient-to-br from-white/10 to-white/5 p-5 shadow-xl">
                         <h2 className="text-xl font-semibold">
                             Notification Settings
@@ -409,35 +409,6 @@ export default function Settings({
                         </p>
 
                         <div className="mt-4 space-y-3">
-                            <div className="rounded-xl border border-white/10 bg-black/20 px-3 py-3 flex items-center justify-between gap-3">
-                                <div className="flex items-center gap-2">
-                                    <Bell className="w-4 h-4 text-muted-foreground" />
-                                    <div>
-                                        <p className="text-sm">
-                                            Web notifications
-                                        </p>
-                                        <p className="text-xs text-muted-foreground">
-                                            Browser push for critical events
-                                        </p>
-                                    </div>
-                                </div>
-                                <button
-                                    type="button"
-                                    onClick={() => setWebNotif((v) => !v)}
-                                    className={`w-12 h-6 rounded-full p-1 transition-all ${
-                                        webNotif ? "bg-lime" : "bg-muted"
-                                    }`}
-                                >
-                                    <span
-                                        className={`block w-4 h-4 rounded-full bg-background transition-transform ${
-                                            webNotif
-                                                ? "translate-x-6"
-                                                : "translate-x-0"
-                                        }`}
-                                    />
-                                </button>
-                            </div>
-
                             <div className="rounded-xl border border-white/10 bg-black/20 px-3 py-3 flex items-center justify-between gap-3">
                                 <div className="flex items-center gap-2">
                                     <ShieldAlert className="w-4 h-4 text-muted-foreground" />
@@ -489,187 +460,127 @@ export default function Settings({
                             </div>
                         </div>
                     </article>
-
-                    <article className="rounded-[20px] border border-white/15 backdrop-blur-md bg-gradient-to-br from-white/10 to-white/5 p-5 shadow-xl">
-                        <h2 className="text-xl font-semibold">
-                            Device Management
-                        </h2>
-                        <p className="text-xs text-muted-foreground mt-1">
-                            API key and hardware controls
-                        </p>
-                        <div className="mt-4 space-y-3">
-                            <div className="rounded-xl border border-white/10 bg-black/20 px-3 py-3">
-                                <p className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
-                                    Device
-                                </p>
-                                <select
-                                    value={selectedDeviceId || ""}
-                                    onChange={(e) =>
-                                        setSelectedDeviceId(Number(e.target.value))
-                                    }
-                                    disabled={devicesLoading || !devices.length}
-                                    className="device-select text-sm mt-2 w-full bg-transparent outline-none border-b border-white/10 text-foreground pb-1 focus:border-lime/50 transition-smooth"
-                                >
-                                    {!devices.length ? (
-                                        <option value="">
-                                            {devicesLoading
-                                                ? "Loading devices..."
-                                                : "No devices available"}
-                                        </option>
-                                    ) : null}
-                                    {devices.map((device) => (
-                                        <option key={device.id} value={device.id}>
-                                            {device.location ||
-                                                device.device_name ||
-                                                `Device ${device.id}`}
-                                        </option>
-                                    ))}
-                                </select>
-                            </div>
-                            <div className="rounded-xl border border-white/10 bg-black/20 px-3 py-3 flex items-center justify-between">
-                                <div>
-                                    <p className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
-                                        Status
-                                    </p>
-                                    <p className="text-sm mt-1">
-                                        {selectedDevice?.status || "unknown"}
-                                    </p>
-                                </div>
-                                <span className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
-                                    ID #{selectedDevice?.id || "-"}
-                                </span>
-                            </div>
-                            <div className="rounded-xl border border-white/10 bg-black/20 px-3 py-3 flex items-center justify-between gap-3">
-                                <div>
-                                    <p className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
-                                        API Key
-                                    </p>
-                                    <p className="text-sm mt-1">
-                                        {maskApiKey(apiKey)}
-                                    </p>
-                                </div>
-                                <button
-                                    type="button"
-                                    onClick={() => {
-                                        if (!apiKey) return;
-                                        navigator.clipboard.writeText(apiKey);
-                                        alert("API Key copied!");
-                                    }}
-                                    disabled={!apiKey}
-                                    className="h-9 px-3 rounded-full border border-white/10 bg-black/20 inline-flex items-center gap-2 text-sm hover:border-lime/50 transition-smooth disabled:opacity-60 disabled:cursor-not-allowed"
-                                >
-                                    <Copy className="w-4 h-4" />
-                                    Copy
-                                </button>
-                            </div>
-                            <div className="rounded-xl border border-white/10 bg-black/20 px-3 py-3">
-                                <p className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
-                                    Device Name
-                                </p>
-                                <input
-                                    type="text"
-                                    value={deviceName}
-                                    onChange={(e) =>
-                                        setDeviceName(e.target.value)
-                                    }
-                                    disabled={!selectedDevice}
-                                    className="text-sm mt-2 w-full bg-transparent outline-none border-b border-white/10 text-foreground pb-1 focus:border-lime/50 transition-smooth"
-                                />
-                            </div>
-                            <div className="rounded-xl border border-white/10 bg-black/20 px-3 py-3">
-                                <p className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
-                                    Location
-                                </p>
-                                <input
-                                    type="text"
-                                    value={deviceLocation}
-                                    onChange={(e) =>
-                                        setDeviceLocation(e.target.value)
-                                    }
-                                    disabled={!selectedDevice}
-                                    className="text-sm mt-2 w-full bg-transparent outline-none border-b border-white/10 text-foreground pb-1 focus:border-lime/50 transition-smooth"
-                                    placeholder="Warehouse"
-                                />
-                            </div>
-                            <button
-                                type="button"
-                                onClick={handleSaveDevice}
-                                disabled={
-                                    !selectedDevice ||
-                                    deviceSaving ||
-                                    !deviceName.trim() ||
-                                    !deviceLocation.trim()
-                                }
-                                className="h-10 px-4 rounded-full bg-lime/20 text-lime border border-lime/35 font-semibold hover:bg-lime/30 transition-smooth disabled:opacity-60 disabled:cursor-not-allowed"
-                            >
-                                {deviceSaving ? "Saving..." : "Save Device"}
-                            </button>
-                            <button
-                                type="button"
-                                onClick={handleResetDevice}
-                                disabled={!selectedDevice || deviceResetting}
-                                className="h-10 px-4 rounded-full bg-danger/20 text-danger border border-danger/35 font-semibold hover:bg-danger/30 transition-smooth disabled:opacity-60 disabled:cursor-not-allowed"
-                            >
-                                {deviceResetting ? "Resetting..." : "Reset Device"}
-                            </button>
-                        </div>
-                    </article>
                 </div>
 
                 <article className="rounded-[20px] border border-white/15 backdrop-blur-md bg-gradient-to-br from-white/10 to-white/5 p-5 shadow-xl h-fit">
-                    <h2 className="text-xl font-semibold">Appearance</h2>
+                    <h2 className="text-xl font-semibold">Device Management</h2>
                     <p className="text-xs text-muted-foreground mt-1">
-                        Theme and interface preferences
+                        API key and hardware controls
                     </p>
 
                     <div className="mt-4 space-y-3">
-                        <div className="rounded-xl border border-white/10 bg-black/20 px-3 py-3 flex items-center justify-between">
-                            <div className="flex items-center gap-2">
-                                <SlidersHorizontal className="w-4 h-4 text-muted-foreground" />
-                                <div>
-                                    <p className="text-sm">Accent color</p>
-                                    <p className="text-xs text-muted-foreground">
-                                        #CCFF00 - Sentinel Lime
-                                    </p>
-                                </div>
-                            </div>
-                            <span className="w-6 h-6 rounded-md bg-lime border border-lime/60" />
+                        <div className="rounded-xl border border-white/10 bg-black/20 px-3 py-3">
+                            <p className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
+                                Device
+                            </p>
+                            <select
+                                value={selectedDeviceId || ""}
+                                onChange={(e) =>
+                                    setSelectedDeviceId(Number(e.target.value))
+                                }
+                                disabled={devicesLoading || !devices.length}
+                                className="device-select text-sm mt-2 w-full bg-transparent outline-none border-b border-white/10 text-foreground pb-1 focus:border-lime/50 transition-smooth"
+                            >
+                                {!devices.length ? (
+                                    <option value="">
+                                        {devicesLoading
+                                            ? "Loading devices..."
+                                            : "No devices available"}
+                                    </option>
+                                ) : null}
+                                {devices.map((device) => (
+                                    <option key={device.id} value={device.id}>
+                                        {device.location ||
+                                            device.device_name ||
+                                            `Device ${device.id}`}
+                                    </option>
+                                ))}
+                            </select>
                         </div>
-
                         <div className="rounded-xl border border-white/10 bg-black/20 px-3 py-3 flex items-center justify-between">
                             <div>
-                                <p className="text-sm">Sidebar default</p>
-                                <p className="text-xs text-muted-foreground">
-                                    Startup navigation state
+                                <p className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
+                                    Status
+                                </p>
+                                <p className="text-sm mt-1">
+                                    {selectedDevice?.status || "unknown"}
                                 </p>
                             </div>
-                            <div className="inline-flex p-1 rounded-full bg-black/25 border border-white/10">
-                                <button
-                                    type="button"
-                                    className={cn(
-                                        "h-7 px-3 text-xs rounded-full transition-smooth",
-                                        !collapsed
-                                            ? "bg-lime text-lime-foreground"
-                                            : "text-muted-foreground",
-                                    )}
-                                    onClick={() => setCollapsed(false)}
-                                >
-                                    Expanded
-                                </button>
-                                <button
-                                    type="button"
-                                    className={cn(
-                                        "h-7 px-3 text-xs rounded-full transition-smooth",
-                                        collapsed
-                                            ? "bg-card text-foreground"
-                                            : "text-muted-foreground",
-                                    )}
-                                    onClick={() => setCollapsed(true)}
-                                >
-                                    Collapsed
-                                </button>
-                            </div>
+                            <span className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
+                                ID #{selectedDevice?.id || "-"}
+                            </span>
                         </div>
+                        <div className="rounded-xl border border-white/10 bg-black/20 px-3 py-3 flex items-center justify-between gap-3">
+                            <div>
+                                <p className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
+                                    API Key
+                                </p>
+                                <p className="text-sm mt-1">
+                                    {maskApiKey(apiKey)}
+                                </p>
+                            </div>
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    if (!apiKey) return;
+                                    navigator.clipboard.writeText(apiKey);
+                                    alert("API Key copied!");
+                                }}
+                                disabled={!apiKey}
+                                className="h-9 px-3 rounded-full border border-white/10 bg-black/20 inline-flex items-center gap-2 text-sm hover:border-lime/50 transition-smooth disabled:opacity-60 disabled:cursor-not-allowed"
+                            >
+                                <Copy className="w-4 h-4" />
+                                Copy
+                            </button>
+                        </div>
+                        <div className="rounded-xl border border-white/10 bg-black/20 px-3 py-3">
+                            <p className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
+                                Device Name
+                            </p>
+                            <input
+                                type="text"
+                                value={deviceName}
+                                onChange={(e) => setDeviceName(e.target.value)}
+                                disabled={!selectedDevice}
+                                className="text-sm mt-2 w-full bg-transparent outline-none border-b border-white/10 text-foreground pb-1 focus:border-lime/50 transition-smooth"
+                            />
+                        </div>
+                        <div className="rounded-xl border border-white/10 bg-black/20 px-3 py-3">
+                            <p className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
+                                Location
+                            </p>
+                            <input
+                                type="text"
+                                value={deviceLocation}
+                                onChange={(e) =>
+                                    setDeviceLocation(e.target.value)
+                                }
+                                disabled={!selectedDevice}
+                                className="text-sm mt-2 w-full bg-transparent outline-none border-b border-white/10 text-foreground pb-1 focus:border-lime/50 transition-smooth"
+                                placeholder="Warehouse"
+                            />
+                        </div>
+                        <button
+                            type="button"
+                            onClick={handleSaveDevice}
+                            disabled={
+                                !selectedDevice ||
+                                deviceSaving ||
+                                !deviceName.trim() ||
+                                !deviceLocation.trim()
+                            }
+                            className="h-10 px-4 rounded-full bg-lime/20 text-lime border border-lime/35 font-semibold hover:bg-lime/30 transition-smooth disabled:opacity-60 disabled:cursor-not-allowed"
+                        >
+                            {deviceSaving ? "Saving..." : "Save Device"}
+                        </button>
+                        <button
+                            type="button"
+                            onClick={handleResetDevice}
+                            disabled={!selectedDevice || deviceResetting}
+                            className="h-10 px-4 rounded-full bg-danger/20 text-danger border border-danger/35 font-semibold hover:bg-danger/30 transition-smooth disabled:opacity-60 disabled:cursor-not-allowed"
+                        >
+                            {deviceResetting ? "Resetting..." : "Reset Device"}
+                        </button>
                     </div>
                 </article>
             </section>

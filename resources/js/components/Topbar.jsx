@@ -59,27 +59,12 @@ export default function Topbar() {
                         className="w-full h-11 rounded-full glass-pill pl-11 pr-4 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-lime/60"
                     />
                 </div>
-                <button
-                    type="button"
-                    className="w-11 h-11 rounded-full glass-pill flex items-center justify-center hover:border-lime/50 transition-smooth"
-                >
-                    <Bell className="w-5 h-5 text-foreground" />
-                </button>
+
                 <span className="hidden md:inline-flex items-center px-3 py-2 rounded-full glass-pill text-xs text-muted-foreground">
                     {formatted} WIB
                 </span>
 
                 <div className="relative">
-                    <button
-                        onClick={() => setShowUserMenu(!showUserMenu)}
-                        className="flex items-center gap-2 px-4 py-2 rounded-full glass-pill hover:border-lime/50 transition-smooth"
-                    >
-                        <User className="w-4 h-4 text-foreground" />
-                        <span className="text-sm text-foreground">
-                            {userName || "User"}
-                        </span>
-                    </button>
-
                     {showUserMenu && (
                         <div className="absolute right-0 mt-2 w-48 rounded-lg glass-panel border border-white/15 shadow-lg overflow-hidden z-50">
                             <button

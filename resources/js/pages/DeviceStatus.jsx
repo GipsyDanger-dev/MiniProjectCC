@@ -1,11 +1,11 @@
 import React from "react";
+import { BellRing, Cpu, Fan, Monitor } from "lucide-react";
 import {
-    BellRing,
-    Cpu,
-    Fan,
-    Monitor,
-} from "lucide-react";
-import { PolarAngleAxis, RadialBar, RadialBarChart, ResponsiveContainer } from "recharts";
+    PolarAngleAxis,
+    RadialBar,
+    RadialBarChart,
+    ResponsiveContainer,
+} from "recharts";
 
 const deviceCards = [
     {
@@ -39,7 +39,9 @@ const deviceCards = [
 function GaugeCard({ title, value, color }) {
     return (
         <article className="rounded-[20px] border border-white/10 bg-[linear-gradient(160deg,rgba(255,255,255,0.09),rgba(255,255,255,0.03)_58%,rgba(99,102,241,0.12))] p-4">
-            <p className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground">{title}</p>
+            <p className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
+                {title}
+            </p>
             <div className="mt-2 h-[160px]">
                 <ResponsiveContainer width="100%" height="100%">
                     <RadialBarChart
@@ -49,8 +51,16 @@ function GaugeCard({ title, value, color }) {
                         startAngle={90}
                         endAngle={-270}
                     >
-                        <PolarAngleAxis type="number" domain={[0, 100]} tick={false} />
-                        <RadialBar dataKey="value" cornerRadius={99} background />
+                        <PolarAngleAxis
+                            type="number"
+                            domain={[0, 100]}
+                            tick={false}
+                        />
+                        <RadialBar
+                            dataKey="value"
+                            cornerRadius={99}
+                            background
+                        />
                         <text
                             x="50%"
                             y="47%"
@@ -85,10 +95,26 @@ export default function DeviceStatus({ activeRoom, iot }) {
     const workerOnline = Boolean(iot.data?.worker_online);
     const latestCommand = iot.data?.latest_command;
     const checks = [
-        { endpoint: "GET /api/dashboard/data", latency: iot.error ? "--" : "ok", ok: !iot.error },
-        { endpoint: "POST /api/ingest", latency: latest ? "live" : "--", ok: Boolean(latest) },
-        { endpoint: "GET /api/command/get", latency: workerOnline ? "active" : "--", ok: workerOnline },
-        { endpoint: "POST /api/status/update", latency: latestCommand ? "recent" : "--", ok: Boolean(latestCommand) },
+        {
+            endpoint: "GET /api/dashboard/data",
+            latency: iot.error ? "--" : "ok",
+            ok: !iot.error,
+        },
+        {
+            endpoint: "POST /api/ingest",
+            latency: latest ? "live" : "--",
+            ok: Boolean(latest),
+        },
+        {
+            endpoint: "GET /api/command/get",
+            latency: workerOnline ? "active" : "--",
+            ok: workerOnline,
+        },
+        {
+            endpoint: "POST /api/status/update",
+            latency: latestCommand ? "recent" : "--",
+            ok: Boolean(latestCommand),
+        },
     ];
 
     const cards = [
@@ -132,19 +158,23 @@ export default function DeviceStatus({ activeRoom, iot }) {
     return (
         <div className="pb-6 space-y-5">
             <div>
-                <h1 className="text-4xl font-semibold text-foreground">Device Status</h1>
+                <h1 className="text-4xl font-semibold text-foreground">
+                    Device Status
+                </h1>
                 <p className="text-sm text-muted-foreground mt-1">
                     Hardware, connectivity, and server diagnostics
                 </p>
             </div>
 
-            <section className="rounded-[20px] border border-white/10 bg-[linear-gradient(160deg,rgba(255,255,255,0.09),rgba(255,255,255,0.03)_58%,rgba(99,102,241,0.1))] p-4">
+            {/* <section className="rounded-[20px] border border-white/10 bg-[linear-gradient(160deg,rgba(255,255,255,0.09),rgba(255,255,255,0.03)_58%,rgba(99,102,241,0.1))] p-4">
                 <div className="flex items-start justify-between">
                     <div>
                         <p className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
                             3D Room Model
                         </p>
-                        <h2 className="text-2xl font-semibold mt-1">{activeRoom}</h2>
+                        <h2 className="text-2xl font-semibold mt-1">
+                            {activeRoom}
+                        </h2>
                     </div>
                     <span className="inline-flex px-2 py-1 rounded-full border border-success/30 bg-success/20 text-success text-[10px] font-semibold">
                         {emergency}
@@ -163,7 +193,7 @@ export default function DeviceStatus({ activeRoom, iot }) {
                         DHT-22 {Math.round(Number(latest?.temperature || 0))}°C
                     </div>
                 </div>
-            </section>
+            </section> */}
 
             <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
                 {cards.map((card) => (
@@ -177,17 +207,26 @@ export default function DeviceStatus({ activeRoom, iot }) {
                                     <card.icon className="w-4 h-4 text-lime" />
                                 </span>
                                 <div>
-                                    <h3 className="text-sm font-semibold">{card.title}</h3>
-                                    <p className="text-[10px] text-success mt-0.5">{card.status}</p>
+                                    <h3 className="text-sm font-semibold">
+                                        {card.title}
+                                    </h3>
+                                    <p className="text-[10px] text-success mt-0.5">
+                                        {card.status}
+                                    </p>
                                 </div>
                             </div>
                             {card.value ? (
-                                <span className="text-4xl leading-none font-semibold">{card.value}</span>
+                                <span className="text-4xl leading-none font-semibold">
+                                    {card.value}
+                                </span>
                             ) : null}
                         </div>
                         <div className="mt-3 space-y-1">
                             {card.details.map((detail) => (
-                                <p key={detail} className="text-xs text-muted-foreground">
+                                <p
+                                    key={detail}
+                                    className="text-xs text-muted-foreground"
+                                >
                                     {detail}
                                 </p>
                             ))}
@@ -195,65 +234,6 @@ export default function DeviceStatus({ activeRoom, iot }) {
                     </article>
                 ))}
             </div>
-
-            <section className="grid gap-3 xl:grid-cols-[2fr_1fr_1fr]">
-                <article className="rounded-[20px] border border-white/10 bg-[linear-gradient(160deg,rgba(255,255,255,0.09),rgba(255,255,255,0.03)_58%,rgba(99,102,241,0.12))] p-5">
-                    <div className="flex items-center justify-between">
-                        <div>
-                            <h2 className="text-xl font-semibold">Server Status</h2>
-                            <p className="text-xs text-muted-foreground mt-1">
-                                Laravel API & database health
-                            </p>
-                        </div>
-                        <span className="inline-flex px-2 py-1 rounded-full border border-success/30 bg-success/20 text-success text-[10px] font-semibold">
-                            {workerOnline ? "Operational" : "Degraded"}
-                        </span>
-                    </div>
-                    <div className="mt-4 space-y-2">
-                        {checks.map((check) => (
-                            <div
-                                key={check.endpoint}
-                                className="flex items-center justify-between rounded-xl border border-white/8 bg-black/20 px-3 py-2"
-                            >
-                                <span className="inline-flex items-center gap-2 text-sm">
-                                    <span
-                                        className={`w-2 h-2 rounded-full ${
-                                            check.ok ? "bg-success" : "bg-danger"
-                                        }`}
-                                    />
-                                    {check.endpoint}
-                                </span>
-                                <span className="text-xs text-muted-foreground">{check.latency}</span>
-                            </div>
-                        ))}
-                    </div>
-                    <div className="mt-4 grid grid-cols-3 gap-2 text-xs">
-                        <div className="rounded-xl border border-white/8 bg-black/20 p-3">
-                            <p className="text-muted-foreground">Database</p>
-                            <p className="text-sm font-semibold mt-1">Connected</p>
-                        </div>
-                        <div className="rounded-xl border border-white/8 bg-black/20 p-3">
-                            <p className="text-muted-foreground">Uptime</p>
-                            <p className="text-sm font-semibold mt-1">
-                                {workerOnline ? "99.94%" : "95.10%"}
-                            </p>
-                        </div>
-                        <div className="rounded-xl border border-white/8 bg-black/20 p-3">
-                            <p className="text-muted-foreground">Latency</p>
-                            <p className="text-sm font-semibold mt-1">
-                                {iot.lastUpdated
-                                    ? iot.lastUpdated.toLocaleTimeString("en-GB", {
-                                          hour: "2-digit",
-                                          minute: "2-digit",
-                                      })
-                                    : "--"}
-                            </p>
-                        </div>
-                    </div>
-                </article>
-                <GaugeCard title="System Uptime" value={99} color="#ccff00" />
-                <GaugeCard title="Alerts Resolved" value={82} color="#22c55e" />
-            </section>
         </div>
     );
 }

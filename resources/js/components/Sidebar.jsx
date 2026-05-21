@@ -19,7 +19,7 @@ import { cn } from "../lib/utils";
 const navItems = [
     { id: "dashboard", label: "Dashboard", icon: LayoutGrid },
     { id: "sensors", label: "Sensor Data", icon: Database },
-    { id: "devices", label: "Device Status", icon: Cpu },
+    // { id: "devices", label: "Device Status", icon: Cpu },
     { id: "logs", label: "Activity Log", icon: Activity },
     { id: "settings", label: "Settings", icon: Settings },
 ];
@@ -110,7 +110,7 @@ export default function Sidebar({
                 )}
 
                 <div className="space-y-2">
-                    <button
+                    {/* <button
                         type="button"
                         className={cn(
                             "w-full flex items-center gap-3 h-11 rounded-full text-sm font-medium transition-smooth hover:bg-muted",
@@ -119,7 +119,7 @@ export default function Sidebar({
                     >
                         <LifeBuoy className="w-[18px] h-[18px] shrink-0" />
                         {!collapsed && <span>Support</span>}
-                    </button>
+                    </button> */}
                     <button
                         type="button"
                         onClick={handleLogout}

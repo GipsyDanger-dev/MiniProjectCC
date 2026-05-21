@@ -84,7 +84,8 @@ export default function Dashboard({ activeRoom, deviceId, iot }) {
             name: "KY-026",
             type: "Flame detector",
             value: `${Math.round(Number(latest?.flame_value || 0))}`,
-            status: Number(latest?.flame_value || 9999) < 500 ? "Alert" : "Normal",
+            status:
+                Number(latest?.flame_value || 9999) < 500 ? "Alert" : "Normal",
             icon: Flame,
         },
         {
@@ -149,7 +150,9 @@ export default function Dashboard({ activeRoom, deviceId, iot }) {
                 ? latestCommand.action
                 : "STOP",
         buzzer:
-            latestCommand?.target_device === "buzzer" ? latestCommand.action : "STOP",
+            latestCommand?.target_device === "buzzer"
+                ? latestCommand.action
+                : "STOP",
     };
 
     const sendActuator = async (payload) => {
@@ -194,16 +197,16 @@ export default function Dashboard({ activeRoom, deviceId, iot }) {
         <div className="py-5 space-y-5">
             <div>
                 <h1 className="text-3xl font-semibold text-foreground">
-                    Hello Steward
+                    Hello Admin
                 </h1>
                 <p className="text-sm text-muted-foreground">
                     Monitoring {activeRoom} in real-time.
                 </p>
-                    {iot.error ? (
-                        <p className="text-xs text-danger mt-1">
-                            API disconnected: {iot.error}
-                        </p>
-                    ) : null}
+                {iot.error ? (
+                    <p className="text-xs text-danger mt-1">
+                        API disconnected: {iot.error}
+                    </p>
+                ) : null}
             </div>
 
             <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
