@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import {
     Bell,
     Fan,
@@ -155,13 +155,16 @@ export default function Dashboard({ activeRoom, deviceId, iot, setCurrentPage })
                 : "STOP",
     };
 
+    const [actuatorLoading, setActuatorLoading] = useState(null);
+
     const sendActuator = async (payload) => {
         if (payload?.navigate === "activity") {
             setCurrentPage?.("logs");
             return;
         }
+        setActuatorLoading(payload.target_device);
         try {
-            await fetch("/api/actuator", {
+            const res = await fetch("/api/actuator", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
@@ -173,8 +176,14 @@ export default function Dashboard({ activeRoom, deviceId, iot, setCurrentPage })
                 },
                 body: JSON.stringify({ ...payload, device_id: deviceId }),
             });
-        } catch (_e) {
-            // Keep UI resilient while simulator continues.
+            const data = await res.json();
+            if (data.status !== "success") {
+                console.error("Actuator error:", data.message);
+            }
+        } catch (e) {
+            console.error("Actuator request failed:", e);
+        } finally {
+            setTimeout(() => setActuatorLoading(null), 500);
         }
     };
 
@@ -235,6 +244,7 @@ export default function Dashboard({ activeRoom, deviceId, iot, setCurrentPage })
                             <QuickActions
                                 actuatorState={actuatorState}
                                 onAction={sendActuator}
+                                loading={actuatorLoading}
                             />
                         </div>
                     </div>
