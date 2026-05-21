@@ -8,6 +8,7 @@ let sensorHistoryData = {
     flame: []
 };
 let currentDeviceId = 1;
+window.currentDeviceId = 1; // Expose for Echo WebSocket
 let refreshInterval = null;
 let scene, camera, renderer, twinObject;
 let isInitialized = false; // Prevent double initialization
@@ -539,6 +540,14 @@ function updateSensorUI(data) {
         return;
     }
 
+    console.log('[DEBUG] Latest sensor:', {
+        gas: latest.gas_value,
+        smoke: latest.smoke_value,
+        temp: latest.temperature,
+        flame: latest.flame_value,
+        time: latest.created_at
+    });
+
     const settings = data.settings;
     
     // Update large metric cards with sparklines
@@ -570,6 +579,8 @@ function updateSensorUI(data) {
     updateMetric('smoke', latest.smoke_value, settings.smoke_threshold, '#f59e0b');
     updateMetric('temp', latest.temperature, settings.temp_threshold, '#10b981');
     updateMetric('flame', latest.flame_value, settings.flame_threshold, '#10b981');
+
+    console.log('[DEBUG] DOM updated - flame card:', document.getElementById('val-flame-large')?.textContent);
 
     // Update status badge
     const statusBadge = document.getElementById('statusBadge');
@@ -701,10 +712,65 @@ function syncThresholdUI(settings) {
     });
 }
 
+// Real-time update handler (called by Echo WebSocket)
+window.handleRealtimeUpdate = function(event) {
+    console.log('[RT] Processing real-time update:', event);
+
+    const sensorData = event.sensor_data;
+    const decision = event.decision;
+    const emergencyStatus = event.emergency_status;
+
+    // Build data structure matching dashboard API response format
+    const data = {
+        status: 'success',
+        sensor_data: [sensorData], // Wrap in array for updateSensorUI
+        device_actuator: {
+            fan_status: decision.fan_status,
+            fan_speed: decision.fan_speed
+        },
+        emergency_status: emergencyStatus,
+        settings: {
+            gas_threshold: parseInt(document.getElementById('range-gas')?.value || 250),
+            smoke_threshold: parseInt(document.getElementById('range-smoke')?.value || 120),
+            temp_threshold: parseInt(document.getElementById('range-temp')?.value || 40),
+            flame_threshold: parseInt(document.getElementById('range-flame')?.value || 500)
+        }
+    };
+
+    // Update UI components directly
+    updateSensorUI(data);
+    updateDecisionPanel(data);
+    update3DTwinStatus(emergencyStatus);
+
+    // Update status badge
+    const statusBadge = document.getElementById('statusBadge');
+    if (statusBadge) {
+        if (emergencyStatus === 'BAHAYA') {
+            statusBadge.textContent = 'DANGER';
+            statusBadge.style.background = 'rgba(239, 68, 68, 0.1)';
+            statusBadge.style.color = '#ef4444';
+            statusBadge.style.borderColor = 'rgba(239, 68, 68, 0.3)';
+        } else {
+            statusBadge.textContent = 'SAFE';
+            statusBadge.style.background = 'rgba(16, 185, 129, 0.1)';
+            statusBadge.style.color = '#10b981';
+            statusBadge.style.borderColor = 'rgba(16, 185, 129, 0.3)';
+        }
+    }
+
+    console.log('[RT] UI updated via WebSocket');
+};
+
 // Device selection
 window.selectDevice = (id) => {
     currentDeviceId = id;
-    
+    window.currentDeviceId = id; // Sync for Echo
+
+    // Reconnect WebSocket to new device channel
+    if (typeof connectWebSocket === 'function') {
+        connectWebSocket();
+    }
+
     // Update active button
     const items = document.querySelectorAll('.nav-item');
     items.forEach((item, idx) => {
@@ -718,7 +784,7 @@ window.selectDevice = (id) => {
             item.style.color = 'var(--text-secondary)';
         }
     });
-    
+
     updateDashboard();
 };
 

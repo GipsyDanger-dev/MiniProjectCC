@@ -22,6 +22,8 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://js.pusher.com/8.2/pusher.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/laravel-echo@2.0.1/dist/echo.iife.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three/examples/js/controls/OrbitControls.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
     
@@ -412,6 +414,41 @@
         document.getElementById('device-selector').addEventListener('change', (e) => {
             selectDevice(parseInt(e.target.value));
         });
+    </script>
+    <script>
+        // Laravel Echo + Pusher WebSocket Setup
+        window.Echo = new Echo({
+            broadcaster: 'pusher',
+            key: '{{ env("PUSHER_APP_KEY") }}',
+            cluster: '{{ env("PUSHER_APP_CLUSTER", "ap1") }}',
+            forceTLS: true
+        });
+
+        // Get current device from dashboard.js
+        function connectWebSocket() {
+            const deviceId = window.currentDeviceId || 1;
+            const channelName = 'device.' + deviceId;
+
+            // Leave previous channel if exists
+            if (window.currentChannel) {
+                window.Echo.leave(window.currentChannel);
+            }
+
+            window.currentChannel = channelName;
+            const channel = window.Echo.channel(channelName);
+
+            channel.listen('.SensorDataReceived', (e) => {
+                console.log('[WS] SensorDataReceived:', e);
+                if (typeof window.handleRealtimeUpdate === 'function') {
+                    window.handleRealtimeUpdate(e);
+                }
+            });
+
+            console.log('[WS] Listening on channel: ' + channelName);
+        }
+
+        // Connect on page load (after dashboard.js initializes)
+        setTimeout(connectWebSocket, 500);
     </script>
     <script src="/dashboard.js"></script>
 </body>
