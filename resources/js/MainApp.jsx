@@ -19,6 +19,7 @@ export default function MainApp() {
     const [devices, setDevices] = useState([]);
     const [devicesLoading, setDevicesLoading] = useState(true);
     const [activeDeviceId, setActiveDeviceId] = useState(1);
+    const [pollingInterval, setPollingInterval] = useState(3000);
     const rooms = useMemo(
         () =>
             devices.map((device) => ({
@@ -33,7 +34,7 @@ export default function MainApp() {
     );
     const activeRoom =
         activeDevice?.location || activeDevice?.device_name || "Unknown";
-    const iot = useRealtimeIoT(activeDeviceId, 3000);
+    const iot = useRealtimeIoT(activeDeviceId, pollingInterval);
 
     const loadDevices = useCallback(async () => {
         setDevicesLoading(true);
@@ -72,6 +73,7 @@ export default function MainApp() {
                 activeRoom={activeRoom}
                 deviceId={activeDeviceId}
                 iot={iot}
+                setCurrentPage={setCurrentPage}
             />
         ),
         sensors: (
@@ -102,6 +104,8 @@ export default function MainApp() {
                 collapsed={collapsed}
                 setCollapsed={setCollapsed}
                 iot={iot}
+                pollingInterval={pollingInterval}
+                setPollingInterval={setPollingInterval}
             />
         ),
         "new-device": (
@@ -143,7 +147,7 @@ export default function MainApp() {
                     toggleTheme={toggleTheme}
                 />
                 <div className="flex-1 flex flex-col min-h-screen">
-                    <Topbar />
+                    <Topbar setCurrentPage={setCurrentPage} />
                     <main className="flex-1 px-8 pb-10">
                         <div className="relative z-10">
                             <RoomSelectionBanner

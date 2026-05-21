@@ -60,7 +60,7 @@ export function QuickActions({ actuatorState = {}, onAction }) {
             active: actuatorState.buzzer === "START",
             action: { target_device: "buzzer", action: "START" },
         },
-        { label: "View Logs", icon: List, active: false },
+        { label: "View Logs", icon: List, active: false, action: { navigate: "activity" } },
     ];
 
     return (
@@ -69,7 +69,13 @@ export function QuickActions({ actuatorState = {}, onAction }) {
                 <button
                     key={action.label}
                     type="button"
-                    onClick={() => action.action && onAction?.(action.action)}
+                    onClick={() => {
+                        if (action.action?.navigate) {
+                            onAction?.(action.action);
+                        } else if (action.action) {
+                            onAction?.(action.action);
+                        }
+                    }}
                     className={`relative isolate overflow-hidden p-6 text-left flex flex-col justify-between min-h-[122px] rounded-[20px] border backdrop-blur-xl transition-smooth ${
                         action.active
                             ? "text-[#10130a] border-lime/70 shadow-[0_14px_36px_rgba(204,255,0,0.38)] bg-[linear-gradient(135deg,rgba(214,255,94,0.92),rgba(170,232,0,0.86))]"

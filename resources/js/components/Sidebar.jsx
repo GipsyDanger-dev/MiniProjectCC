@@ -19,7 +19,7 @@ import { cn } from "../lib/utils";
 const navItems = [
     { id: "dashboard", label: "Dashboard", icon: LayoutGrid },
     { id: "sensors", label: "Sensor Data", icon: Database },
-    // { id: "devices", label: "Device Status", icon: Cpu },
+    { id: "devices", label: "Device Status", icon: Cpu },
     { id: "logs", label: "Activity Log", icon: Activity },
     { id: "settings", label: "Settings", icon: Settings },
 ];

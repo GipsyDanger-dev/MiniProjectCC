@@ -1,7 +1,7 @@
 import React from "react";
 import { cn } from "../lib/utils";
 
-export default function ActuatorControl({ items }) {
+export default function ActuatorControl({ items, onToggle }) {
     return (
         <div className="relative isolate overflow-hidden rounded-[20px] border border-white/10 bg-[linear-gradient(145deg,rgba(255,255,255,0.10),rgba(255,255,255,0.03)_62%,rgba(168,85,247,0.10))] backdrop-blur-xl p-6">
             <span className="absolute inset-0 pointer-events-none bg-[radial-gradient(120%_110%_at_100%_0%,rgba(204,255,0,0.08),transparent_66%)]" />
@@ -35,6 +35,7 @@ export default function ActuatorControl({ items }) {
                             )}
                             <button
                                 type="button"
+                                onClick={() => onToggle?.(item.name)}
                                 className={cn(
                                     "w-12 h-6 rounded-full p-1 transition-all border",
                                     item.enabled

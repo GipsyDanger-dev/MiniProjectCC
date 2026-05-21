@@ -47,6 +47,8 @@ export default function Settings({
     collapsed,
     setCollapsed,
     iot,
+    pollingInterval,
+    setPollingInterval,
 }) {
     const [gas, setGas] = useState(600);
     const [smoke, setSmoke] = useState(300);
@@ -54,7 +56,7 @@ export default function Settings({
     const [flame, setFlame] = useState("Medium");
     const [webNotif, setWebNotif] = useState(true);
     const [dangerOnly, setDangerOnly] = useState(false);
-    const [polling, setPolling] = useState(3);
+    const polling = Math.round((pollingInterval || 3000) / 1000);
     const [saving, setSaving] = useState(false);
     const [devices, setDevices] = useState([]);
     const [devicesLoading, setDevicesLoading] = useState(true);
@@ -85,7 +87,7 @@ export default function Settings({
                 const payload = await res.json();
                 if (!active) return;
                 if (payload.status === "success") {
-                    setDevices(payload.devices || []);
+                    setDevices(payload.data || payload.devices || []);
                 } else {
                     setDevices([]);
                 }
@@ -224,7 +226,7 @@ export default function Settings({
                 setDevices((prev) =>
                     prev.map((device) =>
                         device.id === selectedDevice.id
-                            ? { ...device, status: payload.device.status }
+                            ? { ...device, status: "offline" }
                             : device,
                     ),
                 );
@@ -333,8 +335,8 @@ export default function Settings({
 
                 <div className="mt-5 rounded-xl border border-white/10 bg-[linear-gradient(90deg,rgba(12,56,46,0.55),rgba(12,45,39,0.3))] p-3 flex flex-wrap items-center justify-between gap-2">
                     <p className="text-xs text-muted-foreground">
-                        Live preview at current readings: gas 486ppm, smoke
-                        215ppm, temp 37°C
+                        Live preview at current readings: gas {Math.round(Number(iot?.latestReading?.gas_value || 0))}ppm, smoke
+                        {" "}{Math.round(Number(iot?.latestReading?.smoke_value || 0))}ppm, temp {Math.round(Number(iot?.latestReading?.temperature || 0))}°C
                     </p>
                     <span
                         className={`inline-flex px-2.5 py-1 rounded-full border text-[10px] font-semibold ${previewStatus.className}`}
@@ -453,7 +455,7 @@ export default function Settings({
                                     max="10"
                                     value={polling}
                                     onChange={(e) =>
-                                        setPolling(Number(e.target.value))
+                                        setPollingInterval(Number(e.target.value) * 1000)
                                     }
                                     className="mt-2 w-full accent-lime"
                                 />

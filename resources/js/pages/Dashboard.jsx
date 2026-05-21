@@ -28,7 +28,7 @@ function relativeTime(dateValue) {
     return `Updated ${Math.floor(diffSec / 3600)}h ago`;
 }
 
-export default function Dashboard({ activeRoom, deviceId, iot }) {
+export default function Dashboard({ activeRoom, deviceId, iot, setCurrentPage }) {
     const latest = iot.latestReading;
     const feed = iot.data?.sensor_data || [];
     const logs = iot.data?.activity_logs || [];
@@ -156,6 +156,10 @@ export default function Dashboard({ activeRoom, deviceId, iot }) {
     };
 
     const sendActuator = async (payload) => {
+        if (payload?.navigate === "activity") {
+            setCurrentPage?.("logs");
+            return;
+        }
         try {
             await fetch("/api/actuator", {
                 method: "POST",
@@ -217,7 +221,7 @@ export default function Dashboard({ activeRoom, deviceId, iot }) {
 
             <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_340px]">
                 <div className="space-y-6">
-                    <RoomModel room={activeRoom} />
+                    <RoomModel room={activeRoom} iot={iot} />
                     <div className="grid gap-4 md:grid-cols-5">
                         <div className="md:col-span-2">
                             <StatusCard
@@ -242,7 +246,11 @@ export default function Dashboard({ activeRoom, deviceId, iot }) {
                 </div>
                 <div className="space-y-5">
                     <ActiveSensors items={sensors} />
-                    <ActuatorControl items={actuators} />
+                    <ActuatorControl items={actuators} onToggle={(name) => {
+                        const target = name === "Exhaust Fan" ? "exhaust_fan" : "buzzer";
+                        const isOn = actuators.find(a => a.name === name)?.enabled;
+                        sendActuator({ target_device: target, action: isOn ? "STOP" : "START" });
+                    }} />
                     <ActivityLog entries={dashboardEntries} />
                 </div>
             </div>

@@ -20,8 +20,23 @@ const sensorCharts = [
 
 export default function SensorData({ activeRoom, iot }) {
     const [activeRange, setActiveRange] = useState("1H");
+    const [searchTerm, setSearchTerm] = useState("");
     const rawRows = iot.data?.sensor_data || [];
     const latest = rawRows[0];
+
+    const exportCSV = () => {
+        const header = "Timestamp,Gas,Smoke,Temperature,Flame,Status\n";
+        const rows = rawRows.map((r) =>
+            `${r.created_at},${r.gas_value},${r.smoke_value},${r.temperature},${r.flame_value},${r.status_indikasi}`
+        ).join("\n");
+        const blob = new Blob([header + rows], { type: "text/csv" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = "sensor_data.csv";
+        a.click();
+        URL.revokeObjectURL(url);
+    };
 
     const baseTrend = useMemo(() => {
         if (!rawRows.length) {
@@ -276,10 +291,17 @@ export default function SensorData({ activeRoom, iot }) {
                     <div className="flex items-center gap-2">
                         <div className="h-10 rounded-full border border-white/10 bg-black/25 px-3 flex items-center gap-2 text-sm text-muted-foreground">
                             <Search className="w-4 h-4" />
-                            <span>Filter</span>
+                            <input
+                                type="text"
+                                placeholder="Filter..."
+                                value={searchTerm}
+                                onChange={(e) => setSearchTerm(e.target.value)}
+                                className="bg-transparent border-none outline-none text-sm text-foreground w-24 placeholder-muted-foreground"
+                            />
                         </div>
                         <button
                             type="button"
+                            onClick={exportCSV}
                             className="h-10 rounded-full bg-lime text-lime-foreground px-4 font-semibold inline-flex items-center gap-2 shadow-[0_10px_30px_rgba(204,255,0,0.35)]"
                         >
                             <Download className="w-4 h-4" />

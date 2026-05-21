@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import {
     Calendar,
     ChevronDown,
@@ -29,8 +29,33 @@ function formatTime(value) {
 }
 
 export default function ActivityLogs({ activeRoom, iot }) {
+    const [activeFilter, setActiveFilter] = useState("All");
     const logs = iot.data?.activity_logs || [];
-    const entries = logs.length
+
+    const filteredLogs = logs.filter((log) => {
+        if (activeFilter === "All") return true;
+        if (activeFilter === "Danger") return log.status === "BAHAYA";
+        if (activeFilter === "Resolved") return log.status === "AMAN";
+        if (activeFilter === "Warning") return log.status === "BAHAYA";
+        if (activeFilter === "Info") return log.status !== "BAHAYA";
+        return true;
+    });
+
+    const exportCSV = () => {
+        const header = "ID,Status,Message,Description,Time\n";
+        const rows = filteredLogs.map((l) =>
+            `${l.id},"${l.status}","${(l.message || "").replace(/"/g, '""')}","${(l.description || "").replace(/"/g, '""')}","${l.created_at}"`
+        ).join("\n");
+        const blob = new Blob([header + rows], { type: "text/csv" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = "activity_logs.csv";
+        a.click();
+        URL.revokeObjectURL(url);
+    };
+
+    const entries = filteredLogs.length
         ? logs.slice(0, 8).map((item) => ({
               id: item.id,
               title: item.status === "BAHAYA" ? "Danger Event Triggered" : "Normal Event",
@@ -89,6 +114,7 @@ export default function ActivityLogs({ activeRoom, iot }) {
                     </button>
                     <button
                         type="button"
+                        onClick={exportCSV}
                         className="h-10 rounded-full bg-lime text-lime-foreground px-4 font-semibold inline-flex items-center gap-2 shadow-[0_10px_30px_rgba(204,255,0,0.35)]"
                     >
                         <Download className="w-4 h-4" />
@@ -122,12 +148,13 @@ export default function ActivityLogs({ activeRoom, iot }) {
             <section className="relative isolate overflow-hidden rounded-[20px] border border-white/10 bg-[linear-gradient(160deg,rgba(255,255,255,0.09),rgba(255,255,255,0.03)_58%,rgba(99,102,241,0.12))] p-4 md:p-5">
                 <div className="flex flex-wrap items-center justify-between gap-3 border-b border-white/10 pb-3">
                     <div className="flex flex-wrap gap-2">
-                        {filters.map((filter, index) => (
+                        {filters.map((filter) => (
                             <button
                                 key={filter}
                                 type="button"
+                                onClick={() => setActiveFilter(filter)}
                                 className={`h-8 px-3 rounded-full text-xs transition-smooth ${
-                                    index === 0
+                                    activeFilter === filter
                                         ? "bg-card text-foreground border border-white/10"
                                         : "text-muted-foreground hover:text-foreground hover:bg-white/5"
                                 }`}

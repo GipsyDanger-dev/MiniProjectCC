@@ -1,10 +1,11 @@
 import React, { useEffect, useState } from "react";
 import { Bell, Search, LogOut, User } from "lucide-react";
 
-export default function Topbar() {
+export default function Topbar({ setCurrentPage, onSearch }) {
     const [now, setNow] = useState(new Date());
     const [userName, setUserName] = useState("");
     const [showUserMenu, setShowUserMenu] = useState(false);
+    const [searchValue, setSearchValue] = useState("");
 
     useEffect(() => {
         const timer = setInterval(() => setNow(new Date()), 1000);
@@ -16,9 +17,7 @@ export default function Topbar() {
             try {
                 const response = await fetch("/api/user");
                 const data = await response.json();
-                if (data.status === "success") {
-                    setUserName(data.user.name);
-                }
+                setUserName(data.name || data.user?.name || "Admin");
             } catch (error) {
                 console.error("Error fetching user:", error);
             }
@@ -56,6 +55,14 @@ export default function Topbar() {
                     <input
                         type="text"
                         placeholder="Search devices, logs, sensors..."
+                        value={searchValue}
+                        onChange={(e) => setSearchValue(e.target.value)}
+                        onKeyDown={(e) => {
+                            if (e.key === "Enter" && searchValue.trim()) {
+                                onSearch?.(searchValue.trim());
+                                setCurrentPage?.("sensors");
+                            }
+                        }}
                         className="w-full h-11 rounded-full glass-pill pl-11 pr-4 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-lime/60"
                     />
                 </div>
