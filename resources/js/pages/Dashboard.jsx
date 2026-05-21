@@ -200,7 +200,7 @@ export default function Dashboard({ activeRoom, deviceId, iot, setCurrentPage })
     return (
         <div className="py-5 space-y-5">
             <div>
-                <h1 className="text-3xl font-semibold text-foreground">
+                <h1 className="text-2xl md:text-3xl font-semibold text-foreground">
                     Hello Admin
                 </h1>
                 <p className="text-sm text-muted-foreground">

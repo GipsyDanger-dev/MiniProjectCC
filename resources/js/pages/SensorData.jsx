@@ -139,7 +139,7 @@ export default function SensorData({ activeRoom, iot }) {
     return (
         <div className="pb-6 space-y-5">
             <div>
-                <h1 className="text-4xl font-semibold text-foreground">Sensor Data</h1>
+                <h1 className="text-2xl md:text-4xl font-semibold text-foreground">Sensor Data</h1>
                 <p className="text-sm text-muted-foreground mt-1">
                     Detailed readings for <span className="text-foreground">{activeRoom}</span>
                 </p>
@@ -203,7 +203,7 @@ export default function SensorData({ activeRoom, iot }) {
                     {sensorCharts.map((sensor) => (
                         <div
                             key={sensor.key}
-                            className="h-[220px] rounded-[16px] border border-white/10 bg-black/25 p-2"
+                            className="h-[180px] md:h-[220px] rounded-[16px] border border-white/10 bg-black/25 p-2"
                         >
                             <div className="px-2 pt-1 text-xs font-medium text-muted-foreground">
                                 {sensor.label}
@@ -290,28 +290,28 @@ export default function SensorData({ activeRoom, iot }) {
                     </div>
                     <div className="flex items-center gap-2">
                         <div className="h-10 rounded-full border border-white/10 bg-black/25 px-3 flex items-center gap-2 text-sm text-muted-foreground">
-                            <Search className="w-4 h-4" />
+                            <Search className="w-4 h-4 shrink-0" />
                             <input
                                 type="text"
                                 placeholder="Filter..."
                                 value={searchTerm}
                                 onChange={(e) => setSearchTerm(e.target.value)}
-                                className="bg-transparent border-none outline-none text-sm text-foreground w-24 placeholder-muted-foreground"
+                                className="bg-transparent border-none outline-none text-sm text-foreground w-20 md:w-32 placeholder-muted-foreground"
                             />
                         </div>
                         <button
                             type="button"
                             onClick={exportCSV}
-                            className="h-10 rounded-full bg-lime text-lime-foreground px-4 font-semibold inline-flex items-center gap-2 shadow-[0_10px_30px_rgba(204,255,0,0.35)]"
+                            className="h-10 rounded-full bg-lime text-lime-foreground px-3 md:px-4 font-semibold inline-flex items-center gap-2 shadow-[0_10px_30px_rgba(204,255,0,0.35)]"
                         >
                             <Download className="w-4 h-4" />
-                            Export CSV
+                            <span className="hidden sm:inline">Export CSV</span>
                         </button>
                     </div>
                 </div>
 
                 <div className="mt-4 overflow-auto thin-scroll">
-                    <table className="w-full min-w-[820px] text-sm">
+                    <table className="w-full min-w-[640px] text-sm">
                         <thead>
                             <tr className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground border-b border-white/10">
                                 <th className="text-left py-3">Timestamp</th>

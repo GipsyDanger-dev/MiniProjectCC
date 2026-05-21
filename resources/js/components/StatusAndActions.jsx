@@ -25,7 +25,7 @@ export function StatusCard({
             <p className="inline-flex mt-3 items-center px-3 py-1 rounded-full text-xs bg-muted/40 text-muted-foreground">
                 {updatedLabel}
             </p>
-            <p className="mt-5 text-6xl leading-none font-extrabold text-lime drop-shadow-[0_0_22px_rgba(204,255,0,0.32)]">
+            <p className="mt-5 text-4xl md:text-6xl leading-none font-extrabold text-lime drop-shadow-[0_0_22px_rgba(204,255,0,0.32)]">
                 {status}.
             </p>
             <div className="mt-5 flex items-end justify-between">
@@ -33,7 +33,7 @@ export function StatusCard({
                     <p className="text-xs uppercase tracking-widest text-muted-foreground">
                         Device ID
                     </p>
-                    <p className="text-3xl font-semibold mt-1">{deviceLabel}</p>
+                    <p className="text-xl md:text-3xl font-semibold mt-1">{deviceLabel}</p>
                 </div>
             </div>
         </div>

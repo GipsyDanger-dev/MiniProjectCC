@@ -239,7 +239,7 @@ export default function Settings({
     return (
         <div className="pb-6 space-y-5">
             <div>
-                <h1 className="text-4xl font-semibold text-foreground">
+                <h1 className="text-2xl md:text-4xl font-semibold text-foreground">
                     Settings
                 </h1>
                 <p className="text-sm text-muted-foreground mt-1">
@@ -362,7 +362,7 @@ export default function Settings({
                 </p>
 
                 <div className="mt-4 overflow-auto thin-scroll">
-                    <table className="w-full min-w-[760px] text-sm">
+                    <table className="w-full min-w-[580px] text-sm">
                         <thead>
                             <tr className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground border-b border-white/10">
                                 <th className="text-left py-3">#</th>
@@ -400,7 +400,7 @@ export default function Settings({
                 </div>
             </section>
 
-            <section className="grid gap-5 xl:grid-cols-2">
+            <section className="grid gap-5 md:grid-cols-2">
                 <div>
                     <article className="rounded-[20px] border border-white/15 backdrop-blur-md bg-gradient-to-br from-white/10 to-white/5 p-5 shadow-xl">
                         <h2 className="text-xl font-semibold">
@@ -571,7 +571,7 @@ export default function Settings({
                                 !deviceName.trim() ||
                                 !deviceLocation.trim()
                             }
-                            className="h-10 px-4 rounded-full bg-lime/20 text-lime border border-lime/35 font-semibold hover:bg-lime/30 transition-smooth disabled:opacity-60 disabled:cursor-not-allowed"
+                            className="h-10 w-full px-4 rounded-full bg-lime/20 text-lime border border-lime/35 font-semibold hover:bg-lime/30 transition-smooth disabled:opacity-60 disabled:cursor-not-allowed"
                         >
                             {deviceSaving ? "Saving..." : "Save Device"}
                         </button>
@@ -579,7 +579,7 @@ export default function Settings({
                             type="button"
                             onClick={handleResetDevice}
                             disabled={!selectedDevice || deviceResetting}
-                            className="h-10 px-4 rounded-full bg-danger/20 text-danger border border-danger/35 font-semibold hover:bg-danger/30 transition-smooth disabled:opacity-60 disabled:cursor-not-allowed"
+                            className="h-10 w-full px-4 rounded-full bg-danger/20 text-danger border border-danger/35 font-semibold hover:bg-danger/30 transition-smooth disabled:opacity-60 disabled:cursor-not-allowed"
                         >
                             {deviceResetting ? "Resetting..." : "Reset Device"}
                         </button>

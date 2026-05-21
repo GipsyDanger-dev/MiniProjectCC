@@ -15,6 +15,7 @@ import NewDevice from "./pages/NewDevice";
 export default function MainApp() {
     const { theme, toggleTheme } = useTheme();
     const [collapsed, setCollapsed] = useState(false);
+    const [mobileOpen, setMobileOpen] = useState(false);
     const [currentPage, setCurrentPage] = useState("dashboard");
     const [devices, setDevices] = useState([]);
     const [devicesLoading, setDevicesLoading] = useState(true);
@@ -44,7 +45,7 @@ export default function MainApp() {
             });
             const payload = await res.json();
             if (payload.status === "success") {
-                setDevices(payload.devices || []);
+                setDevices(payload.data || payload.devices || []);
             } else {
                 setDevices([]);
             }
@@ -136,7 +137,7 @@ export default function MainApp() {
     const currentContent = pages[currentPage] || pages.dashboard;
 
     return (
-        <div className="min-h-screen bg-transparent text-foreground">
+        <div className="min-h-screen bg-transparent text-foreground overflow-x-hidden">
             <div className="flex min-h-screen">
                 <Sidebar
                     collapsed={collapsed}
@@ -145,10 +146,15 @@ export default function MainApp() {
                     setCurrentPage={setCurrentPage}
                     theme={theme}
                     toggleTheme={toggleTheme}
+                    mobileOpen={mobileOpen}
+                    setMobileOpen={setMobileOpen}
                 />
-                <div className="flex-1 flex flex-col min-h-screen">
-                    <Topbar setCurrentPage={setCurrentPage} />
-                    <main className="flex-1 px-8 pb-10">
+                <div className="flex-1 flex flex-col min-h-screen min-w-0">
+                    <Topbar
+                        setCurrentPage={setCurrentPage}
+                        onMenuClick={() => setMobileOpen(true)}
+                    />
+                    <main className="flex-1 px-4 pb-6 md:px-8 md:pb-10">
                         <div className="relative z-10">
                             <RoomSelectionBanner
                                 rooms={rooms}

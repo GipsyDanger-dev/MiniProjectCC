@@ -303,6 +303,7 @@ header {
             sans-serif;
         font-feature-settings: "cv02", "cv11";
         -webkit-font-smoothing: antialiased;
+        overflow-x: hidden;
     }
 
     body {

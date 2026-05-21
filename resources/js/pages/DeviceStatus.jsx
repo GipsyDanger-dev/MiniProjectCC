@@ -158,7 +158,7 @@ export default function DeviceStatus({ activeRoom, iot }) {
     return (
         <div className="pb-6 space-y-5">
             <div>
-                <h1 className="text-4xl font-semibold text-foreground">
+                <h1 className="text-2xl md:text-4xl font-semibold text-foreground">
                     Device Status
                 </h1>
                 <p className="text-sm text-muted-foreground mt-1">

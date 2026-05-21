@@ -96,7 +96,7 @@ export default function ActivityLogs({ activeRoom, iot }) {
         <div className="pb-6 space-y-5">
             <div className="flex flex-wrap items-start justify-between gap-3">
                 <div>
-                    <h1 className="text-4xl font-semibold text-foreground">
+                    <h1 className="text-2xl md:text-4xl font-semibold text-foreground">
                         Activity Log
                     </h1>
                     <p className="text-sm text-muted-foreground mt-1">
@@ -109,16 +109,16 @@ export default function ActivityLogs({ activeRoom, iot }) {
                         className="h-10 rounded-full border border-white/10 bg-black/25 px-3 text-sm inline-flex items-center gap-2"
                     >
                         <Calendar className="w-4 h-4 text-muted-foreground" />
-                        Last 24 hours
+                        <span className="hidden sm:inline">Last 24 hours</span>
                         <ChevronDown className="w-4 h-4 text-muted-foreground" />
                     </button>
                     <button
                         type="button"
                         onClick={exportCSV}
-                        className="h-10 rounded-full bg-lime text-lime-foreground px-4 font-semibold inline-flex items-center gap-2 shadow-[0_10px_30px_rgba(204,255,0,0.35)]"
+                        className="h-10 rounded-full bg-lime text-lime-foreground px-3 md:px-4 font-semibold inline-flex items-center gap-2 shadow-[0_10px_30px_rgba(204,255,0,0.35)]"
                     >
                         <Download className="w-4 h-4" />
-                        Export
+                        <span className="hidden sm:inline">Export</span>
                     </button>
                 </div>
             </div>
@@ -164,14 +164,14 @@ export default function ActivityLogs({ activeRoom, iot }) {
                         ))}
                         <button
                             type="button"
-                            className="h-8 px-3 rounded-full text-xs bg-black/20 border border-white/10 inline-flex items-center gap-2"
+                            className="hidden md:inline-flex h-8 px-3 rounded-full text-xs bg-black/20 border border-white/10 items-center gap-2"
                         >
                             Current room ({activeRoom})
                             <ChevronDown className="w-3.5 h-3.5 text-muted-foreground" />
                         </button>
                         <button
                             type="button"
-                            className="h-8 px-3 rounded-full text-xs bg-black/20 border border-white/10 inline-flex items-center gap-2"
+                            className="hidden md:inline-flex h-8 px-3 rounded-full text-xs bg-black/20 border border-white/10 items-center gap-2"
                         >
                             All sensors
                             <ChevronDown className="w-3.5 h-3.5 text-muted-foreground" />

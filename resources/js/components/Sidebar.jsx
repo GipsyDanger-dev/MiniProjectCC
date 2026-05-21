@@ -4,13 +4,10 @@ import {
     Cpu,
     Database,
     LayoutGrid,
-    LifeBuoy,
     LogOut,
-    Moon,
     Plus,
     Settings,
-    Sun,
-    UserCircle2,
+    X,
     ChevronsLeft,
     ChevronsRight,
 } from "lucide-react";
@@ -24,13 +21,12 @@ const navItems = [
     { id: "settings", label: "Settings", icon: Settings },
 ];
 
-export default function Sidebar({
+function SidebarContent({
     collapsed,
     setCollapsed,
     currentPage,
     setCurrentPage,
-    theme,
-    toggleTheme,
+    onNavigate,
 }) {
     const handleLogout = async () => {
         try {
@@ -43,13 +39,14 @@ export default function Sidebar({
             console.error("Logout error:", error);
         }
     };
+
+    const handleClick = (id) => {
+        setCurrentPage(id);
+        onNavigate?.();
+    };
+
     return (
-        <aside
-            className={cn(
-                "hidden lg:flex flex-col h-screen sticky top-0 border-r transition-all duration-300 ease-out glass-sidebar",
-                collapsed ? "w-[84px] px-3" : "w-[270px] px-5",
-            )}
-        >
+        <>
             <div
                 className={cn(
                     "flex items-center gap-3 py-6",
@@ -77,7 +74,7 @@ export default function Sidebar({
                     return (
                         <button
                             key={id}
-                            onClick={() => setCurrentPage(id)}
+                            onClick={() => handleClick(id)}
                             title={collapsed ? label : undefined}
                             className={cn(
                                 "group flex items-center gap-3 h-11 rounded-full text-sm font-medium transition-smooth",
@@ -101,7 +98,7 @@ export default function Sidebar({
                 {!collapsed && (
                     <button
                         type="button"
-                        onClick={() => setCurrentPage("new-device")}
+                        onClick={() => handleClick("new-device")}
                         className="w-full flex items-center justify-center gap-2 h-11 rounded-full bg-deep-green text-deep-green-foreground font-semibold hover:shadow-lime transition-smooth"
                     >
                         <Plus className="w-4 h-4" />
@@ -110,16 +107,6 @@ export default function Sidebar({
                 )}
 
                 <div className="space-y-2">
-                    {/* <button
-                        type="button"
-                        className={cn(
-                            "w-full flex items-center gap-3 h-11 rounded-full text-sm font-medium transition-smooth hover:bg-muted",
-                            collapsed ? "justify-center px-0" : "px-4",
-                        )}
-                    >
-                        <LifeBuoy className="w-[18px] h-[18px] shrink-0" />
-                        {!collapsed && <span>Support</span>}
-                    </button> */}
                     <button
                         type="button"
                         onClick={handleLogout}
@@ -148,6 +135,67 @@ export default function Sidebar({
                     </button>
                 </div>
             </div>
-        </aside>
+        </>
+    );
+}
+
+export default function Sidebar({
+    collapsed,
+    setCollapsed,
+    currentPage,
+    setCurrentPage,
+    theme,
+    toggleTheme,
+    mobileOpen,
+    setMobileOpen,
+}) {
+    return (
+        <>
+            {/* Desktop sidebar */}
+            <aside
+                className={cn(
+                    "hidden lg:flex flex-col h-screen sticky top-0 border-r transition-all duration-300 ease-out glass-sidebar",
+                    collapsed ? "w-[84px] px-3" : "w-[270px] px-5",
+                )}
+            >
+                <SidebarContent
+                    collapsed={collapsed}
+                    setCollapsed={setCollapsed}
+                    currentPage={currentPage}
+                    setCurrentPage={setCurrentPage}
+                />
+            </aside>
+
+            {/* Mobile overlay */}
+            {mobileOpen && (
+                <div
+                    className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm lg:hidden"
+                    onClick={() => setMobileOpen(false)}
+                />
+            )}
+
+            {/* Mobile drawer */}
+            <aside
+                className={cn(
+                    "fixed inset-y-0 left-0 z-50 w-[270px] flex flex-col px-5 glass-sidebar border-r transition-transform duration-300 ease-out lg:hidden",
+                    mobileOpen ? "translate-x-0" : "-translate-x-full",
+                )}
+            >
+                <button
+                    type="button"
+                    onClick={() => setMobileOpen(false)}
+                    className="absolute top-4 right-4 w-8 h-8 rounded-full bg-black/30 border border-white/10 flex items-center justify-center"
+                >
+                    <X className="w-4 h-4 text-foreground" />
+                </button>
+                <SidebarContent
+                    collapsed={false}
+                    setCollapsed={setCollapsed}
+                    currentPage={currentPage}
+                    setCurrentPage={setCurrentPage}
+                    onNavigate={() => setMobileOpen(false)}
+                />
+            </aside>
+        </>
     );
 }
