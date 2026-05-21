@@ -18,24 +18,33 @@ class ApiController extends Controller
 {
     private function triangularMembership(float $value, float $left, float $peak, float $right): float
     {
-        if ($value <= $left || $value >= $right) {
+        // Di luar rentang support
+        if ($value < $left || $value > $right) {
             return 0.0;
         }
 
-        if ($value === $peak) {
-            return 1.0;
+        // Boundary kanal: turun ke 0
+        if ($value === $right && $right !== $peak) {
+            return 0.0;
         }
 
+        // Sisi naik (termasuk trapezoidal saat left === peak)
         if ($value < $peak) {
             $denominator = $peak - $left;
-            return $denominator > 0 ? max(0.0, min(1.0, ($value - $left) / $denominator)) : 1.0;
+            return $denominator > 0 ? ($value - $left) / $denominator : 1.0;
         }
 
-        $denominator = $right - $peak;
-        return $denominator > 0 ? max(0.0, min(1.0, ($right - $value) / $denominator)) : 1.0;
+        // Sisi turun
+        if ($value > $peak) {
+            $denominator = $right - $peak;
+            return $denominator > 0 ? ($right - $value) / $denominator : 1.0;
+        }
+
+        // Di puncak
+        return 1.0;
     }
 
-    private function buildFuzzyDecision(float $gas, float $smoke, float $temperature, float $flame, float $flameThreshold): array
+    private function buildFuzzyDecision(float $gas, float $smoke, float $temperature, float $flame, float $flameThreshold, float $gasThreshold = 250, float $smokeThreshold = 120, float $tempThreshold = 40): array
     {
         if ($flame < $flameThreshold) {
             return [
@@ -49,23 +58,25 @@ class ApiController extends Controller
             ];
         }
 
-        $gasLow = $this->triangularMembership($gas, 0, 0, 200);
-        $gasMedium = $this->triangularMembership($gas, 150, 275, 400);
-        $gasHigh = $this->triangularMembership($gas, 350, 600, 600);
+        // Dynamic membership berdasarkan threshold dari Settings
+        $gasLow = $this->triangularMembership($gas, 0, 0, $gasThreshold * 0.8);
+        $gasMedium = $this->triangularMembership($gas, $gasThreshold * 0.6, $gasThreshold, $gasThreshold * 1.6);
+        $gasHigh = $this->triangularMembership($gas, $gasThreshold * 1.4, $gasThreshold * 2.4, $gasThreshold * 2.4);
 
-        $smokeLow = $this->triangularMembership($smoke, 0, 0, 100);
-        $smokeMedium = $this->triangularMembership($smoke, 80, 165, 250);
-        $smokeHigh = $this->triangularMembership($smoke, 200, 400, 400);
+        $smokeLow = $this->triangularMembership($smoke, 0, 0, $smokeThreshold * 0.8);
+        $smokeMedium = $this->triangularMembership($smoke, $smokeThreshold * 0.6, $smokeThreshold, $smokeThreshold * 2.0);
+        $smokeHigh = $this->triangularMembership($smoke, $smokeThreshold * 1.6, $smokeThreshold * 3.2, $smokeThreshold * 3.2);
 
-        $tempNormal = $this->triangularMembership($temperature, 20, 20, 35);
-        $tempWarm = $this->triangularMembership($temperature, 30, 40, 50);
-        $tempHot = $this->triangularMembership($temperature, 45, 70, 70);
+        $tempNormal = $this->triangularMembership($temperature, $tempThreshold * 0.5, $tempThreshold * 0.75, $tempThreshold);
+        $tempWarm = $this->triangularMembership($temperature, $tempThreshold * 0.875, $tempThreshold, $tempThreshold * 1.25);
+        $tempHot = $this->triangularMembership($temperature, $tempThreshold * 1.25, $tempThreshold * 1.75, $tempThreshold * 1.75);
 
         $rules = [
             ['SAFE', min($gasLow, $smokeLow, $tempNormal), 0],
             ['LOW', min($gasLow, $smokeMedium), 30],
             ['LOW', min($gasMedium, $smokeLow), 30],
-            ['LOW', min($gasLow, $tempWarm), 30],
+            ['LOW', $gasMedium, 30],
+            ['LOW', $smokeMedium, 30],
             ['MEDIUM', min($gasMedium, $smokeMedium), 60],
             ['MEDIUM', min($gasMedium, $tempWarm), 60],
             ['MEDIUM', min($smokeMedium, $tempWarm), 60],
@@ -196,7 +207,10 @@ class ApiController extends Controller
                 (float) $request->smoke_value,
                 (float) $request->temperature,
                 (float) $request->flame_value,
-                (float) $flameThresh
+                (float) $flameThresh,
+                (float) $gasThresh,
+                (float) $smokeThresh,
+                (float) $tempThresh
             );
 
             $status_indikasi = $decision['fan_status'] === 'OFF' ? 'AMAN' : 'BAHAYA';
