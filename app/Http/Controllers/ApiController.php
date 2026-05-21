@@ -11,6 +11,8 @@ use App\Models\WorkerStatus;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
+use App\Events\SensorDataReceived;
+use App\Models\Device;
 
 class ApiController extends Controller
 {
@@ -180,6 +182,7 @@ class ApiController extends Controller
                 'gas_value' => 'required|numeric',
                 'smoke_value' => 'required|numeric',
                 'temperature' => 'required|numeric',
+                'humidity' => 'nullable|numeric',
                 'flame_value' => 'required|numeric'
             ]);
 
@@ -206,6 +209,7 @@ class ApiController extends Controller
                 'gas_value' => $request->gas_value,
                 'smoke_value' => $request->smoke_value,
                 'temperature' => $request->temperature,
+                'humidity' => $request->humidity ?? 0,
                 'flame_value' => $request->flame_value,
                 'status_indikasi' => $status_indikasi,
                 'fuzzy_score' => $decision['score'],
@@ -230,6 +234,13 @@ class ApiController extends Controller
                 'description' => $activity['description'],
                 'message' => $activity['message']
             ]);
+
+            // Broadcast real-time event ke dashboard
+            broadcast(new SensorDataReceived(
+                $sensorData->toArray(),
+                $decision,
+                $status_indikasi
+            ))->toOthers();
 
             return response()->json([
                 'status' => 'success',
@@ -446,7 +457,7 @@ class ApiController extends Controller
             ]);
 
             return response()->json([
-                'status' => 'success', 
+                'status' => 'success',
                 'message' => 'Worker status cleared',
                 'worker_online' => false,
                 'worker_status' => null
@@ -455,5 +466,75 @@ class ApiController extends Controller
             Log::error("clearWorkerStatus error: " . $e->getMessage());
             return response()->json(['status' => 'error', 'message' => $e->getMessage()], 500);
         }
+    }
+
+    public function getDevices()
+    {
+        $devices = Device::all();
+        return response()->json(['status' => 'success', 'data' => $devices]);
+    }
+
+    public function createDevice(Request $request)
+    {
+        $request->validate([
+            'device_name' => 'required|string|max:255',
+            'location' => 'nullable|string|max:255',
+            'api_key' => 'nullable|string|max:255',
+        ]);
+
+        $device = Device::create([
+            'device_name' => $request->device_name,
+            'location' => $request->location,
+            'api_key' => $request->api_key,
+            'status' => $request->status ?? 'offline',
+        ]);
+
+        return response()->json(['status' => 'success', 'data' => $device], 201);
+    }
+
+    public function updateDevice(Request $request, $id)
+    {
+        $device = Device::find($id);
+        if (!$device) {
+            return response()->json(['status' => 'error', 'message' => 'Device not found'], 404);
+        }
+
+        $device->update($request->only(['device_name', 'location', 'status']));
+        return response()->json(['status' => 'success', 'data' => $device]);
+    }
+
+    public function resetDevice($id)
+    {
+        $device = Device::find($id);
+        if (!$device) {
+            return response()->json(['status' => 'error', 'message' => 'Device not found'], 404);
+        }
+
+        $device->update(['status' => 'offline']);
+        Command::where('device_id', $id)->delete();
+        DeviceActuator::where('device_id', $id)->delete();
+
+        return response()->json(['status' => 'success', 'message' => 'Device reset']);
+    }
+
+    public function getUser()
+    {
+        $user = auth()->user();
+        if (!$user) {
+            return response()->json([
+                'id' => 1,
+                'name' => 'Admin',
+                'email' => 'admin@smartsafety.local',
+            ]);
+        }
+        return response()->json($user);
+    }
+
+    public function logout()
+    {
+        if (auth()->check()) {
+            auth()->user()->currentAccessToken()->delete();
+        }
+        return response()->json(['status' => 'success', 'message' => 'Logged out']);
     }
 }

@@ -19,3 +19,15 @@ Route::get('/dashboard/data', [ApiController::class, 'dashboard']);
 Route::post('/settings', [ApiController::class, 'saveSettings']);
 
 Route::post('/actuator', [ApiController::class, 'controlActuator']);
+
+Route::post('/worker/clear', [ApiController::class, 'clearWorkerStatus']);
+
+// Device CRUD
+Route::get('/devices', [ApiController::class, 'getDevices']);
+Route::post('/devices', [ApiController::class, 'createDevice']);
+Route::put('/devices/{id}', [ApiController::class, 'updateDevice']);
+Route::post('/devices/{id}/reset', [ApiController::class, 'resetDevice']);
+
+// User & Auth
+Route::get('/user', [ApiController::class, 'getUser']);
+Route::post('/logout', [ApiController::class, 'logout']);
