@@ -10,7 +10,6 @@ use App\Models\DeviceActuator;
 use App\Models\WorkerStatus;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Cache;
-use Illuminate\Support\Facades\Log;
 use App\Events\SensorDataReceived;
 use App\Models\Device;
 
@@ -149,15 +148,21 @@ class ApiController extends Controller
             ]
         );
 
-        Command::updateOrCreate(
-            ['target_device' => 'exhaust_fan', 'device_id' => $deviceId],
-            ['action' => $decision['fan_status'], 'status' => 'pending']
-        );
+        // Hanya kirim command ON saat ada bahaya.
+        // Fan OFF hanya lewat manual command dari dashboard.
+        if ($decision['fan_status'] !== 'OFF') {
+            Command::updateOrCreate(
+                ['target_device' => 'exhaust_fan', 'device_id' => $deviceId],
+                ['action' => $decision['fan_status'], 'status' => 'pending']
+            );
+        }
 
-        Command::updateOrCreate(
-            ['target_device' => 'buzzer', 'device_id' => $deviceId],
-            ['action' => $decision['buzzer_action'], 'status' => 'pending']
-        );
+        if ($decision['buzzer_action'] === 'START') {
+            Command::updateOrCreate(
+                ['target_device' => 'buzzer', 'device_id' => $deviceId],
+                ['action' => $decision['buzzer_action'], 'status' => 'pending']
+            );
+        }
     }
 
     private function buildActivityMessage(int $deviceId, array $decision, float $gas, float $smoke, float $temperature, float $flame, float $flameThreshold): array

@@ -94,7 +94,7 @@ function SidebarContent({
                 })}
             </nav>
 
-            <div className="mt-auto pt-6 space-y-5">
+            <div className="pt-6 space-y-5">
                 {!collapsed && (
                     <button
                         type="button"
@@ -154,16 +154,18 @@ export default function Sidebar({
             {/* Desktop sidebar */}
             <aside
                 className={cn(
-                    "hidden lg:flex flex-col h-screen sticky top-0 border-r transition-all duration-300 ease-out glass-sidebar",
+                    "hidden lg:flex flex-col fixed inset-y-0 left-0 z-30 border-r transition-all duration-300 ease-out glass-sidebar overflow-hidden",
                     collapsed ? "w-[84px] px-3" : "w-[270px] px-5",
                 )}
             >
-                <SidebarContent
-                    collapsed={collapsed}
-                    setCollapsed={setCollapsed}
-                    currentPage={currentPage}
-                    setCurrentPage={setCurrentPage}
-                />
+                <div className="flex-1 overflow-y-auto thin-scroll py-6">
+                    <SidebarContent
+                        collapsed={collapsed}
+                        setCollapsed={setCollapsed}
+                        currentPage={currentPage}
+                        setCurrentPage={setCurrentPage}
+                    />
+                </div>
             </aside>
 
             {/* Mobile overlay */}
@@ -177,7 +179,7 @@ export default function Sidebar({
             {/* Mobile drawer */}
             <aside
                 className={cn(
-                    "fixed inset-y-0 left-0 z-50 w-[270px] flex flex-col px-5 glass-sidebar border-r transition-transform duration-300 ease-out lg:hidden",
+                    "fixed inset-y-0 left-0 z-50 w-[270px] flex flex-col px-5 glass-sidebar border-r transition-transform duration-300 ease-out lg:hidden overflow-y-auto thin-scroll",
                     mobileOpen ? "translate-x-0" : "-translate-x-full",
                 )}
             >

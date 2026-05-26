@@ -76,7 +76,7 @@ export function QuickActions({ actuatorState = {}, onAction, loading }) {
                         type="button"
                         disabled={isLoading}
                         onClick={() => onAction?.(action.action)}
-                        className={`relative isolate overflow-hidden p-6 text-left flex flex-col justify-between min-h-[122px] rounded-[20px] border backdrop-blur-xl transition-smooth cursor-pointer disabled:opacity-70 disabled:cursor-wait ${
+                        className={`relative overflow-hidden p-6 text-left flex flex-col justify-between min-h-[122px] rounded-[20px] border transition-smooth cursor-pointer disabled:opacity-70 disabled:cursor-wait ${
                             action.active
                                 ? "text-[#10130a] border-lime/70 shadow-[0_14px_36px_rgba(204,255,0,0.38)] bg-[linear-gradient(135deg,rgba(214,255,94,0.92),rgba(170,232,0,0.86))]"
                                 : "text-foreground border-white/10 bg-[linear-gradient(140deg,rgba(255,255,255,0.10),rgba(255,255,255,0.03)_58%,rgba(102,126,241,0.12))]"

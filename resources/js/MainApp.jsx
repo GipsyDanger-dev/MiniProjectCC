@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useTheme } from "./hooks/useTheme";
 import { useRealtimeIoT } from "./hooks/useRealtimeIoT";
+import { cn } from "./lib/utils";
 import Sidebar from "./components/Sidebar";
 import Topbar from "./components/Topbar";
 import RoomSelectionBanner from "./components/RoomSelectionBanner";
@@ -137,35 +138,36 @@ export default function MainApp() {
     const currentContent = pages[currentPage] || pages.dashboard;
 
     return (
-        <div className="min-h-screen bg-transparent text-foreground overflow-x-hidden">
-            <div className="flex min-h-screen">
-                <Sidebar
-                    collapsed={collapsed}
-                    setCollapsed={setCollapsed}
-                    currentPage={currentPage}
+        <div className="bg-transparent text-foreground">
+            <Sidebar
+                collapsed={collapsed}
+                setCollapsed={setCollapsed}
+                currentPage={currentPage}
+                setCurrentPage={setCurrentPage}
+                theme={theme}
+                toggleTheme={toggleTheme}
+                mobileOpen={mobileOpen}
+                setMobileOpen={setMobileOpen}
+            />
+            <div className={cn(
+                "flex flex-col min-h-screen transition-all duration-300 ease-out",
+                collapsed ? "lg:ml-[84px]" : "lg:ml-[270px]"
+            )}>
+                <Topbar
                     setCurrentPage={setCurrentPage}
-                    theme={theme}
-                    toggleTheme={toggleTheme}
-                    mobileOpen={mobileOpen}
-                    setMobileOpen={setMobileOpen}
+                    onMenuClick={() => setMobileOpen(true)}
                 />
-                <div className="flex-1 flex flex-col min-h-screen min-w-0">
-                    <Topbar
-                        setCurrentPage={setCurrentPage}
-                        onMenuClick={() => setMobileOpen(true)}
-                    />
-                    <main className="flex-1 px-4 pb-6 md:px-8 md:pb-10">
-                        <div className="relative z-10">
-                            <RoomSelectionBanner
-                                rooms={rooms}
-                                activeRoomId={activeDeviceId}
-                                loading={devicesLoading}
-                                onChange={setActiveDeviceId}
-                            />
-                            {currentContent}
-                        </div>
-                    </main>
-                </div>
+                <main className="flex-1 px-4 pb-6 md:px-8 md:pb-10">
+                    <div className="relative z-10">
+                        <RoomSelectionBanner
+                            rooms={rooms}
+                            activeRoomId={activeDeviceId}
+                            loading={devicesLoading}
+                            onChange={setActiveDeviceId}
+                        />
+                        {currentContent}
+                    </div>
+                </main>
             </div>
         </div>
     );

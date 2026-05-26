@@ -8,7 +8,7 @@
 // =============================================
 const char* WIFI_SSID     = "Kolcer";
 const char* WIFI_PASSWORD = "Kontrakankalcer";
-const char* SERVER_URL    = "http://192.168.1.57:8000/api";
+const char* SERVER_URL    = "http://192.168.1.30:8000/api";
 const char* API_KEY       = "apa-hayo-kuncinya-99";
 const int   DEVICE_ID     = 1;
 
@@ -36,8 +36,8 @@ const int   DEVICE_ID     = 1;
 // PWM SPEED LEVELS
 // =============================================
 #define FAN_OFF     0
-#define FAN_LOW     76    // 30%
-#define FAN_MEDIUM  153   // 60%
+#define FAN_LOW     130   // 51% — minimum untuk start motor
+#define FAN_MEDIUM  190   // 75%
 #define FAN_HIGH    255   // 100%
 
 // =============================================
@@ -53,6 +53,8 @@ int  fanSpeed     = FAN_OFF;
 unsigned long lastIngest    = 0;
 unsigned long lastPoll      = 0;
 unsigned long lastHeartbeat = 0;
+unsigned long lastDebug     = 0;
+#define INTERVAL_DEBUG 3000  // print status tiap 3 detik
 
 // =============================================
 // SENSOR
@@ -79,10 +81,11 @@ void setExhaust(String action) {
 
   digitalWrite(IN1, exhaustAktif ? HIGH : LOW);
   digitalWrite(IN2, LOW);
+
   analogWrite(ENA, pwm);
 
   if (exhaustAktif) {
-    Serial.printf("[EXHAUST] ON - %s (%d/255)\n", action.c_str(), pwm);
+    Serial.printf("[EXHAUST] ON - %s (PWM=%d)\n", action.c_str(), pwm);
   } else {
     Serial.println("[EXHAUST] OFF");
   }
@@ -235,6 +238,26 @@ void kirimHeartbeat() {
 }
 
 // =============================================
+// DEBUG STATUS
+// =============================================
+void printFanStatus() {
+  String level;
+  if (fanSpeed == FAN_OFF)         level = "OFF";
+  else if (fanSpeed <= FAN_LOW)    level = "LOW";
+  else if (fanSpeed <= FAN_MEDIUM) level = "MEDIUM";
+  else                             level = "HIGH";
+
+  int persen = map(fanSpeed, 0, 255, 0, 100);
+
+  Serial.println("---------- STATUS ----------");
+  Serial.printf("Fan      : %s (PWM=%d, %d%%)\n", level.c_str(), fanSpeed, persen);
+  Serial.printf("Exhaust  : %s\n", exhaustAktif ? "AKTIF" : "MATI");
+  Serial.printf("Buzzer   : %s\n", buzzerAktif ? "AKTIF" : "MATI");
+  Serial.printf("Uptime   : %lu detik\n", millis() / 1000);
+  Serial.println("----------------------------");
+}
+
+// =============================================
 // SETUP
 // =============================================
 void setup() {
@@ -299,5 +322,11 @@ void loop() {
     if (WiFi.status() == WL_CONNECTED) {
       kirimHeartbeat();
     }
+  }
+
+  // 4. Debug status
+  if (now - lastDebug >= INTERVAL_DEBUG) {
+    lastDebug = now;
+    printFanStatus();
   }
 }
