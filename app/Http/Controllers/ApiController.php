@@ -556,10 +556,7 @@ class ApiController extends Controller
     public function clearWorkerStatus()
     {
         try {
-
             WorkerStatus::truncate();
-
-            Cache::forget('worker_status');
 
             ActivityLog::create([
                 'action_type' => 'SYSTEM_UPDATE',
