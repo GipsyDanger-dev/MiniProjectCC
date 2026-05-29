@@ -12,6 +12,8 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Cache;
 use App\Events\SensorDataReceived;
 use App\Models\Device;
+use App\Models\SystemSettings;
+use Illuminate\Support\Facades\Log;
 
 class ApiController extends Controller
 {
@@ -139,29 +141,54 @@ class ApiController extends Controller
 
     private function syncActuatorCommands(int $deviceId, array $decision): void
     {
+        // Manual mode: fuzzy logic tidur, kecuali flame emergency
+        $settings = SystemSettings::firstOrCreate(['id' => 1]);
+        if ($settings->mode === 'manual') {
+            if ($decision['profile'] === 'FLAME_OVERRIDE') {
+                // Flame terdeteksi — auto-switch ke AUTO dan langsung eksekusi
+                $settings->update(['mode' => 'auto']);
+                ActivityLog::create([
+                    'action_type' => 'MODE_SWITCH',
+                    'status' => 'BAHAYA',
+                    'description' => 'Api terdeteksi — auto-switch dari MANUAL ke AUTO',
+                    'message' => 'AUTO-SWITCH: api terdeteksi, fuzzy logic ambil alih'
+                ]);
+                // JANGAN return — lanjut ke fuzzy logic di bawah
+            } else {
+                return; // skip fuzzy logic, pertahankan manual control
+            }
+        }
+
+        // Update DeviceActuator berdasarkan keputusan fuzzy
+        $fanStatus = $decision['fan_status'];
+        $buzzerStatus = $decision['buzzer_action'] === 'START' ? 'ON' : 'OFF';
+
         DeviceActuator::updateOrCreate(
             ['device_id' => $deviceId],
             [
-                'fan_status' => $decision['fan_status'],
-                'alarm_status' => $decision['buzzer_action'] === 'START' ? 'ON' : 'OFF',
-                'fan_speed' => $decision['fan_speed'],
+                'fan_status' => $fanStatus,
+                'alarm_status' => $buzzerStatus,
+                'fan_speed' => $fanStatus === 'OFF' ? 0 : $decision['fan_speed'],
             ]
         );
 
-        // Hanya kirim command ON saat ada bahaya.
-        // Fan OFF hanya lewat manual command dari dashboard.
-        if ($decision['fan_status'] !== 'OFF') {
-            Command::updateOrCreate(
-                ['target_device' => 'exhaust_fan', 'device_id' => $deviceId],
-                ['action' => $decision['fan_status'], 'status' => 'pending']
-            );
+        // Kirim command ke ESP32 (selalu buat baru, jangan reuse)
+        if ($fanStatus !== 'OFF') {
+            Command::create([
+                'device_id' => $deviceId,
+                'target_device' => 'exhaust_fan',
+                'action' => $fanStatus,
+                'status' => 'pending'
+            ]);
         }
 
         if ($decision['buzzer_action'] === 'START') {
-            Command::updateOrCreate(
-                ['target_device' => 'buzzer', 'device_id' => $deviceId],
-                ['action' => $decision['buzzer_action'], 'status' => 'pending']
-            );
+            Command::create([
+                'device_id' => $deviceId,
+                'target_device' => 'buzzer',
+                'action' => 'START',
+                'status' => 'pending'
+            ]);
         }
     }
 
@@ -194,7 +221,7 @@ class ApiController extends Controller
     {
         try {
             $request->validate([
-                'device_id' => 'required|integer',
+                'device_id' => 'required|integer|exists:devices,id',
                 'gas_value' => 'required|numeric',
                 'smoke_value' => 'required|numeric',
                 'temperature' => 'required|numeric',
@@ -202,10 +229,11 @@ class ApiController extends Controller
                 'flame_value' => 'required|numeric'
             ]);
 
-            $gasThresh = Cache::get('gas_threshold', 250);
-            $smokeThresh = Cache::get('smoke_threshold', 120);
-            $tempThresh = Cache::get('temperature_threshold', 40);
-            $flameThresh = Cache::get('flame_threshold', 500);
+            $settings = SystemSettings::firstOrCreate(['id' => 1]);
+            $gasThresh = Cache::get('gas_threshold', $settings->gas_threshold ?? 250);
+            $smokeThresh = Cache::get('smoke_threshold', $settings->smoke_threshold ?? 120);
+            $tempThresh = Cache::get('temperature_threshold', $settings->temperature_threshold ?? 40);
+            $flameThresh = Cache::get('flame_threshold', $settings->flame_threshold ?? 500);
 
             $decision = $this->buildFuzzyDecision(
                 (float) $request->gas_value,
@@ -305,9 +333,11 @@ class ApiController extends Controller
             $latestActuator = DeviceActuator::where('device_id', $deviceId)
                 ->orderBy('updated_at', 'desc')
                 ->first();
-            
+
             $isEmergency = $latestSensorData && $latestSensorData->status_indikasi === 'BAHAYA';
             $workerOnline = $worker && $worker->last_heartbeat ? now()->diffInSeconds($worker->last_heartbeat) <= 60 : false;
+
+            $settings = SystemSettings::firstOrCreate(['id' => 1]);
 
             return response()->json([
                 'status' => 'success',
@@ -319,11 +349,12 @@ class ApiController extends Controller
                 'latest_command' => $latestCommand,
                 'device_actuator' => $latestActuator,
                 'emergency_status' => $isEmergency ? 'BAHAYA' : 'AMAN',
+                'system_mode' => $settings->mode ?? 'auto',
                 'settings' => [
-                    'gas_threshold' => Cache::get('gas_threshold', 250),
-                    'smoke_threshold' => Cache::get('smoke_threshold', 120),
-                    'temp_threshold' => Cache::get('temperature_threshold', 40),
-                    'flame_threshold' => Cache::get('flame_threshold', 500)
+                    'gas_threshold' => Cache::get('gas_threshold', $settings->gas_threshold ?? 250),
+                    'smoke_threshold' => Cache::get('smoke_threshold', $settings->smoke_threshold ?? 120),
+                    'temp_threshold' => Cache::get('temperature_threshold', $settings->temperature_threshold ?? 40),
+                    'flame_threshold' => Cache::get('flame_threshold', $settings->flame_threshold ?? 500)
                 ]
             ]);
         } catch (\Exception $e) {
@@ -343,6 +374,18 @@ class ApiController extends Controller
                 'flame_threshold' => 'required|numeric',
             ]);
 
+            // Simpan ke database (persist)
+            SystemSettings::updateOrCreate(
+                ['id' => 1],
+                [
+                    'gas_threshold' => $request->gas_threshold,
+                    'smoke_threshold' => $request->smoke_threshold,
+                    'temperature_threshold' => $request->temperature_threshold,
+                    'flame_threshold' => $request->flame_threshold,
+                ]
+            );
+
+            // Simpan ke cache (fast read)
             Cache::put('gas_threshold', $request->gas_threshold);
             Cache::put('smoke_threshold', $request->smoke_threshold);
             Cache::put('temperature_threshold', $request->temperature_threshold);
@@ -370,6 +413,8 @@ class ApiController extends Controller
             'device_id' => 'nullable|integer'
         ]);
 
+        $deviceId = $request->device_id ?? 1;
+
         if ($request->target_device === 'exhaust_fan') {
             $allowedActions = ['START', 'STOP', 'OFF', 'LOW', 'MEDIUM', 'HIGH'];
         } else {
@@ -392,22 +437,61 @@ class ApiController extends Controller
         }
 
         Command::create([
-            'device_id' => $request->device_id,
+            'device_id' => $deviceId,
             'target_device' => $request->target_device,
             'action' => $action,
             'status' => 'pending'
         ]);
 
+        // Set manual mode — fuzzy logic tidak akan override
+        SystemSettings::firstOrCreate(['id' => 1])->update(['mode' => 'manual']);
+
+        // Langsung update DeviceActuator sesuai perintah manual
+        $speedMap = ['LOW' => 30, 'MEDIUM' => 60, 'HIGH' => 100];
+        if ($request->target_device === 'exhaust_fan') {
+            DeviceActuator::updateOrCreate(
+                ['device_id' => $deviceId],
+                [
+                    'fan_status' => $action,
+                    'fan_speed' => $action === 'OFF' ? 0 : ($speedMap[$action] ?? 100),
+                ]
+            );
+        } else {
+            DeviceActuator::updateOrCreate(
+                ['device_id' => $deviceId],
+                [
+                    'alarm_status' => $action === 'START' ? 'ON' : 'OFF',
+                ]
+            );
+        }
+
         ActivityLog::create([
             'action_type' => 'MANUAL_COMMAND',
             'status' => 'AMAN',
-            'description' => "Perintah manual {$action} dikirim ke {$request->target_device}",
+            'description' => "Mode: MANUAL — {$action} → {$request->target_device}",
             'message' => "Manual: {$action} → {$request->target_device}"
         ]);
 
-        return response()->json(['status' => 'success']);
+        return response()->json(['status' => 'success', 'mode' => 'manual']);
     }
 
+    public function setMode(Request $request)
+    {
+        $request->validate([
+            'mode' => 'required|in:auto,manual'
+        ]);
+
+        SystemSettings::firstOrCreate(['id' => 1])->update(['mode' => $request->mode]);
+
+        ActivityLog::create([
+            'action_type' => 'MODE_SWITCH',
+            'status' => 'AMAN',
+            'description' => "Mode diubah ke " . strtoupper($request->mode),
+            'message' => "Mode: " . strtoupper($request->mode)
+        ]);
+
+        return response()->json(['status' => 'success', 'mode' => $request->mode]);
+    }
 
     public function getPendingCommand(Request $request)
     {
@@ -415,12 +499,21 @@ class ApiController extends Controller
             'device_id' => 'required|integer'
         ]);
 
-        $command = Command::where('status', 'pending')
-            ->where('device_id', $request->device_id)
-            ->first();
+        $command = DB::transaction(function () use ($request) {
+            $cmd = Command::where('status', 'pending')
+                ->where('device_id', $request->device_id)
+                ->orderBy('id')
+                ->lockForUpdate()
+                ->first();
+
+            if ($cmd) {
+                $cmd->update(['status' => 'processing']);
+            }
+
+            return $cmd;
+        });
 
         if ($command) {
-            $command->update(['status' => 'processing']);
             return response()->json(['status' => 'success', 'data' => $command]);
         }
 
@@ -532,6 +625,7 @@ class ApiController extends Controller
         $device->update(['status' => 'offline']);
         Command::where('device_id', $id)->delete();
         DeviceActuator::where('device_id', $id)->delete();
+        SensorData::where('device_id', $id)->delete();
 
         return response()->json(['status' => 'success', 'message' => 'Device reset']);
     }

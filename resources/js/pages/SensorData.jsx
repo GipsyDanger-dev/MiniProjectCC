@@ -12,10 +12,10 @@ import {
 } from "recharts";
 
 const sensorCharts = [
-    { key: "gas", label: "Gas (PPM)", stroke: "#ccff00", gradient: "gasGradient", threshold: 500 },
-    { key: "smoke", label: "Smoke (PPM)", stroke: "#54a7ff", gradient: "smokeGradient", threshold: 250 },
-    { key: "temp", label: "Temperature (°C)", stroke: "#f59e0b", gradient: "tempGradient", threshold: 45 },
-    { key: "flame", label: "Flame (%)", stroke: "#f97316", gradient: "flameGradient", threshold: 20 },
+    { key: "gas", label: "Gas (PPM)", stroke: "#ccff00", gradient: "gasGradient", threshold: 250 },
+    { key: "flame", label: "Api (Analog)", stroke: "#f97316", gradient: "flameGradient", threshold: 500 },
+    { key: "humidity", label: "Kelembapan (%)", stroke: "#54a7ff", gradient: "humidityGradient", threshold: 70 },
+    { key: "temp", label: "Suhu (°C)", stroke: "#f59e0b", gradient: "tempGradient", threshold: 40 },
 ];
 
 export default function SensorData({ activeRoom, iot }) {
@@ -25,9 +25,9 @@ export default function SensorData({ activeRoom, iot }) {
     const latest = rawRows[0];
 
     const exportCSV = () => {
-        const header = "Timestamp,Gas,Smoke,Temperature,Flame,Status\n";
+        const header = "Timestamp,Gas,Api,Suhu,Kelembapan,Status\n";
         const rows = rawRows.map((r) =>
-            `${r.created_at},${r.gas_value},${r.smoke_value},${r.temperature},${r.flame_value},${r.status_indikasi}`
+            `${r.created_at},${r.gas_value},${r.flame_value},${r.temperature},${r.humidity || 0},${r.status_indikasi}`
         ).join("\n");
         const blob = new Blob([header + rows], { type: "text/csv" });
         const url = URL.createObjectURL(blob);
@@ -41,13 +41,13 @@ export default function SensorData({ activeRoom, iot }) {
     const baseTrend = useMemo(() => {
         if (!rawRows.length) {
             return [
-                { time: "12:00", gas: 440, smoke: 210, temp: 34, flame: 8 },
-                { time: "12:05", gas: 470, smoke: 215, temp: 36, flame: 11 },
-                { time: "12:10", gas: 485, smoke: 225, temp: 38, flame: 9 },
-                { time: "12:15", gas: 512, smoke: 238, temp: 41, flame: 15 },
-                { time: "12:20", gas: 468, smoke: 218, temp: 39, flame: 12 },
-                { time: "12:25", gas: 421, smoke: 221, temp: 36, flame: 10 },
-                { time: "12:30", gas: 430, smoke: 195, temp: 35, flame: 6 },
+                { time: "12:00", gas: 440, flame: 3200, humidity: 55, temp: 34 },
+                { time: "12:05", gas: 470, flame: 3100, humidity: 58, temp: 36 },
+                { time: "12:10", gas: 485, flame: 2900, humidity: 60, temp: 38 },
+                { time: "12:15", gas: 512, flame: 2800, humidity: 62, temp: 41 },
+                { time: "12:20", gas: 468, flame: 3000, humidity: 59, temp: 39 },
+                { time: "12:25", gas: 421, flame: 3300, humidity: 57, temp: 36 },
+                { time: "12:30", gas: 430, flame: 3400, humidity: 55, temp: 35 },
             ];
         }
 
@@ -57,9 +57,9 @@ export default function SensorData({ activeRoom, iot }) {
                 minute: "2-digit",
             }),
             gas: Math.round(Number(item.gas_value) || 0),
-            smoke: Math.round(Number(item.smoke_value) || 0),
-            temp: Math.round(Number(item.temperature) || 0),
             flame: Math.round(Number(item.flame_value) || 0),
+            humidity: Math.round(Number(item.humidity) || 0),
+            temp: Math.round(Number(item.temperature) || 0),
         }));
     }, [rawRows]);
     const chartData = useMemo(() => {
@@ -67,27 +67,27 @@ export default function SensorData({ activeRoom, iot }) {
             return baseTrend.map((item) => ({
                 ...item,
                 gas: Math.round(item.gas * 0.94),
-                smoke: Math.round(item.smoke * 0.97),
+                flame: Math.round(item.flame * 0.97),
+                humidity: Math.round(item.humidity * 0.98),
                 temp: Math.round(item.temp * 0.95),
-                flame: Math.round(item.flame * 0.9),
             }));
         }
         if (activeRange === "24H") {
             return baseTrend.map((item, idx) => ({
                 ...item,
                 gas: Math.round(item.gas * (0.88 + (idx % 3) * 0.02)),
-                smoke: Math.round(item.smoke * (0.9 + (idx % 4) * 0.02)),
+                flame: Math.round(item.flame * (0.9 + (idx % 4) * 0.02)),
+                humidity: Math.round(item.humidity * (0.92 + (idx % 3) * 0.015)),
                 temp: Math.round(item.temp * (0.9 + (idx % 3) * 0.015)),
-                flame: Math.round(item.flame * (0.82 + (idx % 5) * 0.04)),
             }));
         }
         if (activeRange === "7D") {
             return baseTrend.map((item, idx) => ({
                 ...item,
                 gas: Math.round(item.gas * (0.82 + (idx % 5) * 0.025)),
-                smoke: Math.round(item.smoke * (0.86 + (idx % 4) * 0.03)),
+                flame: Math.round(item.flame * (0.86 + (idx % 4) * 0.03)),
+                humidity: Math.round(item.humidity * (0.88 + (idx % 4) * 0.02)),
                 temp: Math.round(item.temp * (0.88 + (idx % 4) * 0.02)),
-                flame: Math.round(item.flame * (0.78 + (idx % 6) * 0.05)),
             }));
         }
         return baseTrend;
@@ -95,32 +95,32 @@ export default function SensorData({ activeRoom, iot }) {
 
     const metricCards = [
         {
-            title: "Gas Level",
+            title: "Gas",
             value: Math.round(Number(latest?.gas_value || 0)),
             unit: "ppm",
             delta:
                 latest && Number(latest.gas_value) > 250 ? "Alert" : "Normal",
         },
         {
-            title: "Smoke Level",
-            value: Math.round(Number(latest?.smoke_value || 0)),
-            unit: "ppm",
-            delta:
-                latest && Number(latest.smoke_value) > 120 ? "Alert" : "Normal",
-        },
-        {
-            title: "Temperature",
-            value: Math.round(Number(latest?.temperature || 0)),
-            unit: "°C",
-            delta:
-                latest && Number(latest.temperature) > 40 ? "Alert" : "Normal",
-        },
-        {
-            title: "Flame",
+            title: "Api",
             value:
                 latest && Number(latest.flame_value) < 500 ? "DETECTED" : "CLEAR",
             unit: "",
             delta: latest?.status_indikasi || "Stable",
+        },
+        {
+            title: "Kelembapan",
+            value: Math.round(Number(latest?.humidity || 0)),
+            unit: "%",
+            delta:
+                latest && Number(latest.humidity) > 70 ? "Alert" : "Normal",
+        },
+        {
+            title: "Suhu",
+            value: Math.round(Number(latest?.temperature || 0)),
+            unit: "°C",
+            delta:
+                latest && Number(latest.temperature) > 40 ? "Alert" : "Normal",
         },
     ];
 
@@ -130,9 +130,9 @@ export default function SensorData({ activeRoom, iot }) {
             minute: "2-digit",
         }),
         `${Math.round(Number(item.gas_value) || 0)}`,
-        `${Math.round(Number(item.smoke_value) || 0)}`,
-        `${Math.round(Number(item.temperature) || 0)}`,
         Number(item.flame_value) < 500 ? "DETECTED" : "CLEAR",
+        `${Math.round(Number(item.humidity || 0))}`,
+        `${Math.round(Number(item.temperature) || 0)}`,
         item.status_indikasi || "AMAN",
     ]);
 
@@ -218,7 +218,7 @@ export default function SensorData({ activeRoom, iot }) {
                                             <stop offset="0%" stopColor="#ccff00" stopOpacity={0.45} />
                                             <stop offset="100%" stopColor="#ccff00" stopOpacity={0.03} />
                                         </linearGradient>
-                                        <linearGradient id="smokeGradient" x1="0" y1="0" x2="0" y2="1">
+                                        <linearGradient id="humidityGradient" x1="0" y1="0" x2="0" y2="1">
                                             <stop offset="0%" stopColor="#4ba2ff" stopOpacity={0.42} />
                                             <stop offset="100%" stopColor="#4ba2ff" stopOpacity={0.02} />
                                         </linearGradient>
@@ -316,9 +316,9 @@ export default function SensorData({ activeRoom, iot }) {
                             <tr className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground border-b border-white/10">
                                 <th className="text-left py-3">Timestamp</th>
                                 <th className="text-left py-3">Gas (PPM)</th>
-                                <th className="text-left py-3">Smoke (PPM)</th>
-                                <th className="text-left py-3">Temp (°C)</th>
-                                <th className="text-left py-3">Flame</th>
+                                <th className="text-left py-3">Api</th>
+                                <th className="text-left py-3">Kelembapan (%)</th>
+                                <th className="text-left py-3">Suhu (°C)</th>
                                 <th className="text-right py-3">Status</th>
                             </tr>
                         </thead>

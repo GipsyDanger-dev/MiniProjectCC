@@ -3,7 +3,7 @@ import { Save } from "lucide-react";
 
 export default function ThresholdSettings({ settings, onSave }) {
     const [gas, setGas] = useState(600);
-    const [smoke, setSmoke] = useState(300);
+    const [humidity, setHumidity] = useState(70);
     const [temp, setTemp] = useState(50);
     const [flame, setFlame] = useState("Medium");
     const [dirty, setDirty] = useState(false);
@@ -12,7 +12,7 @@ export default function ThresholdSettings({ settings, onSave }) {
     useEffect(() => {
         if (!settings || dirty || saving) return;
         setGas(Number(settings.gas_threshold || 600));
-        setSmoke(Number(settings.smoke_threshold || 300));
+        setHumidity(Number(settings.humidity_threshold || 70));
         setTemp(Number(settings.temp_threshold || 50));
     }, [settings, dirty, saving]);
 
@@ -51,24 +51,24 @@ export default function ThresholdSettings({ settings, onSave }) {
                 <div>
                     <div className="flex items-center justify-between text-foreground">
                         <span className="text-lg font-semibold">
-                            Smoke threshold
+                            Humidity threshold
                         </span>
-                        <span className="text-lg">{smoke} ppm</span>
+                        <span className="text-lg">{humidity}%</span>
                     </div>
                     <input
                         type="range"
                         min="0"
-                        max="500"
-                        value={smoke}
+                        max="100"
+                        value={humidity}
                         onChange={(e) => {
                             setDirty(true);
-                            setSmoke(Number(e.target.value));
+                            setHumidity(Number(e.target.value));
                         }}
                         className="mt-3 w-full accent-lime"
                     />
                     <div className="mt-1 flex justify-between text-sm text-muted-foreground">
-                        <span>0ppm</span>
-                        <span>500ppm</span>
+                        <span>0%</span>
+                        <span>100%</span>
                     </div>
                 </div>
 
@@ -125,7 +125,7 @@ export default function ThresholdSettings({ settings, onSave }) {
                         setSaving(true);
                         await onSave?.({
                             gas_threshold: gas,
-                            smoke_threshold: smoke,
+                            humidity_threshold: humidity,
                             temperature_threshold: temp,
                             flame_threshold:
                                 flame === "Low" ? 700 : flame === "Medium" ? 500 : 350,

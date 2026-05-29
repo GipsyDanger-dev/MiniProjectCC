@@ -51,13 +51,14 @@ export default function Settings({
     setPollingInterval,
 }) {
     const [gas, setGas] = useState(600);
-    const [smoke, setSmoke] = useState(300);
+    const [humidity, setHumidity] = useState(70);
     const [temp, setTemp] = useState(50);
     const [flame, setFlame] = useState("Medium");
     const [webNotif, setWebNotif] = useState(true);
     const [dangerOnly, setDangerOnly] = useState(false);
     const polling = Math.round((pollingInterval || 3000) / 1000);
     const [saving, setSaving] = useState(false);
+    const [saveFeedback, setSaveFeedback] = useState(null);
     const [devices, setDevices] = useState([]);
     const [devicesLoading, setDevicesLoading] = useState(true);
     const [selectedDeviceId, setSelectedDeviceId] = useState(null);
@@ -72,7 +73,7 @@ export default function Settings({
         const settings = iot.data?.settings;
         if (!settings) return;
         setGas(Number(settings.gas_threshold || 600));
-        setSmoke(Number(settings.smoke_threshold || 300));
+        setHumidity(Number(settings.humidity_threshold || 70));
         setTemp(Number(settings.temp_threshold || 50));
     }, [iot.data?.settings]);
 
@@ -135,7 +136,7 @@ export default function Settings({
     }, [selectedDevice]);
 
     const previewStatus = useMemo(() => {
-        if (gas > 700 || smoke > 350 || temp > 55 || flame === "High") {
+        if (gas > 700 || humidity > 80 || temp > 55 || flame === "High") {
             return {
                 label: "BAHAYA",
                 className: "bg-danger/20 text-danger border-danger/40",
@@ -145,12 +146,12 @@ export default function Settings({
             label: "AMAN",
             className: "bg-success/20 text-success border-success/40",
         };
-    }, [gas, smoke, temp, flame]);
+    }, [gas, humidity, temp, flame]);
 
     const saveThresholds = async () => {
         setSaving(true);
         try {
-            await fetch("/api/settings", {
+            const res = await fetch("/api/settings", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
@@ -162,14 +163,19 @@ export default function Settings({
                 },
                 body: JSON.stringify({
                     gas_threshold: gas,
-                    smoke_threshold: smoke,
+                    humidity_threshold: humidity,
                     temperature_threshold: temp,
                     flame_threshold:
                         flame === "Low" ? 700 : flame === "Medium" ? 500 : 350,
                 }),
             });
+            const data = await res.json();
+            setSaveFeedback({ type: "success", msg: "Thresholds saved!" });
+        } catch (e) {
+            setSaveFeedback({ type: "error", msg: "Failed to save thresholds" });
         } finally {
             setSaving(false);
+            setTimeout(() => setSaveFeedback(null), 3000);
         }
     };
 
@@ -274,17 +280,17 @@ export default function Settings({
                     </div>
                     <div>
                         <div className="flex items-center justify-between">
-                            <span className="text-sm">Smoke threshold</span>
+                            <span className="text-sm">Humidity threshold</span>
                             <span className="text-sm text-muted-foreground">
-                                {smoke} ppm
+                                {humidity}%
                             </span>
                         </div>
                         <input
                             type="range"
                             min="0"
-                            max="500"
-                            value={smoke}
-                            onChange={(e) => setSmoke(Number(e.target.value))}
+                            max="100"
+                            value={humidity}
+                            onChange={(e) => setHumidity(Number(e.target.value))}
                             className="mt-2 w-full accent-lime"
                         />
                     </div>
@@ -335,8 +341,7 @@ export default function Settings({
 
                 <div className="mt-5 rounded-xl border border-white/10 bg-[linear-gradient(90deg,rgba(12,56,46,0.55),rgba(12,45,39,0.3))] p-3 flex flex-wrap items-center justify-between gap-2">
                     <p className="text-xs text-muted-foreground">
-                        Live preview at current readings: gas {Math.round(Number(iot?.latestReading?.gas_value || 0))}ppm, smoke
-                        {" "}{Math.round(Number(iot?.latestReading?.smoke_value || 0))}ppm, temp {Math.round(Number(iot?.latestReading?.temperature || 0))}°C
+                        Live preview: gas {Math.round(Number(iot?.latestReading?.gas_value || 0))}ppm, api {Number(iot?.latestReading?.flame_value || 9999) < 500 ? "DETECTED" : "CLEAR"}, kelembapan {Math.round(Number(iot?.latestReading?.humidity || 0))}%, suhu {Math.round(Number(iot?.latestReading?.temperature || 0))}°C
                     </p>
                     <span
                         className={`inline-flex px-2.5 py-1 rounded-full border text-[10px] font-semibold ${previewStatus.className}`}
@@ -353,6 +358,15 @@ export default function Settings({
                     <Save className="w-4 h-4" />
                     {saving ? "Saving..." : "Save Thresholds"}
                 </button>
+                {saveFeedback && (
+                    <div className={`mt-3 px-3 py-2 rounded-xl text-xs font-medium border ${
+                        saveFeedback.type === "success"
+                            ? "bg-success/15 text-success border-success/30"
+                            : "bg-danger/15 text-danger border-danger/30"
+                    }`}>
+                        {saveFeedback.msg}
+                    </div>
+                )}
             </section>
 
             <section className="relative isolate overflow-hidden rounded-[20px] border border-white/15 backdrop-blur-md bg-gradient-to-br from-white/10 to-white/5 p-5 shadow-xl">
@@ -367,8 +381,8 @@ export default function Settings({
                             <tr className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground border-b border-white/10">
                                 <th className="text-left py-3">#</th>
                                 <th className="text-left py-3">Gas</th>
-                                <th className="text-left py-3">Smoke</th>
-                                <th className="text-left py-3">Temp</th>
+                                <th className="text-left py-3">Api</th>
+                                <th className="text-left py-3">Suhu</th>
                                 <th className="text-right py-3">Fan Output</th>
                             </tr>
                         </thead>

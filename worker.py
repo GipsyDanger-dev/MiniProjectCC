@@ -9,7 +9,7 @@ HEARTBEAT_URL = "http://127.0.0.1:8000/api/worker/heartbeat"
 DEVICE_ID = 1
 
 HEADERS = {
-    "x-api-key": "key-servernih-121"  # Same as device 1 in simulator
+    "x-api-key": "apa-hayo-kuncinya-99"
 }
 
 print("⚙️  Memulai Python Worker (Secured Asynchronous System)...")
@@ -23,13 +23,13 @@ while True:
             hb_resp = requests.post(HEARTBEAT_URL, json={
                 "component_name": "Main Python Worker",
                 "current_state": "Active / Polling"
-            }, headers=HEADERS, timeout=5)
+            }, headers=HEADERS, timeout=15)
         except Exception as hb_error:
             print(f"⚠️  Heartbeat error: {hb_error}")
 
         # Get pending command
         try:
-            response = requests.get(GET_COMMAND_URL, params={"device_id": DEVICE_ID}, headers=HEADERS, timeout=5)
+            response = requests.get(GET_COMMAND_URL, params={"device_id": DEVICE_ID}, headers=HEADERS, timeout=15)
         except requests.Timeout:
             print("⏱️  Request timeout, retrying...")
             time.sleep(3)
@@ -77,7 +77,7 @@ while True:
                 requests.post(HEARTBEAT_URL, json={
                     "component_name": "Main Python Worker",
                     "current_state": f"Executing {action} on {target}"
-                }, headers=HEADERS, timeout=5)
+                }, headers=HEADERS, timeout=15)
 
                 print(f"🔄 Sedang mengeksekusi hardware {target}...")
                 if target == "exhaust_fan":
@@ -108,7 +108,7 @@ while True:
                         "command_id": cmd_id,
                         "status": "completed"
                     }
-                    update_resp = requests.post(UPDATE_STATUS_URL, json=payload, headers=HEADERS, timeout=5)
+                    update_resp = requests.post(UPDATE_STATUS_URL, json=payload, headers=HEADERS, timeout=15)
                     
                     if update_resp.status_code == 200:
                         print(f"✅ [SELESAI] Perintah id-{cmd_id} beres dan sudah dilog ke database!\n")

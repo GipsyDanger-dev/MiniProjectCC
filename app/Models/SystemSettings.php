@@ -7,8 +7,9 @@ class SystemSettings extends Model
 {
     protected $fillable = [
         'gas_threshold',
-        'smoke_threshold', 
+        'smoke_threshold',
         'temperature_threshold',
+        'flame_threshold',
         'mode',
         'emergency_active'
     ];

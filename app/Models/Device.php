@@ -5,7 +5,7 @@ use Illuminate\Database\Eloquent\Model;
 class Device extends Model
 {
     protected $table = 'devices';
-    protected $fillable = ['device_name', 'location', 'status'];
+    protected $fillable = ['device_name', 'location', 'api_key', 'status'];
 
     public function actuator()
     {

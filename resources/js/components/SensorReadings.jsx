@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from "react";
 
 export default function SensorReadings({ readings = [] }) {
-    const metrics = ["Gas", "Smoke", "Temperature", "Flame"];
+    const metrics = ["Gas", "Api", "Kelembapan", "Suhu"];
     const [active, setActive] = useState("Gas");
     const MAX_POINTS = 8;
     const fallbackLabels = [
@@ -19,9 +19,9 @@ export default function SensorReadings({ readings = [] }) {
             return {
                 labels: fallbackLabels.slice(-MAX_POINTS),
                 Gas: [462, 301, 419, 388, 475, 452, 347, 295],
-                Smoke: [250, 322, 294, 340, 301, 333, 290, 274],
-                Temperature: [30, 32, 31, 33, 35, 34, 32, 31],
-                Flame: [11, 18, 15, 22, 17, 13, 16, 14],
+                Api: [3000, 3200, 2900, 3400, 3100, 3300, 2900, 2700],
+                Kelembapan: [55, 60, 58, 62, 65, 63, 59, 57],
+                Suhu: [30, 32, 31, 33, 35, 34, 32, 31],
             };
         }
 
@@ -35,11 +35,11 @@ export default function SensorReadings({ readings = [] }) {
                 }).format(new Date(item.created_at)),
             ),
             Gas: series.map((item) => Math.round(Number(item.gas_value) || 0)),
-            Smoke: series.map((item) => Math.round(Number(item.smoke_value) || 0)),
-            Temperature: series.map((item) =>
+            Api: series.map((item) => Math.round(Number(item.flame_value) || 0)),
+            Kelembapan: series.map((item) => Math.round(Number(item.humidity) || 0)),
+            Suhu: series.map((item) =>
                 Math.round(Number(item.temperature) || 0),
             ),
-            Flame: series.map((item) => Math.round(Number(item.flame_value) || 0)),
         };
     }, [readings]);
 
@@ -87,7 +87,7 @@ export default function SensorReadings({ readings = [] }) {
                         >
                             <div className="text-xs text-muted-foreground mb-3 min-h-4">
                                 {idx === 0 || idx === 4
-                                    ? `${value}${active === "Gas" ? "ppm" : ""}`
+                                    ? `${value}${active === "Gas" ? " ppm" : active === "Kelembapan" ? "%" : active === "Suhu" ? "°C" : ""}`
                                     : ""}
                             </div>
                             <div className="h-56 rounded-[30px] bg-[#0f1118] border border-white/5 relative overflow-hidden p-1">

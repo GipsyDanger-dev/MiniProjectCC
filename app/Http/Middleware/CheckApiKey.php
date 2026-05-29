@@ -15,7 +15,8 @@ public function handle(Request $request, Closure $next)
     {
         $apiKey = $request->header('x-api-key');
 
-        if ($apiKey === env('WORKER_API_KEY', 'apa-hayo-kuncinya-99')) {
+        $workerKey = config('app.worker_api_key', 'apa-hayo-kuncinya-99');
+        if ($apiKey && $apiKey === $workerKey) {
             return $next($request);
         }
 

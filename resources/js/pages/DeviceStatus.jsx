@@ -94,6 +94,9 @@ export default function DeviceStatus({ activeRoom, iot }) {
     const emergency = iot.data?.emergency_status || "AMAN";
     const workerOnline = Boolean(iot.data?.worker_online);
     const latestCommand = iot.data?.latest_command;
+    const actuator = iot.data?.device_actuator;
+    const fanOn = actuator?.fan_status && actuator.fan_status !== "OFF";
+    const buzzerOn = actuator?.alarm_status === "ON";
     const checks = [
         {
             endpoint: "GET /api/dashboard/data",
@@ -121,36 +124,21 @@ export default function DeviceStatus({ activeRoom, iot }) {
         deviceCards[0],
         {
             ...deviceCards[1],
-            status:
-                latestCommand?.target_device === "exhaust_fan" &&
-                latestCommand?.action === "START"
-                    ? "RUNNING"
-                    : "IDLE",
-            value:
-                latestCommand?.target_device === "exhaust_fan" &&
-                latestCommand?.action === "START"
-                    ? "ON"
-                    : "OFF",
+            status: fanOn ? "RUNNING" : "IDLE",
+            value: fanOn ? actuator.fan_status : "OFF",
         },
         {
             ...deviceCards[2],
-            status:
-                latestCommand?.target_device === "buzzer" &&
-                latestCommand?.action === "START"
-                    ? "ACTIVE"
-                    : "SILENT",
-            value:
-                latestCommand?.target_device === "buzzer" &&
-                latestCommand?.action === "START"
-                    ? "On"
-                    : "Silent",
+            status: buzzerOn ? "ACTIVE" : "SILENT",
+            value: buzzerOn ? "On" : "Silent",
         },
         {
             ...deviceCards[3],
             details: [
-                "SentinelIoT",
-                `Status: ${emergency}`,
                 `Gas: ${Math.round(Number(latest?.gas_value || 0))}ppm`,
+                `Api: ${Number(latest?.flame_value || 9999) < 500 ? "DETECTED" : "CLEAR"}`,
+                `Kelembapan: ${Math.round(Number(latest?.humidity || 0))}%`,
+                `Suhu: ${Math.round(Number(latest?.temperature || 0))}°C`,
             ],
         },
     ];
@@ -184,13 +172,16 @@ export default function DeviceStatus({ activeRoom, iot }) {
                     <div className="absolute inset-x-0 bottom-0 h-[55%] bg-[linear-gradient(transparent,rgba(30,35,60,0.5))]" />
                     <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[340px] h-[160px] border border-white/10 rotate-[-12deg] rounded-xl" />
                     <div className="absolute left-[42%] top-[42%] text-[10px] px-2 py-1 rounded-full bg-black/45 border border-lime/35 text-lime">
-                        MQ-2 {Math.round(Number(latest?.gas_value || 0))}ppm
+                        Gas {Math.round(Number(latest?.gas_value || 0))}ppm
                     </div>
                     <div className="absolute left-[50%] top-[58%] text-[10px] px-2 py-1 rounded-full bg-black/45 border border-pink-400/35 text-pink-300">
-                        KY-026 {Math.round(Number(latest?.flame_value || 0))}
+                        Api {Number(latest?.flame_value || 9999) < 500 ? "DETECTED" : "CLEAR"}
                     </div>
                     <div className="absolute left-[55%] top-[30%] text-[10px] px-2 py-1 rounded-full bg-black/45 border border-cyan-300/35 text-cyan-200">
-                        DHT-22 {Math.round(Number(latest?.temperature || 0))}°C
+                        Suhu {Math.round(Number(latest?.temperature || 0))}°C
+                    </div>
+                    <div className="absolute left-[48%] top-[25%] text-[10px] px-2 py-1 rounded-full bg-black/45 border border-blue-300/35 text-blue-200">
+                        Kelembapan {Math.round(Number(latest?.humidity || 0))}%
                     </div>
                 </div>
             </section> */}
