@@ -1,152 +1,67 @@
 import React from "react";
-import {
-    Activity,
-    Cpu,
-    Database,
-    LayoutGrid,
-    LifeBuoy,
-    LogOut,
-    Moon,
-    Plus,
-    Settings,
-    Sun,
-    UserCircle2,
-    ChevronsLeft,
-    ChevronsRight,
-} from "lucide-react";
+import { Activity, Database, LayoutGrid, LogOut, Plus, Settings, ChevronsLeft, ChevronsRight } from "lucide-react";
 import { cn } from "../lib/utils";
+import GooeyNav from "./GooeyNav";
 
 const navItems = [
     { id: "dashboard", label: "Dashboard", icon: LayoutGrid },
     { id: "sensors", label: "Sensor Data", icon: Database },
-    // { id: "devices", label: "Device Status", icon: Cpu },
     { id: "logs", label: "Activity Log", icon: Activity },
     { id: "settings", label: "Settings", icon: Settings },
 ];
 
-export default function Sidebar({
-    collapsed,
-    setCollapsed,
-    currentPage,
-    setCurrentPage,
-    theme,
-    toggleTheme,
-}) {
+export default function Sidebar({ collapsed, setCollapsed, currentPage, setCurrentPage }) {
+    const activeIndex = navItems.findIndex(i => i.id === currentPage);
+
     const handleLogout = async () => {
         try {
-            const response = await fetch("/api/logout", { method: "POST" });
-            const data = await response.json();
-            if (data.status === "success") {
-                window.location.href = "/login";
-            }
-        } catch (error) {
-            console.error("Logout error:", error);
-        }
+            const res = await fetch("/api/logout", { method: "POST" });
+            const data = await res.json();
+            if (data.status === "success") window.location.href = "/login";
+        } catch (e) { console.error("Logout error:", e); }
     };
+
     return (
-        <aside
-            className={cn(
-                "hidden lg:flex flex-col h-screen sticky top-0 border-r transition-all duration-300 ease-out glass-sidebar",
-                collapsed ? "w-[84px] px-3" : "w-[270px] px-5",
-            )}
-        >
-            <div
-                className={cn(
-                    "flex items-center gap-3 py-6",
-                    collapsed ? "justify-center" : "px-2",
-                )}
-            >
-                <div className="w-9 h-9 rounded-full bg-lime flex items-center justify-center text-foreground text-xs font-bold">
-                    SI
-                </div>
-                {!collapsed && (
-                    <div>
-                        <p className="font-semibold text-sm text-foreground">
-                            Smart Safety
-                        </p>
-                        <p className="text-xs text-muted-foreground">
-                            Security Monitor
-                        </p>
+        <aside className={cn("sidebar-glass hidden lg:flex flex-col transition-all duration-300", collapsed ? "w-[72px]" : "w-[260px]")}>
+            {/* Logo */}
+            <div className={cn("flex items-center gap-3 px-4 py-5 border-b border-white/[0.06]", collapsed && "justify-center px-0")}>
+                <div className="w-9 h-9 rounded-xl bg-violet flex items-center justify-center text-white text-xs font-bold shrink-0">SI</div>
+                {!collapsed && <div><p className="font-semibold text-sm text-foreground leading-tight">SentinelIoT</p><p className="text-[11px] text-muted-foreground">Smart Safety</p></div>}
+            </div>
+
+            {/* Navigation */}
+            <div className="flex-1 px-3 py-4 min-h-0 overflow-hidden">
+                {collapsed ? (
+                    <div className="flex flex-col gap-1">
+                        {navItems.map(({ id, icon: Icon }) => (
+                            <button key={id} onClick={() => setCurrentPage(id)}
+                                className={cn("flex items-center justify-center w-full h-10 rounded-xl transition-smooth", currentPage === id ? "bg-violet/15 text-violet" : "text-white/50 hover:bg-white/[0.06] hover:text-white")}>
+                                <Icon className="w-[18px] h-[18px]" strokeWidth={2} />
+                            </button>
+                        ))}
                     </div>
+                ) : (
+                    <GooeyNav items={navItems} initialActiveIndex={activeIndex >= 0 ? activeIndex : 0} onNavigate={(item) => setCurrentPage(item.id)} />
                 )}
             </div>
 
-            <nav className="flex flex-col gap-2">
-                {navItems.map(({ id, label, icon: Icon }) => {
-                    const isActive = currentPage === id;
-                    return (
-                        <button
-                            key={id}
-                            onClick={() => setCurrentPage(id)}
-                            title={collapsed ? label : undefined}
-                            className={cn(
-                                "group flex items-center gap-3 h-11 rounded-full text-sm font-medium transition-smooth",
-                                collapsed ? "justify-center px-0" : "px-4",
-                                isActive
-                                    ? "bg-lime text-lime-foreground shadow-lime"
-                                    : "text-sidebar-foreground hover:bg-muted",
-                            )}
-                        >
-                            <Icon
-                                className="w-[18px] h-[18px] shrink-0"
-                                strokeWidth={2}
-                            />
-                            {!collapsed && <span>{label}</span>}
-                        </button>
-                    );
-                })}
-            </nav>
-
-            <div className="mt-auto pt-6 space-y-5">
-                {!collapsed && (
-                    <button
-                        type="button"
-                        onClick={() => setCurrentPage("new-device")}
-                        className="w-full flex items-center justify-center gap-2 h-11 rounded-full bg-deep-green text-deep-green-foreground font-semibold hover:shadow-lime transition-smooth"
-                    >
+            {/* Bottom actions */}
+            <div className="px-3 pb-4 space-y-1 border-t border-white/[0.06] pt-3">
+                {!collapsed ? (
+                    <button onClick={() => setCurrentPage("new-device")} className="w-full flex items-center justify-center gap-2 h-10 rounded-xl bg-violet text-white font-semibold text-sm transition-smooth hover:shadow-violet">
+                        <Plus className="w-4 h-4" /> New Device
+                    </button>
+                ) : (
+                    <button onClick={() => setCurrentPage("new-device")} className="w-full flex items-center justify-center h-10 rounded-xl bg-violet text-white transition-smooth hover:shadow-violet">
                         <Plus className="w-4 h-4" />
-                        New Device
                     </button>
                 )}
-
-                <div className="space-y-2">
-                    {/* <button
-                        type="button"
-                        className={cn(
-                            "w-full flex items-center gap-3 h-11 rounded-full text-sm font-medium transition-smooth hover:bg-muted",
-                            collapsed ? "justify-center px-0" : "px-4",
-                        )}
-                    >
-                        <LifeBuoy className="w-[18px] h-[18px] shrink-0" />
-                        {!collapsed && <span>Support</span>}
-                    </button> */}
-                    <button
-                        type="button"
-                        onClick={handleLogout}
-                        className={cn(
-                            "w-full flex items-center gap-3 h-11 rounded-full text-sm font-medium transition-smooth hover:bg-muted text-danger",
-                            collapsed ? "justify-center px-0" : "px-4",
-                        )}
-                    >
-                        <LogOut className="w-[18px] h-[18px] shrink-0" />
-                        {!collapsed && <span>Sign Out</span>}
-                    </button>
-                    <button
-                        type="button"
-                        onClick={() => setCollapsed(!collapsed)}
-                        className={cn(
-                            "w-full flex items-center gap-3 h-11 rounded-full text-sm font-medium transition-smooth hover:bg-muted",
-                            collapsed ? "justify-center px-0" : "px-4",
-                        )}
-                    >
-                        {collapsed ? (
-                            <ChevronsRight className="w-[18px] h-[18px] shrink-0" />
-                        ) : (
-                            <ChevronsLeft className="w-[18px] h-[18px] shrink-0" />
-                        )}
-                        {!collapsed && <span>Collapse</span>}
-                    </button>
-                </div>
+                <button onClick={handleLogout} className={cn("w-full flex items-center gap-3 h-10 rounded-xl text-sm font-medium transition-smooth hover:bg-white/[0.06] text-danger", collapsed ? "justify-center" : "px-3")}>
+                    <LogOut className="w-[18px] h-[18px] shrink-0" />{!collapsed && <span>Sign Out</span>}
+                </button>
+                <button onClick={() => setCollapsed(!collapsed)} className={cn("w-full flex items-center gap-3 h-10 rounded-xl text-sm transition-smooth hover:bg-white/[0.06] text-white/40", collapsed ? "justify-center" : "px-3")}>
+                    {collapsed ? <ChevronsRight className="w-[18px] h-[18px]" /> : <ChevronsLeft className="w-[18px] h-[18px]" />}{!collapsed && <span>Collapse</span>}
+                </button>
             </div>
         </aside>
     );
