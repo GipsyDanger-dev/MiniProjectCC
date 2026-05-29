@@ -30,14 +30,15 @@ function formatTime(value) {
 
 export default function ActivityLogs({ activeRoom, iot }) {
     const [activeFilter, setActiveFilter] = useState("All");
+    const [expandedId, setExpandedId] = useState(null);
     const logs = iot.data?.activity_logs || [];
 
     const filteredLogs = logs.filter((log) => {
         if (activeFilter === "All") return true;
-        if (activeFilter === "Danger") return log.status === "BAHAYA";
+        if (activeFilter === "Danger") return log.status === "BAHAYA" && log.action_type === "SENSOR_DATA";
         if (activeFilter === "Resolved") return log.status === "AMAN";
-        if (activeFilter === "Warning") return log.status === "BAHAYA";
-        if (activeFilter === "Info") return log.status !== "BAHAYA";
+        if (activeFilter === "Warning") return log.status === "BAHAYA" && log.action_type !== "SENSOR_DATA";
+        if (activeFilter === "Info") return log.action_type === "SYSTEM_UPDATE" || log.action_type === "MODE_SWITCH";
         return true;
     });
 
@@ -56,7 +57,7 @@ export default function ActivityLogs({ activeRoom, iot }) {
     };
 
     const entries = filteredLogs.length
-        ? logs.slice(0, 8).map((item) => ({
+        ? filteredLogs.slice(0, 8).map((item) => ({
               id: item.id,
               title: item.status === "BAHAYA" ? "Danger Event Triggered" : "Normal Event",
               desc: item.message || item.description,
@@ -178,7 +179,7 @@ export default function ActivityLogs({ activeRoom, iot }) {
                         </button>
                     </div>
                     <span className="text-xs text-muted-foreground">
-                        Showing {entries.length} of {logs.length}
+                        Showing {entries.length} of {filteredLogs.length} filtered ({logs.length} total)
                     </span>
                 </div>
 
@@ -236,11 +237,18 @@ export default function ActivityLogs({ activeRoom, iot }) {
                                     </div>
                                     <button
                                         type="button"
+                                        onClick={() => setExpandedId(expandedId === entry.id ? null : entry.id)}
                                         className="w-8 h-8 rounded-full border border-white/10 bg-black/20 inline-flex items-center justify-center"
                                     >
-                                        <ChevronDown className="w-4 h-4 text-muted-foreground" />
+                                        <ChevronDown className={`w-4 h-4 text-muted-foreground transition-transform ${expandedId === entry.id ? "rotate-180" : ""}`} />
                                     </button>
                                 </div>
+                                {expandedId === entry.id && (
+                                    <div className="mt-3 pt-3 border-t border-white/10 text-xs text-muted-foreground space-y-1">
+                                        <p><strong>Action:</strong> {logs.find(l => l.id === entry.id)?.action_type || "N/A"}</p>
+                                        <p><strong>Full description:</strong> {logs.find(l => l.id === entry.id)?.description || "N/A"}</p>
+                                    </div>
+                                )}
                             </article>
                         </div>
                     ))}

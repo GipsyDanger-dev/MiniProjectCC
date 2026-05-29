@@ -124,7 +124,7 @@ export default function SensorData({ activeRoom, iot }) {
         },
     ];
 
-    const rawReadings = rawRows.slice(0, 24).map((item) => [
+    const allReadings = rawRows.slice(0, 24).map((item) => [
         new Date(item.created_at).toLocaleTimeString("en-GB", {
             hour: "2-digit",
             minute: "2-digit",
@@ -135,6 +135,12 @@ export default function SensorData({ activeRoom, iot }) {
         `${Math.round(Number(item.temperature) || 0)}`,
         item.status_indikasi || "AMAN",
     ]);
+
+    const rawReadings = searchTerm
+        ? allReadings.filter((row) =>
+            row.some((cell) => String(cell).toLowerCase().includes(searchTerm.toLowerCase()))
+          )
+        : allReadings;
 
     return (
         <div className="pb-6 space-y-5">

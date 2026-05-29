@@ -1,11 +1,8 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
-    Bell,
     Copy,
-    Moon,
     Save,
     ShieldAlert,
-    SlidersHorizontal,
 } from "lucide-react";
 import { cn } from "../lib/utils";
 
@@ -42,10 +39,6 @@ const maskApiKey = (value) => {
 };
 
 export default function Settings({
-    theme,
-    toggleTheme,
-    collapsed,
-    setCollapsed,
     iot,
     pollingInterval,
     setPollingInterval,
@@ -54,8 +47,9 @@ export default function Settings({
     const [humidity, setHumidity] = useState(70);
     const [temp, setTemp] = useState(50);
     const [flame, setFlame] = useState("Medium");
-    const [webNotif, setWebNotif] = useState(true);
-    const [dangerOnly, setDangerOnly] = useState(false);
+    const [dangerOnly, setDangerOnly] = useState(() => {
+        try { return localStorage.getItem("dangerOnly") === "true"; } catch { return false; }
+    });
     const polling = Math.round((pollingInterval || 3000) / 1000);
     const [saving, setSaving] = useState(false);
     const [saveFeedback, setSaveFeedback] = useState(null);
@@ -134,6 +128,10 @@ export default function Settings({
         setDeviceLocation(selectedDevice.location || "");
         setApiKey(selectedDevice.api_key || "");
     }, [selectedDevice]);
+
+    useEffect(() => {
+        try { localStorage.setItem("dangerOnly", String(dangerOnly)); } catch {}
+    }, [dangerOnly]);
 
     const previewStatus = useMemo(() => {
         if (gas > 700 || humidity > 80 || temp > 55 || flame === "High") {
