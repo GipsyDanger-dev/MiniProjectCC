@@ -128,12 +128,6 @@ export default function MainApp() {
                 onReload={loadDevices}
             />
         ),
-        profile: (
-            <PlaceholderPage
-                title="Profile"
-                subtitle="Manage your account details."
-            />
-        ),
     };
     const currentContent = pages[currentPage] || pages.dashboard;
 

@@ -221,7 +221,7 @@ export default function Dashboard({ activeRoom, deviceId, iot, setCurrentPage })
 
     const saveThresholds = async (payload) => {
         try {
-            await fetch("/api/settings", {
+            const res = await fetch("/api/settings", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
@@ -233,8 +233,11 @@ export default function Dashboard({ activeRoom, deviceId, iot, setCurrentPage })
                 },
                 body: JSON.stringify(payload),
             });
-        } catch (_e) {
-            // No-op.
+            if (!res.ok) {
+                console.error("Failed to save thresholds:", res.status);
+            }
+        } catch (e) {
+            console.error("Failed to save thresholds:", e);
         }
     };
 
