@@ -91,7 +91,25 @@ ESP32 Sensors → Laravel API → Fuzzy Logic → Actuator Commands → ESP32
 php artisan test
 ```
 
-**89 tests, 194 assertions** covering:
+**89 tests, 194 assertions** — Test-Driven Development (TDD) approach, all tests written before verification:
+
+### Test-Driven Development (TDD)
+
+All features are covered by tests written first, then verified against implementation:
+
+```bash
+# Run all tests
+php artisan test
+
+# Run specific test suite
+php artisan test --filter=FuzzyLogicTest
+php artisan test --filter=FlameEmergencyTest
+
+# Run with coverage (requires Xdebug)
+php artisan test --coverage
+```
+
+### Test Suites
 - Fuzzy logic (21 unit tests): membership functions, all zones, flame override
 - Sensor ingestion (9 tests): validation, auth, humidity, commands
 - Dashboard (8 tests): settings, emergency status, actuator state
@@ -102,6 +120,41 @@ php artisan test
 - Command polling (5 tests): atomic lock, processing state
 - Worker status (6 tests): heartbeat, command update, clear
 - Device CRUD (7 tests): create, update, reset cascade
+
+## Code Quality
+
+### Dead Code Audit (2026-06-02)
+
+Comprehensive audit performed and all issues resolved:
+
+| Category | Issue | Fix |
+|----------|-------|-----|
+| Dead filter UI | ActivityLogs filter buttons changed state but didn't filter data | Fixed to use `filteredLogs` |
+| Non-functional search | SensorData search input was cosmetic only | Made search filter table rows |
+| Unused imports | Settings had 3 unused lucide-react imports | Removed `Bell`, `Moon`, `SlidersHorizontal` |
+| Unused state | `webNotif` state declared but never read | Removed |
+| Dead state | `dangerOnly` toggle did nothing | Now persists to localStorage |
+| Dead code | `GaugeCard` component defined but never rendered | Removed |
+| Commented-out code | 30-line 3D Room Model section in DeviceStatus | Removed |
+| Dead code path | Unreachable `profile` page in MainApp | Removed |
+| Dead cache call | `Cache::forget('worker_status')` on non-existent key | Removed |
+| Legacy dead files | `script.js`, `dashboard.blade.php`, `public/dashboard.js` | Deleted |
+| Silent errors | `saveThresholds` swallowed errors silently | Now logs to console |
+
+### TDD Coverage Matrix
+
+| Test File | Tests | Covers |
+|-----------|-------|--------|
+| `FuzzyLogicTest` | 21 | Triangular membership, all 4 zones, flame override, custom thresholds |
+| `IngestDataTest` | 9 | Flame override, safe zone, validation, API key, humidity, activity log |
+| `DashboardTest` | 8 | Settings, emergency status, system mode, actuator state, custom device_id |
+| `ActuatorControlTest` | 13 | Fan speeds (OFF/LOW/MEDIUM/HIGH), buzzer, mode switch, validation |
+| `ManualOverrideTest` | 3 | Fuzzy blocked in manual, stop persists, auto resumes after switch |
+| `FlameEmergencyTest` | 5 | Auto-switch manual→auto, immediate execution, overrides stopped fan |
+| `SettingsTest` | 5 | DB persistence, cache sync, validation, overwrite |
+| `CommandPollingTest` | 5 | Atomic lock, processing state, empty response, API key required |
+| `WorkerStatusTest` | 6 | Heartbeat create/update, command status, 404, clear |
+| `DeviceCrudTest` | 7 | List, create, update, 404, reset cascade (sensor_data + commands + actuators) |
 
 ## Frontend Pages
 
