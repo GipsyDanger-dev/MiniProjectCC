@@ -14,10 +14,10 @@ import {
 import { cn } from "../lib/utils";
 
 const navItems = [
-    { id: "dashboard", label: "Dashboard", icon: LayoutGrid },
-    { id: "sensors", label: "Sensor Data", icon: Database },
-    { id: "devices", label: "Device Status", icon: Cpu },
-    { id: "logs", label: "Activity Log", icon: Activity },
+    { id: "dashboard", label: "Overview", icon: LayoutGrid },
+    { id: "sensors", label: "Sensor Feed", icon: Database },
+    { id: "devices", label: "Devices", icon: Cpu },
+    { id: "logs", label: "Event Log", icon: Activity },
     { id: "settings", label: "Settings", icon: Settings },
 ];
 
@@ -50,90 +50,128 @@ function SidebarContent({
             <div
                 className={cn(
                     "flex items-center gap-3 py-6",
-                    collapsed ? "justify-center" : "px-2",
+                    collapsed ? "justify-center" : "px-4",
                 )}
             >
-                <div className="w-9 h-9 rounded-full bg-purple flex items-center justify-center text-foreground text-xs font-bold">
-                    SI
+                <div className="w-8 h-8 border border-accent flex items-center justify-center">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="square" className="w-4 h-4 text-accent">
+                        <circle cx="12" cy="12" r="8"/><line x1="12" y1="2" x2="12" y2="22"/><line x1="2" y1="12" x2="22" y2="12"/>
+                    </svg>
                 </div>
                 {!collapsed && (
                     <div>
-                        <p className="font-semibold text-sm text-foreground">
-                            Smart Safety
+                        <p className="font-medium text-xs text-surface tracking-[0.14em] uppercase">
+                            Sentinel
                         </p>
-                        <p className="text-xs text-muted-foreground">
-                            Security Monitor
+                        <p className="text-[9px] text-sidebar-muted">
+                            IoT — v2.4
                         </p>
                     </div>
                 )}
             </div>
 
-            <nav className="flex flex-col gap-2">
-                {navItems.map(({ id, label, icon: Icon }) => {
-                    const isActive = currentPage === id;
-                    return (
-                        <button
-                            key={id}
-                            onClick={() => handleClick(id)}
-                            title={collapsed ? label : undefined}
-                            className={cn(
-                                "group flex items-center gap-3 h-11 rounded-full text-sm font-medium transition-smooth",
-                                collapsed ? "justify-center px-0" : "px-4",
-                                isActive
-                                    ? "bg-purple text-purple-foreground shadow-purple"
-                                    : "text-sidebar-foreground hover:bg-muted",
-                            )}
-                        >
-                            <Icon
-                                className="w-[18px] h-[18px] shrink-0"
-                                strokeWidth={2}
-                            />
-                            {!collapsed && <span>{label}</span>}
-                        </button>
-                    );
-                })}
-            </nav>
+            <div className="pt-4">
+                <p className="text-[9px] uppercase tracking-[0.12em] text-sidebar-muted px-4 pb-2">
+                    Main
+                </p>
+                <nav className="flex flex-col">
+                    {navItems.slice(0, 4).map(({ id, label, icon: Icon }) => {
+                        const isActive = currentPage === id;
+                        return (
+                            <button
+                                key={id}
+                                onClick={() => handleClick(id)}
+                                title={collapsed ? label : undefined}
+                                className={cn(
+                                    "group flex items-center gap-3 h-9 text-[10px] uppercase tracking-[0.08em] transition-smooth border-l-2",
+                                    collapsed ? "justify-center px-0" : "px-4",
+                                    isActive
+                                        ? "text-surface bg-[#1c1c18] border-l-accent"
+                                        : "text-sidebar-muted border-l-transparent hover:text-surface/60 hover:bg-white/[0.02]",
+                                )}
+                            >
+                                <Icon
+                                    className="w-3.5 h-3.5 shrink-0 opacity-60 group-[.active]:opacity-100"
+                                    strokeWidth={1.5}
+                                />
+                                {!collapsed && <span>{label}</span>}
+                            </button>
+                        );
+                    })}
+                </nav>
+            </div>
 
-            <div className="pt-6 space-y-5">
+            <div className="pt-4">
+                <p className="text-[9px] uppercase tracking-[0.12em] text-sidebar-muted px-4 pb-2">
+                    Config
+                </p>
+                <nav className="flex flex-col">
+                    {navItems.slice(4).map(({ id, label, icon: Icon }) => {
+                        const isActive = currentPage === id;
+                        return (
+                            <button
+                                key={id}
+                                onClick={() => handleClick(id)}
+                                title={collapsed ? label : undefined}
+                                className={cn(
+                                    "group flex items-center gap-3 h-9 text-[10px] uppercase tracking-[0.08em] transition-smooth border-l-2",
+                                    collapsed ? "justify-center px-0" : "px-4",
+                                    isActive
+                                        ? "text-surface bg-[#1c1c18] border-l-accent"
+                                        : "text-sidebar-muted border-l-transparent hover:text-surface/60 hover:bg-white/[0.02]",
+                                )}
+                            >
+                                <Icon
+                                    className="w-3.5 h-3.5 shrink-0 opacity-60"
+                                    strokeWidth={1.5}
+                                />
+                                {!collapsed && <span>{label}</span>}
+                            </button>
+                        );
+                    })}
+                </nav>
+            </div>
+
+            <div className="flex-1" />
+
+            <div className="px-4 pb-6 space-y-2">
                 {!collapsed && (
                     <button
                         type="button"
                         onClick={() => handleClick("new-device")}
-                        className="w-full flex items-center justify-center gap-2 h-11 rounded-full bg-deep-green text-deep-green-foreground font-semibold hover:shadow-purple transition-smooth"
+                        className="w-full h-8 border border-[#333] text-sidebar-muted text-[9px] uppercase tracking-[0.1em] hover:border-accent hover:text-accent transition-smooth flex items-center justify-center gap-1.5"
                     >
-                        <Plus className="w-4 h-4" />
-                        New Device
+                        <Plus className="w-3 h-3" />
+                        Add Device
                     </button>
                 )}
 
-                <div className="space-y-2">
-                    <button
-                        type="button"
-                        onClick={handleLogout}
-                        className={cn(
-                            "w-full flex items-center gap-3 h-11 rounded-full text-sm font-medium transition-smooth hover:bg-muted text-danger",
-                            collapsed ? "justify-center px-0" : "px-4",
-                        )}
-                    >
-                        <LogOut className="w-[18px] h-[18px] shrink-0" />
-                        {!collapsed && <span>Sign Out</span>}
-                    </button>
-                    <button
-                        type="button"
-                        onClick={() => setCollapsed(!collapsed)}
-                        className={cn(
-                            "w-full flex items-center gap-3 h-11 rounded-full text-sm font-medium transition-smooth hover:bg-muted",
-                            collapsed ? "justify-center px-0" : "px-4",
-                        )}
-                    >
-                        {collapsed ? (
-                            <ChevronsRight className="w-[18px] h-[18px] shrink-0" />
-                        ) : (
-                            <ChevronsLeft className="w-[18px] h-[18px] shrink-0" />
-                        )}
-                        {!collapsed && <span>Collapse</span>}
-                    </button>
-                </div>
+                <button
+                    type="button"
+                    onClick={handleLogout}
+                    className={cn(
+                        "w-full flex items-center gap-3 h-9 text-[9px] uppercase tracking-[0.08em] transition-smooth text-[#444] hover:text-accent",
+                        collapsed ? "justify-center px-0" : "px-4 justify-center",
+                    )}
+                >
+                    <LogOut className="w-3.5 h-3.5 shrink-0" />
+                    {!collapsed && <span>Sign Out</span>}
+                </button>
+                <button
+                    type="button"
+                    onClick={() => setCollapsed(!collapsed)}
+                    className={cn(
+                        "w-full flex items-center gap-3 h-9 text-[9px] uppercase tracking-[0.08em] transition-smooth text-[#444] hover:text-accent",
+                        collapsed ? "justify-center px-0" : "px-4 justify-center",
+                    )}
+                >
+                    {collapsed ? (
+                        <ChevronsRight className="w-3.5 h-3.5 shrink-0" />
+                    ) : (
+                        <ChevronsLeft className="w-3.5 h-3.5 shrink-0" />
+                    )}
+                    {!collapsed && <span>Collapse</span>}
+                </button>
             </div>
         </>
     );
@@ -154,11 +192,11 @@ export default function Sidebar({
             {/* Desktop sidebar */}
             <aside
                 className={cn(
-                    "hidden lg:flex flex-col fixed inset-y-0 left-0 z-30 border-r transition-all duration-300 ease-out glass-sidebar overflow-hidden",
-                    collapsed ? "w-[84px] px-3" : "w-[270px] px-5",
+                    "hidden lg:flex flex-col fixed inset-y-0 left-0 z-30 border-r-2 border-accent transition-all duration-200 glass-sidebar overflow-hidden",
+                    collapsed ? "w-[60px] px-2" : "w-[176px]",
                 )}
             >
-                <div className="flex-1 overflow-y-auto thin-scroll py-6">
+                <div className="flex-1 overflow-y-auto thin-scroll">
                     <SidebarContent
                         collapsed={collapsed}
                         setCollapsed={setCollapsed}
@@ -171,7 +209,7 @@ export default function Sidebar({
             {/* Mobile overlay */}
             {mobileOpen && (
                 <div
-                    className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm lg:hidden"
+                    className="fixed inset-0 z-40 bg-black/60 lg:hidden"
                     onClick={() => setMobileOpen(false)}
                 />
             )}
@@ -179,16 +217,16 @@ export default function Sidebar({
             {/* Mobile drawer */}
             <aside
                 className={cn(
-                    "fixed inset-y-0 left-0 z-50 w-[270px] flex flex-col px-5 glass-sidebar border-r transition-transform duration-300 ease-out lg:hidden overflow-y-auto thin-scroll",
+                    "fixed inset-y-0 left-0 z-50 w-[176px] flex flex-col glass-sidebar border-r-2 border-accent transition-transform duration-200 ease-out lg:hidden overflow-y-auto thin-scroll",
                     mobileOpen ? "translate-x-0" : "-translate-x-full",
                 )}
             >
                 <button
                     type="button"
                     onClick={() => setMobileOpen(false)}
-                    className="absolute top-4 right-4 w-8 h-8 rounded-full bg-black/30 border border-white/10 flex items-center justify-center"
+                    className="absolute top-3 right-3 w-6 h-6 flex items-center justify-center text-surface"
                 >
-                    <X className="w-4 h-4 text-foreground" />
+                    <X className="w-4 h-4" />
                 </button>
                 <SidebarContent
                     collapsed={false}

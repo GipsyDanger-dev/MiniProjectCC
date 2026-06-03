@@ -16,100 +16,45 @@ export default function ThresholdSettings({ settings, onSave }) {
         setTemp(Number(settings.temp_threshold || 50));
     }, [settings, dirty, saving]);
 
+    const SliderRow = ({ label, value, min, max, unit, onChange }) => (
+        <div className="py-2.5 border-b border-edge last:border-b-0">
+            <div className="flex justify-between items-center mb-1.5">
+                <span className="text-[9px] uppercase tracking-[0.08em] text-ink3">{label}</span>
+                <span className="text-[13px] font-medium text-accent tabular-nums">{value}{unit}</span>
+            </div>
+            <input
+                type="range"
+                min={min}
+                max={max}
+                value={value}
+                onChange={(e) => { setDirty(true); onChange(Number(e.target.value)); }}
+                className="w-full h-1 bg-surface3 border border-edge appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-3 [&::-webkit-slider-thumb]:h-3 [&::-webkit-slider-thumb]:bg-accent [&::-webkit-slider-thumb]:border-none [&::-webkit-slider-thumb]:cursor-pointer"
+            />
+        </div>
+    );
+
     return (
-        <div className="card-surface p-6">
-            <h3 className="text-3xl font-semibold">Threshold Settings</h3>
-            <p className="text-muted-foreground mt-1">
-                Configure alert boundaries for each sensor
-            </p>
-
-            <div className="mt-6 grid gap-6 md:grid-cols-2">
-                <div>
-                    <div className="flex items-center justify-between text-foreground">
-                        <span className="text-lg font-semibold">
-                            Gas threshold
-                        </span>
-                        <span className="text-lg">{gas} ppm</span>
-                    </div>
-                    <input
-                        type="range"
-                        min="0"
-                        max="1000"
-                        value={gas}
-                        onChange={(e) => {
-                            setDirty(true);
-                            setGas(Number(e.target.value));
-                        }}
-                        className="mt-3 w-full accent-purple"
-                    />
-                    <div className="mt-1 flex justify-between text-sm text-muted-foreground">
-                        <span>0ppm</span>
-                        <span>1000ppm</span>
-                    </div>
-                </div>
-
-                <div>
-                    <div className="flex items-center justify-between text-foreground">
-                        <span className="text-lg font-semibold">
-                            Humidity threshold
-                        </span>
-                        <span className="text-lg">{humidity}%</span>
-                    </div>
-                    <input
-                        type="range"
-                        min="0"
-                        max="100"
-                        value={humidity}
-                        onChange={(e) => {
-                            setDirty(true);
-                            setHumidity(Number(e.target.value));
-                        }}
-                        className="mt-3 w-full accent-purple"
-                    />
-                    <div className="mt-1 flex justify-between text-sm text-muted-foreground">
-                        <span>0%</span>
-                        <span>100%</span>
-                    </div>
-                </div>
-
-                <div>
-                    <div className="flex items-center justify-between text-foreground">
-                        <span className="text-lg font-semibold">
-                            Temperature threshold
-                        </span>
-                        <span className="text-lg">{temp} °C</span>
-                    </div>
-                    <input
-                        type="range"
-                        min="0"
-                        max="80"
-                        value={temp}
-                        onChange={(e) => {
-                            setDirty(true);
-                            setTemp(Number(e.target.value));
-                        }}
-                        className="mt-3 w-full accent-purple"
-                    />
-                    <div className="mt-1 flex justify-between text-sm text-muted-foreground">
-                        <span>0°C</span>
-                        <span>80°C</span>
-                    </div>
-                </div>
-
-                <div>
-                    <span className="text-lg font-semibold">
-                        Flame sensitivity
-                    </span>
-                    <div className="mt-4 inline-flex w-full rounded-full bg-muted/40 p-1">
+        <div className="bg-surface2 border border-edge">
+            <div className="px-3 py-2 border-b border-edge">
+                <p className="text-[9px] font-medium uppercase tracking-[0.10em] text-ink2">Threshold Quick-Set</p>
+            </div>
+            <div className="px-3">
+                <SliderRow label="Gas (PPM)" value={gas} min={0} max={1000} unit="" onChange={setGas} />
+                <SliderRow label="Humidity (%)" value={humidity} min={0} max={100} unit="%" onChange={setHumidity} />
+                <SliderRow label="Temperature (°C)" value={temp} min={0} max={80} unit="°C" onChange={setTemp} />
+                <div className="py-2.5 border-b border-edge">
+                    <span className="text-[9px] uppercase tracking-[0.08em] text-ink3">Flame Sensitivity</span>
+                    <div className="flex mt-1.5">
                         {["Low", "Medium", "High"].map((level) => (
                             <button
                                 key={level}
                                 type="button"
-                                onClick={() => {
-                                    setDirty(true);
-                                    setFlame(level);
-                                }}
-                                className={`flex-1 py-2 rounded-full transition-smooth ${flame === level ? "bg-card text-foreground" : "text-muted-foreground"}`}
+                                onClick={() => { setDirty(true); setFlame(level); }}
+                                className={`flex-1 py-1.5 text-[9px] uppercase tracking-[0.08em] border border-r-0 last:border-r transition-smooth ${
+                                    flame === level
+                                        ? "bg-surface text-accent border-accent"
+                                        : "bg-surface3 text-ink3 border-edge"
+                                }`}
                             >
                                 {level}
                             </button>
@@ -117,8 +62,7 @@ export default function ThresholdSettings({ settings, onSave }) {
                     </div>
                 </div>
             </div>
-
-            <div className="mt-8 flex justify-end">
+            <div className="px-3 py-2">
                 <button
                     type="button"
                     onClick={async () => {
@@ -127,15 +71,14 @@ export default function ThresholdSettings({ settings, onSave }) {
                             gas_threshold: gas,
                             humidity_threshold: humidity,
                             temperature_threshold: temp,
-                            flame_threshold:
-                                flame === "Low" ? 700 : flame === "Medium" ? 500 : 350,
+                            flame_threshold: flame === "Low" ? 700 : flame === "Medium" ? 500 : 350,
                         });
                         setSaving(false);
                         setDirty(false);
                     }}
-                    className="inline-flex items-center gap-2 px-6 h-11 rounded-full bg-purple text-purple-foreground font-semibold shadow-purple"
+                    className="w-full h-8 bg-accent text-white text-[9px] uppercase tracking-[0.1em] font-medium flex items-center justify-center gap-1.5 hover:bg-accent/80 transition-smooth"
                 >
-                    <Save className="w-4 h-4" />
+                    <Save className="w-3 h-3" />
                     {saving ? "Saving..." : "Save Settings"}
                 </button>
             </div>
