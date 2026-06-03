@@ -1,6 +1,6 @@
 /** @type {import('tailwindcss').Config} */
 module.exports = {
-    darkMode: ["class"],
+    darkMode: false,
     content: [
         "./resources/views/**/*.blade.php",
         "./resources/js/**/*.{js,jsx,ts,tsx}",
@@ -9,10 +9,16 @@ module.exports = {
         extend: {
             fontFamily: {
                 sans: [
-                    '"Plus Jakarta Sans"',
-                    "ui-sans-serif",
-                    "system-ui",
-                    "sans-serif",
+                    '"JetBrains Mono"',
+                    '"Courier New"',
+                    "Courier",
+                    "monospace",
+                ],
+                mono: [
+                    '"JetBrains Mono"',
+                    '"Courier New"',
+                    "Courier",
+                    "monospace",
                 ],
             },
             colors: {
@@ -53,9 +59,13 @@ module.exports = {
                     DEFAULT: "hsl(var(--accent-lime))",
                     foreground: "hsl(var(--accent-lime-foreground))",
                 },
+                purple: {
+                    DEFAULT: "hsl(var(--accent-lime))",
+                    foreground: "hsl(var(--accent-lime-foreground))",
+                },
                 "dark-card": {
-                    DEFAULT: "hsl(var(--dark-card))",
-                    foreground: "hsl(var(--dark-card-foreground))",
+                    DEFAULT: "hsl(var(--surface2))",
+                    foreground: "hsl(var(--ink2))",
                 },
                 "deep-green": {
                     DEFAULT: "hsl(var(--deep-green))",
@@ -78,23 +88,40 @@ module.exports = {
                     foreground: "hsl(var(--sidebar-foreground))",
                     muted: "hsl(var(--sidebar-muted))",
                     active: "hsl(var(--sidebar-active))",
-                    "active-foreground":
-                        "hsl(var(--sidebar-active-foreground))",
+                    "active-foreground": "hsl(var(--sidebar-active-foreground))",
                     border: "hsl(var(--sidebar-border))",
+                },
+                ink: {
+                    DEFAULT: "hsl(var(--ink))",
+                    2: "hsl(var(--ink2))",
+                    3: "hsl(var(--ink3))",
+                },
+                surface: {
+                    DEFAULT: "hsl(var(--surface))",
+                    2: "hsl(var(--surface2))",
+                    3: "hsl(var(--surface3))",
+                },
+                edge: {
+                    DEFAULT: "hsl(var(--edge))",
+                    2: "hsl(var(--edge2))",
                 },
             },
             boxShadow: {
-                card: "var(--shadow-card)",
-                "card-hover": "var(--shadow-card-hover)",
+                card: "none",
+                "card-hover": "none",
                 lime: "var(--shadow-lime)",
-                dark: "var(--shadow-dark)",
+                purple: "var(--shadow-lime)",
+                dark: "none",
+            },
+            borderRadius: {
+                none: "0",
             },
             animation: {
-                "fade-in-up": "fade-in-up 0.35s ease-out both",
+                "fade-in-up": "fade-in-up 0.25s ease-out both",
             },
             keyframes: {
                 "fade-in-up": {
-                    "0%": { opacity: "0", transform: "translateY(8px)" },
+                    "0%": { opacity: "0", transform: "translateY(4px)" },
                     "100%": { opacity: "1", transform: "translateY(0)" },
                 },
             },
