@@ -1,9 +1,5 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
-import {
-    Copy,
-    Save,
-    ShieldAlert,
-} from "lucide-react";
+import React, { useEffect, useMemo, useState } from "react";
+import { Copy, Save, ShieldAlert } from "lucide-react";
 import { cn } from "../lib/utils";
 
 const fuzzyRules = [
@@ -23,13 +19,10 @@ const fuzzyRules = [
 ];
 
 const fanOutputClass = (value) => {
-    if (value === "LOW")
-        return "bg-blue-500/20 text-blue-300 border-blue-400/40";
-    if (value === "MEDIUM")
-        return "bg-amber-500/20 text-amber-300 border-amber-400/40";
-    if (value === "HIGH")
-        return "bg-orange-500/20 text-orange-300 border-orange-400/40";
-    return "bg-danger/20 text-danger border-danger/40";
+    if (value === "LOW") return "text-ink3 border-edge2 bg-surface3";
+    if (value === "MEDIUM") return "text-accent border-accent bg-accent/10";
+    if (value === "HIGH") return "text-orange-700 border-orange-400 bg-orange-50";
+    return "text-danger border-danger bg-danger/10";
 };
 
 const maskApiKey = (value) => {
@@ -38,11 +31,7 @@ const maskApiKey = (value) => {
     return `${value.slice(0, 6)}••••${value.slice(-4)}`;
 };
 
-export default function Settings({
-    iot,
-    pollingInterval,
-    setPollingInterval,
-}) {
+export default function Settings({ iot, pollingInterval, setPollingInterval }) {
     const [gas, setGas] = useState(600);
     const [humidity, setHumidity] = useState(70);
     const [temp, setTemp] = useState(50);
@@ -61,7 +50,6 @@ export default function Settings({
     const [apiKey, setApiKey] = useState("");
     const [deviceSaving, setDeviceSaving] = useState(false);
     const [deviceResetting, setDeviceResetting] = useState(false);
-    const initSelectionRef = useRef(false);
 
     useEffect(() => {
         const settings = iot.data?.settings;
@@ -76,9 +64,7 @@ export default function Settings({
         const loadDevices = async () => {
             setDevicesLoading(true);
             try {
-                const res = await fetch("/api/devices", {
-                    headers: { Accept: "application/json" },
-                });
+                const res = await fetch("/api/devices", { headers: { Accept: "application/json" } });
                 const payload = await res.json();
                 if (!active) return;
                 if (payload.status === "success") {
@@ -93,34 +79,20 @@ export default function Settings({
             }
         };
         loadDevices();
-        return () => {
-            active = false;
-        };
+        return () => { active = false; };
     }, []);
 
     useEffect(() => {
         if (!devices.length) return;
-        const hasSelected =
-            selectedDeviceId &&
-            devices.some((device) => device.id === selectedDeviceId);
-        if (hasSelected) {
-            initSelectionRef.current = true;
-            return;
-        }
-
+        const hasSelected = selectedDeviceId && devices.some((device) => device.id === selectedDeviceId);
+        if (hasSelected) return;
         const preferredId = Number(iot?.data?.device_id);
         const matched = devices.find((device) => device.id === preferredId);
         const nextId = matched?.id || devices[0]?.id || null;
-        if (nextId) {
-            setSelectedDeviceId(nextId);
-        }
-        initSelectionRef.current = true;
+        if (nextId) setSelectedDeviceId(nextId);
     }, [devices, iot?.data?.device_id, selectedDeviceId]);
 
-    const selectedDevice = useMemo(
-        () => devices.find((device) => device.id === selectedDeviceId) || null,
-        [devices, selectedDeviceId],
-    );
+    const selectedDevice = useMemo(() => devices.find((device) => device.id === selectedDeviceId) || null, [devices, selectedDeviceId]);
 
     useEffect(() => {
         if (!selectedDevice) return;
@@ -135,15 +107,9 @@ export default function Settings({
 
     const previewStatus = useMemo(() => {
         if (gas > 700 || humidity > 80 || temp > 55 || flame === "High") {
-            return {
-                label: "BAHAYA",
-                className: "bg-danger/20 text-danger border-danger/40",
-            };
+            return { label: "BAHAYA", className: "text-danger border-danger bg-danger/10" };
         }
-        return {
-            label: "AMAN",
-            className: "bg-success/20 text-success border-success/40",
-        };
+        return { label: "AMAN", className: "text-success border-success bg-success/10" };
     }, [gas, humidity, temp, flame]);
 
     const saveThresholds = async () => {
@@ -154,20 +120,16 @@ export default function Settings({
                 headers: {
                     "Content-Type": "application/json",
                     Accept: "application/json",
-                    "X-CSRF-TOKEN":
-                        document
-                            .querySelector('meta[name="csrf-token"]')
-                            ?.getAttribute("content") || "",
+                    "X-CSRF-TOKEN": document.querySelector('meta[name="csrf-token"]')?.getAttribute("content") || "",
                 },
                 body: JSON.stringify({
                     gas_threshold: gas,
                     humidity_threshold: humidity,
                     temperature_threshold: temp,
-                    flame_threshold:
-                        flame === "Low" ? 700 : flame === "Medium" ? 500 : 350,
+                    flame_threshold: flame === "Low" ? 700 : flame === "Medium" ? 500 : 350,
                 }),
             });
-            const data = await res.json();
+            await res.json();
             setSaveFeedback({ type: "success", msg: "Thresholds saved!" });
         } catch (e) {
             setSaveFeedback({ type: "error", msg: "Failed to save thresholds" });
@@ -186,25 +148,13 @@ export default function Settings({
                 headers: {
                     "Content-Type": "application/json",
                     Accept: "application/json",
-                    "X-CSRF-TOKEN":
-                        document
-                            .querySelector('meta[name="csrf-token"]')
-                            ?.getAttribute("content") || "",
+                    "X-CSRF-TOKEN": document.querySelector('meta[name="csrf-token"]')?.getAttribute("content") || "",
                 },
-                body: JSON.stringify({
-                    device_name: deviceName.trim(),
-                    location: deviceLocation.trim(),
-                }),
+                body: JSON.stringify({ device_name: deviceName.trim(), location: deviceLocation.trim() }),
             });
             const payload = await res.json();
             if (payload.status === "success") {
-                setDevices((prev) =>
-                    prev.map((device) =>
-                        device.id === selectedDevice.id
-                            ? payload.device
-                            : device,
-                    ),
-                );
+                setDevices((prev) => prev.map((device) => device.id === selectedDevice.id ? payload.device : device));
             }
         } finally {
             setDeviceSaving(false);
@@ -217,387 +167,259 @@ export default function Settings({
         try {
             const res = await fetch(`/api/devices/${selectedDevice.id}/reset`, {
                 method: "POST",
-                headers: {
-                    Accept: "application/json",
-                    "X-CSRF-TOKEN":
-                        document
-                            .querySelector('meta[name="csrf-token"]')
-                            ?.getAttribute("content") || "",
-                },
+                headers: { Accept: "application/json", "X-CSRF-TOKEN": document.querySelector('meta[name="csrf-token"]')?.getAttribute("content") || "" },
             });
             const payload = await res.json();
             if (payload.status === "success") {
-                setDevices((prev) =>
-                    prev.map((device) =>
-                        device.id === selectedDevice.id
-                            ? { ...device, status: "offline" }
-                            : device,
-                    ),
-                );
+                setDevices((prev) => prev.map((device) => device.id === selectedDevice.id ? { ...device, status: "offline" } : device));
             }
         } finally {
             setDeviceResetting(false);
         }
     };
 
+    const SliderRow = ({ label, value, min, max, unit, onChange }) => (
+        <div className="py-2.5 border-b border-edge last:border-b-0">
+            <div className="flex justify-between items-center mb-1.5">
+                <span className="text-[9px] uppercase tracking-[0.08em] text-ink3">{label}</span>
+                <span className="text-[13px] font-medium text-accent tabular-nums">{value}{unit}</span>
+            </div>
+            <input
+                type="range"
+                min={min}
+                max={max}
+                value={value}
+                onChange={(e) => onChange(Number(e.target.value))}
+                className="w-full h-1 bg-surface3 border border-edge appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-3 [&::-webkit-slider-thumb]:h-3 [&::-webkit-slider-thumb]:bg-accent [&::-webkit-slider-thumb]:border-none [&::-webkit-slider-thumb]:cursor-pointer"
+            />
+        </div>
+    );
+
     return (
-        <div className="pb-6 space-y-5">
+        <div className="flex flex-col gap-2.5">
+            {/* Header */}
             <div>
-                <h1 className="text-2xl md:text-4xl font-semibold text-foreground">
-                    Settings
-                </h1>
-                <p className="text-sm text-muted-foreground mt-1">
-                    Thresholds, fuzzy rules, and device configuration
-                </p>
+                <p className="text-[9px] font-medium uppercase tracking-[0.10em] text-ink2">Settings</p>
+                <p className="text-[9px] text-ink3 mt-0.5">Thresholds, fuzzy rules, and device configuration</p>
             </div>
 
-            <section className="relative isolate overflow-hidden rounded-[20px] border border-white/15 backdrop-blur-md bg-gradient-to-br from-white/10 to-white/5 p-5 shadow-xl">
-                <h2 className="text-xl font-semibold">
-                    Threshold Configuration
-                </h2>
-                <p className="text-xs text-muted-foreground mt-1">
-                    Adjust when SentinelIoT triggers the BAHAYA alert state
-                </p>
-
-                <div className="mt-5 grid gap-5 md:grid-cols-2">
-                    <div>
-                        <div className="flex items-center justify-between">
-                            <span className="text-sm">Gas threshold</span>
-                            <span className="text-sm text-muted-foreground">
-                                {gas} ppm
-                            </span>
-                        </div>
-                        <input
-                            type="range"
-                            min="0"
-                            max="1000"
-                            value={gas}
-                            onChange={(e) => setGas(Number(e.target.value))}
-                            className="mt-2 w-full accent-purple"
-                        />
+            <div className="grid gap-2.5 md:grid-cols-2">
+                {/* Threshold Configuration */}
+                <div className="bg-surface2 border border-edge">
+                    <div className="px-3 py-2 border-b border-edge">
+                        <p className="text-[9px] font-medium uppercase tracking-[0.10em] text-ink2">Threshold Configuration</p>
                     </div>
-                    <div>
-                        <div className="flex items-center justify-between">
-                            <span className="text-sm">Humidity threshold</span>
-                            <span className="text-sm text-muted-foreground">
-                                {humidity}%
-                            </span>
-                        </div>
-                        <input
-                            type="range"
-                            min="0"
-                            max="100"
-                            value={humidity}
-                            onChange={(e) => setHumidity(Number(e.target.value))}
-                            className="mt-2 w-full accent-purple"
-                        />
-                    </div>
-                    <div>
-                        <div className="flex items-center justify-between">
-                            <span className="text-sm">
-                                Temperature threshold
-                            </span>
-                            <span className="text-sm text-muted-foreground">
-                                {temp}°C
-                            </span>
-                        </div>
-                        <input
-                            type="range"
-                            min="0"
-                            max="80"
-                            value={temp}
-                            onChange={(e) => setTemp(Number(e.target.value))}
-                            className="mt-2 w-full accent-purple"
-                        />
-                    </div>
-                    <div>
-                        <div className="flex items-center justify-between">
-                            <span className="text-sm">Flame sensitivity</span>
-                            <span className="text-sm text-muted-foreground">
-                                {flame}
-                            </span>
-                        </div>
-                        <div className="mt-2 inline-flex w-full rounded-full bg-black/25 border border-white/10 p-1">
-                            {["Low", "Medium", "High"].map((level) => (
-                                <button
-                                    key={level}
-                                    type="button"
-                                    onClick={() => setFlame(level)}
-                                    className={cn(
-                                        "flex-1 h-8 rounded-full text-xs transition-smooth",
-                                        flame === level
-                                            ? "bg-card text-foreground"
-                                            : "text-muted-foreground",
-                                    )}
-                                >
-                                    {level}
-                                </button>
-                            ))}
-                        </div>
-                    </div>
-                </div>
-
-                <div className="mt-5 rounded-xl border border-white/10 bg-[linear-gradient(90deg,rgba(12,56,46,0.55),rgba(12,45,39,0.3))] p-3 flex flex-wrap items-center justify-between gap-2">
-                    <p className="text-xs text-muted-foreground">
-                        Live preview: gas {Math.round(Number(iot?.latestReading?.gas_value || 0))}ppm, api {Number(iot?.latestReading?.flame_value || 9999) < 500 ? "DETECTED" : "CLEAR"}, kelembapan {Math.round(Number(iot?.latestReading?.humidity || 0))}%, suhu {Math.round(Number(iot?.latestReading?.temperature || 0))}°C
-                    </p>
-                    <span
-                        className={`inline-flex px-2.5 py-1 rounded-full border text-[10px] font-semibold ${previewStatus.className}`}
-                    >
-                        {previewStatus.label}
-                    </span>
-                </div>
-
-                <button
-                    type="button"
-                    onClick={saveThresholds}
-                    className="mt-4 h-11 w-full rounded-full bg-purple text-purple-foreground font-semibold inline-flex items-center justify-center gap-2 shadow-[0_12px_35px_rgba(147,51,234,0.35)]"
-                >
-                    <Save className="w-4 h-4" />
-                    {saving ? "Saving..." : "Save Thresholds"}
-                </button>
-                {saveFeedback && (
-                    <div className={`mt-3 px-3 py-2 rounded-xl text-xs font-medium border ${
-                        saveFeedback.type === "success"
-                            ? "bg-success/15 text-success border-success/30"
-                            : "bg-danger/15 text-danger border-danger/30"
-                    }`}>
-                        {saveFeedback.msg}
-                    </div>
-                )}
-            </section>
-
-            <section className="relative isolate overflow-hidden rounded-[20px] border border-white/15 backdrop-blur-md bg-gradient-to-br from-white/10 to-white/5 p-5 shadow-xl">
-                <h2 className="text-xl font-semibold">Fuzzy Logic Rules</h2>
-                <p className="text-xs text-muted-foreground mt-1">
-                    Read-only mapping of inputs to fan speed output (13 rules)
-                </p>
-
-                <div className="mt-4 overflow-auto thin-scroll">
-                    <table className="w-full min-w-[580px] text-sm">
-                        <thead>
-                            <tr className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground border-b border-white/10">
-                                <th className="text-left py-3">#</th>
-                                <th className="text-left py-3">Gas</th>
-                                <th className="text-left py-3">Api</th>
-                                <th className="text-left py-3">Suhu</th>
-                                <th className="text-right py-3">Fan Output</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {fuzzyRules.map((rule, idx) => (
-                                <tr
-                                    key={`${rule.join("-")}-${idx}`}
-                                    className="border-b border-white/5 hover:bg-white/5"
-                                >
-                                    <td className="py-3 text-muted-foreground">
-                                        {idx + 1}
-                                    </td>
-                                    <td>{rule[0]}</td>
-                                    <td>{rule[1]}</td>
-                                    <td>{rule[2]}</td>
-                                    <td className="text-right">
-                                        <span
-                                            className={`inline-flex px-2 py-1 rounded-full border text-[10px] ${fanOutputClass(
-                                                rule[3],
-                                            )}`}
-                                        >
-                                            {rule[3]}
-                                        </span>
-                                    </td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
-                </div>
-            </section>
-
-            <section className="grid gap-5 md:grid-cols-2">
-                <div>
-                    <article className="rounded-[20px] border border-white/15 backdrop-blur-md bg-gradient-to-br from-white/10 to-white/5 p-5 shadow-xl">
-                        <h2 className="text-xl font-semibold">
-                            Notification Settings
-                        </h2>
-                        <p className="text-xs text-muted-foreground mt-1">
-                            Control when and how you get alerted
-                        </p>
-
-                        <div className="mt-4 space-y-3">
-                            <div className="rounded-xl border border-white/10 bg-black/20 px-3 py-3 flex items-center justify-between gap-3">
-                                <div className="flex items-center gap-2">
-                                    <ShieldAlert className="w-4 h-4 text-muted-foreground" />
-                                    <div>
-                                        <p className="text-sm">
-                                            Alert on BAHAYA only
-                                        </p>
-                                        <p className="text-xs text-muted-foreground">
-                                            Ignore INFO/WARN notifications
-                                        </p>
-                                    </div>
-                                </div>
-                                <button
-                                    type="button"
-                                    onClick={() => setDangerOnly((v) => !v)}
-                                    className={`w-12 h-6 rounded-full p-1 transition-all ${
-                                        dangerOnly ? "bg-purple" : "bg-muted"
-                                    }`}
-                                >
-                                    <span
-                                        className={`block w-4 h-4 rounded-full bg-background transition-transform ${
-                                            dangerOnly
-                                                ? "translate-x-6"
-                                                : "translate-x-0"
+                    <div className="px-3">
+                        <SliderRow label="Gas (PPM)" value={gas} min={0} max={1000} unit="" onChange={setGas} />
+                        <SliderRow label="Humidity (%)" value={humidity} min={0} max={100} unit="%" onChange={setHumidity} />
+                        <SliderRow label="Temperature (°C)" value={temp} min={0} max={80} unit="°C" onChange={setTemp} />
+                        <div className="py-2.5 border-b border-edge">
+                            <span className="text-[9px] uppercase tracking-[0.08em] text-ink3">Flame Sensitivity</span>
+                            <div className="flex mt-1.5">
+                                {["Low", "Medium", "High"].map((level) => (
+                                    <button
+                                        key={level}
+                                        type="button"
+                                        onClick={() => setFlame(level)}
+                                        className={`flex-1 py-1.5 text-[9px] uppercase tracking-[0.08em] border border-r-0 last:border-r transition-smooth ${
+                                            flame === level
+                                                ? "bg-surface text-accent border-accent"
+                                                : "bg-surface3 text-ink3 border-edge"
                                         }`}
-                                    />
-                                </button>
-                            </div>
-
-                            <div className="rounded-xl border border-white/10 bg-black/20 px-3 py-3">
-                                <div className="flex items-center justify-between">
-                                    <span className="text-sm">
-                                        Polling interval
-                                    </span>
-                                    <span className="text-sm text-muted-foreground">
-                                        {polling}s
-                                    </span>
-                                </div>
-                                <input
-                                    type="range"
-                                    min="1"
-                                    max="10"
-                                    value={polling}
-                                    onChange={(e) =>
-                                        setPollingInterval(Number(e.target.value) * 1000)
-                                    }
-                                    className="mt-2 w-full accent-purple"
-                                />
+                                    >
+                                        {level}
+                                    </button>
+                                ))}
                             </div>
                         </div>
-                    </article>
+                    </div>
+                    <div className="px-3 py-2 border-t border-edge">
+                        <div className="flex items-center justify-between mb-2">
+                            <p className="text-[9px] text-ink3">Live preview: gas {Math.round(Number(iot?.latestReading?.gas_value || 0))}ppm, api {Number(iot?.latestReading?.flame_value || 9999) < 500 ? "DETECTED" : "CLEAR"}, kelembapan {Math.round(Number(iot?.latestReading?.humidity || 0))}%, suhu {Math.round(Number(iot?.latestReading?.temperature || 0))}°C</p>
+                            <span className={`text-[9px] uppercase tracking-[0.06em] px-1.5 py-0.5 border ${previewStatus.className}`}>{previewStatus.label}</span>
+                        </div>
+                        <button
+                            type="button"
+                            onClick={saveThresholds}
+                            className="w-full h-8 bg-accent text-white text-[9px] uppercase tracking-[0.1em] font-medium flex items-center justify-center gap-1.5 hover:bg-accent/80 transition-smooth"
+                        >
+                            <Save className="w-3 h-3" />
+                            {saving ? "Saving..." : "Save Thresholds"}
+                        </button>
+                        {saveFeedback && (
+                            <div className={`mt-2 px-2 py-1.5 text-[9px] border ${
+                                saveFeedback.type === "success" ? "bg-success/10 text-success border-success" : "bg-danger/10 text-danger border-danger"
+                            }`}>
+                                {saveFeedback.msg}
+                            </div>
+                        )}
+                    </div>
                 </div>
 
-                <article className="rounded-[20px] border border-white/15 backdrop-blur-md bg-gradient-to-br from-white/10 to-white/5 p-5 shadow-xl h-fit">
-                    <h2 className="text-xl font-semibold">Device Management</h2>
-                    <p className="text-xs text-muted-foreground mt-1">
-                        API key and hardware controls
-                    </p>
+                {/* Fuzzy Logic Rules */}
+                <div className="bg-surface2 border border-edge">
+                    <div className="px-3 py-2 border-b border-edge">
+                        <p className="text-[9px] font-medium uppercase tracking-[0.10em] text-ink2">Fuzzy Logic Rules</p>
+                        <p className="text-[8px] text-ink3">Read-only mapping of inputs to fan speed (13 rules)</p>
+                    </div>
+                    <div className="overflow-auto thin-scroll">
+                        <table className="w-full min-w-[380px]">
+                            <thead>
+                                <tr className="text-[9px] uppercase tracking-[0.08em] text-ink3 border-b border-edge">
+                                    <th className="text-left px-3 py-2">#</th>
+                                    <th className="text-left px-3 py-2">Gas</th>
+                                    <th className="text-left px-3 py-2">Api</th>
+                                    <th className="text-left px-3 py-2">Suhu</th>
+                                    <th className="text-right px-3 py-2">Fan</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {fuzzyRules.map((rule, idx) => (
+                                    <tr key={`${rule.join("-")}-${idx}`} className="border-b border-edge hover:bg-surface3 transition-smooth">
+                                        <td className="px-3 py-1.5 text-[9px] text-ink3">{idx + 1}</td>
+                                        <td className="px-3 py-1.5 text-[9px] text-ink">{rule[0]}</td>
+                                        <td className="px-3 py-1.5 text-[9px] text-ink">{rule[1]}</td>
+                                        <td className="px-3 py-1.5 text-[9px] text-ink">{rule[2]}</td>
+                                        <td className="px-3 py-1.5 text-right">
+                                            <span className={`inline-flex px-1.5 py-0.5 text-[8px] uppercase tracking-[0.06em] border ${fanOutputClass(rule[3])}`}>
+                                                {rule[3]}
+                                            </span>
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
 
-                    <div className="mt-4 space-y-3">
-                        <div className="rounded-xl border border-white/10 bg-black/20 px-3 py-3">
-                            <p className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
-                                Device
-                            </p>
+            <div className="grid gap-2.5 md:grid-cols-2">
+                {/* Notification Settings */}
+                <div className="bg-surface2 border border-edge">
+                    <div className="px-3 py-2 border-b border-edge">
+                        <p className="text-[9px] font-medium uppercase tracking-[0.10em] text-ink2">Notification Settings</p>
+                    </div>
+                    <div className="px-3">
+                        <div className="py-2.5 border-b border-edge flex items-center justify-between gap-2">
+                            <div className="flex items-center gap-2">
+                                <ShieldAlert className="w-3 h-3 text-ink3" />
+                                <div>
+                                    <p className="text-[9px] text-ink">Alert on BAHAYA only</p>
+                                    <p className="text-[8px] text-ink3">Ignore INFO/WARN notifications</p>
+                                </div>
+                            </div>
+                            <button
+                                type="button"
+                                onClick={() => setDangerOnly((v) => !v)}
+                                className={`w-9 h-[18px] border cursor-pointer relative transition-smooth ${dangerOnly ? "bg-accent/10 border-accent" : "bg-surface3 border-edge2"}`}
+                            >
+                                <span className={`absolute top-0.5 w-3 h-3 transition-all ${dangerOnly ? "left-[18px] bg-accent" : "left-0.5 bg-edge2"}`} />
+                            </button>
+                        </div>
+                        <div className="py-2.5">
+                            <div className="flex justify-between items-center mb-1.5">
+                                <span className="text-[9px] uppercase tracking-[0.08em] text-ink3">Polling Interval</span>
+                                <span className="text-[13px] font-medium text-accent tabular-nums">{polling}s</span>
+                            </div>
+                            <input
+                                type="range"
+                                min="1"
+                                max="10"
+                                value={polling}
+                                onChange={(e) => setPollingInterval(Number(e.target.value) * 1000)}
+                                className="w-full h-1 bg-surface3 border border-edge appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-3 [&::-webkit-slider-thumb]:h-3 [&::-webkit-slider-thumb]:bg-accent [&::-webkit-slider-thumb]:border-none [&::-webkit-slider-thumb]:cursor-pointer"
+                            />
+                        </div>
+                    </div>
+                </div>
+
+                {/* Device Management */}
+                <div className="bg-surface2 border border-edge">
+                    <div className="px-3 py-2 border-b border-edge">
+                        <p className="text-[9px] font-medium uppercase tracking-[0.10em] text-ink2">Device Management</p>
+                    </div>
+                    <div className="px-3">
+                        <div className="py-2.5 border-b border-edge">
+                            <p className="text-[8px] uppercase tracking-[0.08em] text-ink3 mb-1">Device</p>
                             <select
                                 value={selectedDeviceId || ""}
-                                onChange={(e) =>
-                                    setSelectedDeviceId(Number(e.target.value))
-                                }
+                                onChange={(e) => setSelectedDeviceId(Number(e.target.value))}
                                 disabled={devicesLoading || !devices.length}
-                                className="device-select text-sm mt-2 w-full bg-transparent outline-none border-b border-white/10 text-foreground pb-1 focus:border-purple/50 transition-smooth"
+                                className="text-[9px] w-full bg-transparent outline-none border-b border-edge text-ink pb-0.5 focus:border-accent transition-smooth"
                             >
                                 {!devices.length ? (
-                                    <option value="">
-                                        {devicesLoading
-                                            ? "Loading devices..."
-                                            : "No devices available"}
-                                    </option>
+                                    <option value="">{devicesLoading ? "Loading devices..." : "No devices available"}</option>
                                 ) : null}
                                 {devices.map((device) => (
                                     <option key={device.id} value={device.id}>
-                                        {device.location ||
-                                            device.device_name ||
-                                            `Device ${device.id}`}
+                                        {device.location || device.device_name || `Device ${device.id}`}
                                     </option>
                                 ))}
                             </select>
                         </div>
-                        <div className="rounded-xl border border-white/10 bg-black/20 px-3 py-3 flex items-center justify-between">
+                        <div className="py-2.5 border-b border-edge flex items-center justify-between">
                             <div>
-                                <p className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
-                                    Status
-                                </p>
-                                <p className="text-sm mt-1">
-                                    {selectedDevice?.status || "unknown"}
-                                </p>
+                                <p className="text-[8px] uppercase tracking-[0.08em] text-ink3">Status</p>
+                                <p className="text-[9px] text-ink mt-0.5">{selectedDevice?.status || "unknown"}</p>
                             </div>
-                            <span className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
-                                ID #{selectedDevice?.id || "-"}
-                            </span>
+                            <span className="text-[8px] uppercase tracking-[0.06em] text-ink3">ID #{selectedDevice?.id || "-"}</span>
                         </div>
-                        <div className="rounded-xl border border-white/10 bg-black/20 px-3 py-3 flex items-center justify-between gap-3">
+                        <div className="py-2.5 border-b border-edge flex items-center justify-between gap-2">
                             <div>
-                                <p className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
-                                    API Key
-                                </p>
-                                <p className="text-sm mt-1">
-                                    {maskApiKey(apiKey)}
-                                </p>
+                                <p className="text-[8px] uppercase tracking-[0.08em] text-ink3">API Key</p>
+                                <p className="text-[9px] text-ink mt-0.5">{maskApiKey(apiKey)}</p>
                             </div>
                             <button
                                 type="button"
-                                onClick={() => {
-                                    if (!apiKey) return;
-                                    navigator.clipboard.writeText(apiKey);
-                                    alert("API Key copied!");
-                                }}
+                                onClick={() => { if (!apiKey) return; navigator.clipboard.writeText(apiKey); alert("API Key copied!"); }}
                                 disabled={!apiKey}
-                                className="h-9 px-3 rounded-full border border-white/10 bg-black/20 inline-flex items-center gap-2 text-sm hover:border-purple/50 transition-smooth disabled:opacity-60 disabled:cursor-not-allowed"
+                                className="h-6 px-2 border border-edge bg-surface3 inline-flex items-center gap-1 text-[9px] text-ink3 hover:border-accent transition-smooth disabled:opacity-50"
                             >
-                                <Copy className="w-4 h-4" />
-                                Copy
+                                <Copy className="w-3 h-3" /> Copy
                             </button>
                         </div>
-                        <div className="rounded-xl border border-white/10 bg-black/20 px-3 py-3">
-                            <p className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
-                                Device Name
-                            </p>
+                        <div className="py-2.5 border-b border-edge">
+                            <p className="text-[8px] uppercase tracking-[0.08em] text-ink3 mb-1">Device Name</p>
                             <input
                                 type="text"
                                 value={deviceName}
                                 onChange={(e) => setDeviceName(e.target.value)}
                                 disabled={!selectedDevice}
-                                className="text-sm mt-2 w-full bg-transparent outline-none border-b border-white/10 text-foreground pb-1 focus:border-purple/50 transition-smooth"
+                                className="text-[9px] w-full bg-transparent outline-none border-b border-edge text-ink pb-0.5 focus:border-accent transition-smooth"
                             />
                         </div>
-                        <div className="rounded-xl border border-white/10 bg-black/20 px-3 py-3">
-                            <p className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
-                                Location
-                            </p>
+                        <div className="py-2.5 border-b border-edge">
+                            <p className="text-[8px] uppercase tracking-[0.08em] text-ink3 mb-1">Location</p>
                             <input
                                 type="text"
                                 value={deviceLocation}
-                                onChange={(e) =>
-                                    setDeviceLocation(e.target.value)
-                                }
+                                onChange={(e) => setDeviceLocation(e.target.value)}
                                 disabled={!selectedDevice}
-                                className="text-sm mt-2 w-full bg-transparent outline-none border-b border-white/10 text-foreground pb-1 focus:border-purple/50 transition-smooth"
+                                className="text-[9px] w-full bg-transparent outline-none border-b border-edge text-ink pb-0.5 focus:border-accent transition-smooth"
                                 placeholder="Warehouse"
                             />
                         </div>
-                        <button
-                            type="button"
-                            onClick={handleSaveDevice}
-                            disabled={
-                                !selectedDevice ||
-                                deviceSaving ||
-                                !deviceName.trim() ||
-                                !deviceLocation.trim()
-                            }
-                            className="h-10 w-full px-4 rounded-full bg-purple/20 text-purple border border-purple/35 font-semibold hover:bg-purple/30 transition-smooth disabled:opacity-60 disabled:cursor-not-allowed"
-                        >
-                            {deviceSaving ? "Saving..." : "Save Device"}
-                        </button>
-                        <button
-                            type="button"
-                            onClick={handleResetDevice}
-                            disabled={!selectedDevice || deviceResetting}
-                            className="h-10 w-full px-4 rounded-full bg-danger/20 text-danger border border-danger/35 font-semibold hover:bg-danger/30 transition-smooth disabled:opacity-60 disabled:cursor-not-allowed"
-                        >
-                            {deviceResetting ? "Resetting..." : "Reset Device"}
-                        </button>
+                        <div className="py-2.5 flex gap-2">
+                            <button
+                                type="button"
+                                onClick={handleSaveDevice}
+                                disabled={!selectedDevice || deviceSaving || !deviceName.trim() || !deviceLocation.trim()}
+                                className="flex-1 h-7 bg-accent text-white text-[9px] uppercase tracking-[0.1em] font-medium hover:bg-accent/80 transition-smooth disabled:opacity-50"
+                            >
+                                {deviceSaving ? "Saving..." : "Save Device"}
+                            </button>
+                            <button
+                                type="button"
+                                onClick={handleResetDevice}
+                                disabled={!selectedDevice || deviceResetting}
+                                className="flex-1 h-7 bg-danger/10 text-danger border border-danger text-[9px] uppercase tracking-[0.1em] font-medium hover:bg-danger/20 transition-smooth disabled:opacity-50"
+                            >
+                                {deviceResetting ? "Resetting..." : "Reset Device"}
+                            </button>
+                        </div>
                     </div>
-                </article>
-            </section>
+                </div>
+            </div>
         </div>
     );
 }

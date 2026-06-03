@@ -12,10 +12,10 @@ import {
 } from "recharts";
 
 const sensorCharts = [
-    { key: "gas", label: "Gas (PPM)", stroke: "#a855f7", gradient: "gasGradient", threshold: 250 },
-    { key: "flame", label: "Api (Analog)", stroke: "#f97316", gradient: "flameGradient", threshold: 500 },
-    { key: "humidity", label: "Kelembapan (%)", stroke: "#54a7ff", gradient: "humidityGradient", threshold: 70 },
-    { key: "temp", label: "Suhu (°C)", stroke: "#f59e0b", gradient: "tempGradient", threshold: 40 },
+    { key: "gas", label: "Gas (PPM)", stroke: "#c45a0a", gradient: "gasGradient", threshold: 250 },
+    { key: "flame", label: "Api (Analog)", stroke: "#dc2626", gradient: "flameGradient", threshold: 500 },
+    { key: "humidity", label: "Kelembapan (%)", stroke: "#9a7b4f", gradient: "humidityGradient", threshold: 70 },
+    { key: "temp", label: "Suhu (°C)", stroke: "#b45309", gradient: "tempGradient", threshold: 40 },
 ];
 
 export default function SensorData({ activeRoom, iot }) {
@@ -62,6 +62,7 @@ export default function SensorData({ activeRoom, iot }) {
             temp: Math.round(Number(item.temperature) || 0),
         }));
     }, [rawRows]);
+
     const chartData = useMemo(() => {
         if (activeRange === "6H") {
             return baseTrend.map((item) => ({
@@ -94,41 +95,14 @@ export default function SensorData({ activeRoom, iot }) {
     }, [activeRange, baseTrend]);
 
     const metricCards = [
-        {
-            title: "Gas",
-            value: Math.round(Number(latest?.gas_value || 0)),
-            unit: "ppm",
-            delta:
-                latest && Number(latest.gas_value) > 250 ? "Alert" : "Normal",
-        },
-        {
-            title: "Api",
-            value:
-                latest && Number(latest.flame_value) < 500 ? "DETECTED" : "CLEAR",
-            unit: "",
-            delta: latest?.status_indikasi || "Stable",
-        },
-        {
-            title: "Kelembapan",
-            value: Math.round(Number(latest?.humidity || 0)),
-            unit: "%",
-            delta:
-                latest && Number(latest.humidity) > 70 ? "Alert" : "Normal",
-        },
-        {
-            title: "Suhu",
-            value: Math.round(Number(latest?.temperature || 0)),
-            unit: "°C",
-            delta:
-                latest && Number(latest.temperature) > 40 ? "Alert" : "Normal",
-        },
+        { title: "Gas", value: Math.round(Number(latest?.gas_value || 0)), unit: "ppm", delta: latest && Number(latest.gas_value) > 250 ? "Alert" : "Normal" },
+        { title: "Api", value: latest && Number(latest.flame_value) < 500 ? "DETECTED" : "CLEAR", unit: "", delta: latest?.status_indikasi || "Stable" },
+        { title: "Kelembapan", value: Math.round(Number(latest?.humidity || 0)), unit: "%", delta: latest && Number(latest.humidity) > 70 ? "Alert" : "Normal" },
+        { title: "Suhu", value: Math.round(Number(latest?.temperature || 0)), unit: "°C", delta: latest && Number(latest.temperature) > 40 ? "Alert" : "Normal" },
     ];
 
     const allReadings = rawRows.slice(0, 24).map((item) => [
-        new Date(item.created_at).toLocaleTimeString("en-GB", {
-            hour: "2-digit",
-            minute: "2-digit",
-        }),
+        new Date(item.created_at).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" }),
         `${Math.round(Number(item.gas_value) || 0)}`,
         Number(item.flame_value) < 500 ? "DETECTED" : "CLEAR",
         `${Math.round(Number(item.humidity || 0))}`,
@@ -143,210 +117,175 @@ export default function SensorData({ activeRoom, iot }) {
         : allReadings;
 
     return (
-        <div className="pb-6 space-y-5">
-            <div>
-                <h1 className="text-2xl md:text-4xl font-semibold text-foreground">Sensor Data</h1>
-                <p className="text-sm text-muted-foreground mt-1">
-                    Detailed readings for <span className="text-foreground">{activeRoom}</span>
-                </p>
+        <div className="flex flex-col gap-2.5">
+            {/* Header */}
+            <div className="flex flex-wrap items-center justify-between gap-2">
+                <div>
+                    <p className="text-[9px] font-medium uppercase tracking-[0.10em] text-ink2">Sensor Data</p>
+                    <p className="text-[9px] text-ink3 mt-0.5">Detailed readings for {activeRoom}</p>
+                </div>
+                <button
+                    type="button"
+                    onClick={exportCSV}
+                    className="h-7 px-3 bg-accent text-white text-[9px] uppercase tracking-[0.1em] font-medium inline-flex items-center gap-1.5 hover:bg-accent/80 transition-smooth"
+                >
+                    <Download className="w-3 h-3" />
+                    Export CSV
+                </button>
             </div>
 
-            <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-                {metricCards.map((card, idx) => (
-                    <div
-                        key={card.title}
-                        className={`relative isolate overflow-hidden rounded-[18px] border border-white/10 backdrop-blur-xl p-4 ${
-                            idx === 2
-                                ? "bg-[linear-gradient(145deg,rgba(255,255,255,0.10),rgba(255,255,255,0.03)_60%,rgba(204,255,0,0.15))]"
-                                : "bg-[linear-gradient(145deg,rgba(255,255,255,0.10),rgba(255,255,255,0.03)_60%,rgba(99,102,241,0.10))]"
-                        }`}
-                    >
-                        <span className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
-                            {card.title}
+            {/* Metric cards */}
+            <div className="grid grid-cols-2 xl:grid-cols-4 gap-2">
+                {metricCards.map((card) => (
+                    <div key={card.title} className="bg-surface2 border border-edge px-3 py-2.5">
+                        <p className="text-[9px] uppercase tracking-[0.08em] text-ink3">{card.title}</p>
+                        <p className="text-lg font-medium text-ink mt-1 tabular-nums">
+                            {card.value}{card.unit ? <span className="text-[9px] text-ink3 ml-1">{card.unit}</span> : null}
+                        </p>
+                        <span className={`inline-block mt-1 text-[9px] uppercase tracking-[0.06em] px-1.5 py-0.5 border ${
+                            card.delta === "Alert" ? "text-danger border-danger bg-danger/10" : "text-ink3 border-edge2 bg-surface3"
+                        }`}>
+                            {card.delta}
                         </span>
-                        <div className="mt-3 flex items-end justify-between">
-                            <p className="text-4xl font-semibold leading-none">
-                                {card.value}
-                                {card.unit ? (
-                                    <span className="text-lg text-muted-foreground ml-1">
-                                        {card.unit}
-                                    </span>
-                                ) : null}
-                            </p>
-                            <span className="text-xs text-purple">{card.delta}</span>
-                        </div>
                     </div>
                 ))}
             </div>
 
-            <div className="relative isolate overflow-hidden rounded-[20px] border border-white/10 bg-[linear-gradient(160deg,rgba(255,255,255,0.09),rgba(255,255,255,0.03)_58%,rgba(102,126,234,0.11))] p-5">
-                <div className="flex items-start justify-between gap-3">
-                    <div>
-                        <h2 className="text-xl font-semibold">Sensor Trends</h2>
-                        <p className="text-xs text-muted-foreground mt-1">
-                            Multi-sensor overlay with danger threshold
-                        </p>
-                    </div>
-                    <div className="inline-flex rounded-full bg-black/25 border border-white/10 p-1 text-xs">
-                        {["1H", "6H", "24H", "7D"].map((item, i) => (
-                            <button
-                                key={item}
-                                className={`px-3 py-1 rounded-full transition-smooth ${
-                                    activeRange === item
-                                        ? "bg-card text-foreground"
-                                        : "text-muted-foreground"
-                                }`}
-                                type="button"
-                                onClick={() => setActiveRange(item)}
-                            >
-                                {item}
-                            </button>
-                        ))}
+            {/* Sensor Trends */}
+            <div className="bg-surface2 border border-edge">
+                <div className="flex items-center justify-between px-3 py-2 border-b border-edge">
+                    <p className="text-[9px] font-medium uppercase tracking-[0.10em] text-ink2">Sensor Trends</p>
+                    <div className="flex">
+                        {["1H", "6H", "24H", "7D"].map((item) => {
+                            const isRealtime = item === "1H";
+                            return (
+                                <button
+                                    key={item}
+                                    type="button"
+                                    disabled={!isRealtime}
+                                    onClick={() => setActiveRange(item)}
+                                    title={isRealtime ? "Real-time data" : "Historical data not available yet"}
+                                    className={`px-2.5 py-1 text-[9px] uppercase tracking-[0.08em] border border-r-0 last:border-r transition-smooth ${
+                                        activeRange === item
+                                            ? "bg-surface text-accent border-accent"
+                                            : isRealtime
+                                                ? "bg-surface3 text-ink3 border-edge"
+                                                : "bg-surface3 text-ink3/40 border-edge cursor-not-allowed"
+                                    }`}
+                                >
+                                    {item}
+                                </button>
+                            );
+                        })}
                     </div>
                 </div>
 
-                <div className="mt-4 grid gap-3 md:grid-cols-2">
+                <div className="p-3 grid gap-2 md:grid-cols-2">
                     {sensorCharts.map((sensor) => (
-                        <div
-                            key={sensor.key}
-                            className="h-[180px] md:h-[220px] rounded-[16px] border border-white/10 bg-black/25 p-2"
-                        >
-                            <div className="px-2 pt-1 text-xs font-medium text-muted-foreground">
+                        <div key={sensor.key} className="h-[180px] border border-edge bg-surface p-2">
+                            <div className="px-1 pt-0.5 text-[9px] uppercase tracking-[0.06em] text-ink3">
                                 {sensor.label}
                             </div>
-                            <ResponsiveContainer width="100%" height="92%">
-                                <AreaChart
-                                    data={chartData}
-                                    margin={{ top: 14, right: 10, left: -12, bottom: 0 }}
-                                >
+                            <ResponsiveContainer width="100%" height="90%">
+                                <AreaChart data={chartData} margin={{ top: 10, right: 8, left: -14, bottom: 0 }}>
                                     <defs>
                                         <linearGradient id="gasGradient" x1="0" y1="0" x2="0" y2="1">
-                                            <stop offset="0%" stopColor="#a855f7" stopOpacity={0.45} />
-                                            <stop offset="100%" stopColor="#a855f7" stopOpacity={0.03} />
+                                            <stop offset="0%" stopColor="#c45a0a" stopOpacity={0.3} />
+                                            <stop offset="100%" stopColor="#c45a0a" stopOpacity={0.02} />
                                         </linearGradient>
                                         <linearGradient id="humidityGradient" x1="0" y1="0" x2="0" y2="1">
-                                            <stop offset="0%" stopColor="#4ba2ff" stopOpacity={0.42} />
-                                            <stop offset="100%" stopColor="#4ba2ff" stopOpacity={0.02} />
+                                            <stop offset="0%" stopColor="#9a7b4f" stopOpacity={0.3} />
+                                            <stop offset="100%" stopColor="#9a7b4f" stopOpacity={0.02} />
                                         </linearGradient>
                                         <linearGradient id="tempGradient" x1="0" y1="0" x2="0" y2="1">
-                                            <stop offset="0%" stopColor="#f59e0b" stopOpacity={0.42} />
-                                            <stop offset="100%" stopColor="#f59e0b" stopOpacity={0.02} />
+                                            <stop offset="0%" stopColor="#b45309" stopOpacity={0.3} />
+                                            <stop offset="100%" stopColor="#b45309" stopOpacity={0.02} />
                                         </linearGradient>
                                         <linearGradient id="flameGradient" x1="0" y1="0" x2="0" y2="1">
-                                            <stop offset="0%" stopColor="#f97316" stopOpacity={0.42} />
-                                            <stop offset="100%" stopColor="#f97316" stopOpacity={0.02} />
+                                            <stop offset="0%" stopColor="#dc2626" stopOpacity={0.3} />
+                                            <stop offset="100%" stopColor="#dc2626" stopOpacity={0.02} />
                                         </linearGradient>
                                     </defs>
-                                    <CartesianGrid
-                                        strokeDasharray="4 6"
-                                        stroke="rgba(255,255,255,0.08)"
-                                        vertical={false}
-                                    />
-                                    <XAxis
-                                        dataKey="time"
-                                        tick={{ fill: "rgba(255,255,255,0.45)", fontSize: 10 }}
-                                        axisLine={false}
-                                        tickLine={false}
-                                        minTickGap={20}
-                                    />
-                                    <YAxis
-                                        tick={{ fill: "rgba(255,255,255,0.42)", fontSize: 10 }}
-                                        axisLine={false}
-                                        tickLine={false}
-                                        width={30}
-                                    />
+                                    <CartesianGrid strokeDasharray="4 6" stroke="rgba(26,26,24,0.08)" vertical={false} />
+                                    <XAxis dataKey="time" tick={{ fill: "#8a8a82", fontSize: 9 }} axisLine={false} tickLine={false} minTickGap={20} />
+                                    <YAxis tick={{ fill: "#8a8a82", fontSize: 9 }} axisLine={false} tickLine={false} width={28} />
                                     <Tooltip
                                         contentStyle={{
-                                            background: "rgba(13,16,26,0.92)",
-                                            border: "1px solid rgba(255,255,255,0.12)",
-                                            borderRadius: "12px",
-                                            color: "#fff",
+                                            background: "#1a1a18",
+                                            border: "1px solid #3d3d38",
+                                            borderRadius: 0,
+                                            color: "#f4f2ec",
+                                            fontSize: 10,
                                         }}
-                                        labelStyle={{ color: "rgba(255,255,255,0.8)" }}
+                                        labelStyle={{ color: "#8a8a82" }}
                                     />
-                                    <ReferenceLine
-                                        y={sensor.threshold}
-                                        stroke="rgba(255,75,75,0.6)"
-                                        strokeDasharray="6 6"
-                                        ifOverflow="extendDomain"
-                                    />
-                                    <Area
-                                        type="monotone"
-                                        dataKey={sensor.key}
-                                        stroke={sensor.stroke}
-                                        strokeWidth={2.4}
-                                        fill={`url(#${sensor.gradient})`}
-                                        dot={false}
-                                        activeDot={{ r: 4, strokeWidth: 0, fill: sensor.stroke }}
-                                    />
+                                    <ReferenceLine y={sensor.threshold} stroke="rgba(220,38,38,0.5)" strokeDasharray="6 6" ifOverflow="extendDomain" />
+                                    <Area type="monotone" dataKey={sensor.key} stroke={sensor.stroke} strokeWidth={2} fill={`url(#${sensor.gradient})`} dot={false} activeDot={{ r: 3, strokeWidth: 0, fill: sensor.stroke }} />
                                 </AreaChart>
                             </ResponsiveContainer>
                         </div>
                     ))}
                 </div>
+                <div className="px-3 pb-2 flex gap-4">
+                    <div className="flex items-center gap-1.5 text-[9px] text-ink3 uppercase tracking-[0.06em]">
+                        <span className="w-1.5 h-1.5 bg-accent" /> Normal
+                    </div>
+                    <div className="flex items-center gap-1.5 text-[9px] text-ink3 uppercase tracking-[0.06em]">
+                        <span className="w-1.5 h-1.5 bg-danger" /> Alert
+                    </div>
+                    <div className="flex items-center gap-1.5 text-[9px] text-ink3 uppercase tracking-[0.06em]">
+                        <span className="w-1.5 h-1.5 bg-edge" /> Threshold
+                    </div>
+                </div>
             </div>
 
-            <div className="relative isolate overflow-hidden rounded-[20px] border border-white/10 bg-[linear-gradient(160deg,rgba(255,255,255,0.09),rgba(255,255,255,0.03)_58%,rgba(99,102,241,0.12))] p-5">
-                <div className="flex flex-wrap items-center justify-between gap-3">
+            {/* Raw Readings */}
+            <div className="bg-surface2 border border-edge">
+                <div className="flex items-center justify-between px-3 py-2 border-b border-edge">
                     <div>
-                        <h2 className="text-xl font-semibold">Raw Readings</h2>
-                        <p className="text-xs text-muted-foreground">
-                            {rawReadings.length} entries
-                        </p>
+                        <p className="text-[9px] font-medium uppercase tracking-[0.10em] text-ink2">Raw Readings</p>
+                        <p className="text-[9px] text-ink3">{rawReadings.length} entries</p>
                     </div>
-                    <div className="flex items-center gap-2">
-                        <div className="h-10 rounded-full border border-white/10 bg-black/25 px-3 flex items-center gap-2 text-sm text-muted-foreground">
-                            <Search className="w-4 h-4 shrink-0" />
+                    <div className="flex items-center gap-1.5">
+                        <div className="h-7 border border-edge bg-surface px-2 flex items-center gap-1.5">
+                            <Search className="w-3 h-3 text-ink3" />
                             <input
                                 type="text"
                                 placeholder="Filter..."
                                 value={searchTerm}
                                 onChange={(e) => setSearchTerm(e.target.value)}
-                                className="bg-transparent border-none outline-none text-sm text-foreground w-20 md:w-32 placeholder-muted-foreground"
+                                className="bg-transparent border-none outline-none text-[9px] text-ink w-20 md:w-28 placeholder-ink3"
                             />
                         </div>
-                        <button
-                            type="button"
-                            onClick={exportCSV}
-                            className="h-10 rounded-full bg-purple text-purple-foreground px-3 md:px-4 font-semibold inline-flex items-center gap-2 shadow-[0_10px_30px_rgba(147,51,234,0.35)]"
-                        >
-                            <Download className="w-4 h-4" />
-                            <span className="hidden sm:inline">Export CSV</span>
-                        </button>
                     </div>
                 </div>
 
-                <div className="mt-4 overflow-auto thin-scroll">
-                    <table className="w-full min-w-[640px] text-sm">
+                <div className="overflow-auto thin-scroll">
+                    <table className="w-full min-w-[640px]">
                         <thead>
-                            <tr className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground border-b border-white/10">
-                                <th className="text-left py-3">Timestamp</th>
-                                <th className="text-left py-3">Gas (PPM)</th>
-                                <th className="text-left py-3">Api</th>
-                                <th className="text-left py-3">Kelembapan (%)</th>
-                                <th className="text-left py-3">Suhu (°C)</th>
-                                <th className="text-right py-3">Status</th>
+                            <tr className="text-[9px] uppercase tracking-[0.08em] text-ink3 border-b border-edge">
+                                <th className="text-left px-3 py-2">Timestamp</th>
+                                <th className="text-left px-3 py-2">Gas (PPM)</th>
+                                <th className="text-left px-3 py-2">Api</th>
+                                <th className="text-left px-3 py-2">Kelembapan (%)</th>
+                                <th className="text-left px-3 py-2">Suhu (°C)</th>
+                                <th className="text-right px-3 py-2">Status</th>
                             </tr>
                         </thead>
                         <tbody>
                             {rawReadings.map((row, index) => (
-                                <tr
-                                    key={`${row[0]}-${index}`}
-                                    className="border-b border-white/5 hover:bg-white/5"
-                                >
-                                    <td className="py-3">{row[0]}</td>
-                                    <td>{row[1]}</td>
-                                    <td>{row[2]}</td>
-                                    <td>{row[3]}</td>
-                                    <td>{row[4]}</td>
-                                    <td className="py-3 text-right">
-                                        <span
-                                            className={`inline-flex px-2 py-1 rounded-full text-[10px] border ${
-                                                row[5] === "BAHAYA"
-                                                    ? "bg-danger/20 text-danger border-danger/40"
-                                                    : "bg-success/20 text-success border-success/40"
-                                            }`}
-                                        >
+                                <tr key={`${row[0]}-${index}`} className="border-b border-edge hover:bg-surface3 transition-smooth">
+                                    <td className="px-3 py-2 text-[9px] text-ink2 tabular-nums">{row[0]}</td>
+                                    <td className="px-3 py-2 text-[9px] text-ink tabular-nums">{row[1]}</td>
+                                    <td className="px-3 py-2 text-[9px] text-ink">{row[2]}</td>
+                                    <td className="px-3 py-2 text-[9px] text-ink tabular-nums">{row[3]}</td>
+                                    <td className="px-3 py-2 text-[9px] text-ink tabular-nums">{row[4]}</td>
+                                    <td className="px-3 py-2 text-right">
+                                        <span className={`inline-flex px-1.5 py-0.5 text-[9px] uppercase tracking-[0.06em] border ${
+                                            row[5] === "BAHAYA"
+                                                ? "text-danger border-danger bg-danger/10"
+                                                : "text-success border-success bg-success/10"
+                                        }`}>
                                             {row[5]}
                                         </span>
                                     </td>

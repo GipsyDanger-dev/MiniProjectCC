@@ -1,39 +1,53 @@
 import React from "react";
-import { Bell, List, Loader2, Play, Square } from "lucide-react";
+import { Bell, List, Loader2, Play, Square, Zap } from "lucide-react";
 
 export function StatusCard({
     status = "AMAN",
     systemActive = true,
+    onToggle,
     deviceLabel = "IOT-SEC-0A42F",
     updatedLabel = "Updated 2s ago",
 }) {
+    const isDanger = status === "BAHAYA";
     return (
-        <div className="card-surface p-6 h-full bg-[radial-gradient(120%_120%_at_100%_0%,rgba(147,51,234,0.12),transparent_62%)] border border-white/5">
-            <div className="flex items-center justify-between">
-                <p className="text-xs uppercase tracking-widest text-muted-foreground">
-                    System Status
+        <div className="bg-surface2 border border-edge p-4 h-full flex flex-col">
+            <div className="flex items-center justify-between mb-3">
+                <p className="text-[9px] uppercase tracking-[0.10em] text-ink3">
+                    Status Indikasi
                 </p>
-                <button
-                    type="button"
-                    className={`w-12 h-7 rounded-full p-1 transition-all ${systemActive ? "bg-purple" : "bg-muted"}`}
+                <div
+                    onClick={onToggle}
+                    className={`w-9 h-[18px] border cursor-pointer relative transition-smooth ${
+                        systemActive
+                            ? "bg-accent/10 border-accent"
+                            : "bg-surface3 border-edge2"
+                    }`}
                 >
                     <span
-                        className={`block w-5 h-5 rounded-full bg-background transition-transform ${systemActive ? "translate-x-5" : "translate-x-0"}`}
+                        className={`absolute top-0.5 w-3 h-3 transition-all ${
+                            systemActive
+                                ? "left-[18px] bg-accent"
+                                : "left-0.5 bg-edge2"
+                        }`}
                     />
-                </button>
+                </div>
             </div>
-            <p className="inline-flex mt-3 items-center px-3 py-1 rounded-full text-xs bg-muted/40 text-muted-foreground">
+            <p className="text-center text-[9px] text-ink3 mb-3 tracking-[0.04em]">
                 {updatedLabel}
             </p>
-            <p className="mt-5 text-4xl md:text-6xl leading-none font-extrabold text-purple drop-shadow-[0_0_22px_rgba(147,51,234,0.32)]">
-                {status}.
+            <p
+                className={`text-2xl font-medium text-center tracking-[0.02em] ${
+                    isDanger ? "text-danger animate-pulse" : "text-success"
+                }`}
+            >
+                {status}
             </p>
-            <div className="mt-5 flex items-end justify-between">
+            <div className="mt-auto pt-3 flex items-end justify-between">
                 <div>
-                    <p className="text-xs uppercase tracking-widest text-muted-foreground">
+                    <p className="text-[9px] uppercase tracking-[0.10em] text-ink3">
                         Device ID
                     </p>
-                    <p className="text-xl md:text-3xl font-semibold mt-1">{deviceLabel}</p>
+                    <p className="text-sm font-medium mt-0.5">{deviceLabel}</p>
                 </div>
             </div>
         </div>
@@ -43,11 +57,12 @@ export function StatusCard({
 export function QuickActions({ actuatorState = {}, onAction, loading }) {
     const actions = [
         {
-            label: "Activate Fan",
-            icon: Play,
+            label: "Aktifkan Fan",
+            icon: Zap,
             target: "exhaust_fan",
             active: actuatorState.exhaust_fan === "START" || actuatorState.exhaust_fan === "HIGH" || actuatorState.exhaust_fan === "MEDIUM" || actuatorState.exhaust_fan === "LOW",
             action: { target_device: "exhaust_fan", action: "START" },
+            primary: true,
         },
         {
             label: "Stop Fan",
@@ -55,6 +70,7 @@ export function QuickActions({ actuatorState = {}, onAction, loading }) {
             target: "exhaust_fan",
             active: actuatorState.exhaust_fan === "STOP" || actuatorState.exhaust_fan === "OFF",
             action: { target_device: "exhaust_fan", action: "STOP" },
+            primary: false,
         },
         {
             label: "Test Buzzer",
@@ -62,12 +78,13 @@ export function QuickActions({ actuatorState = {}, onAction, loading }) {
             target: "buzzer",
             active: actuatorState.buzzer === "START",
             action: { target_device: "buzzer", action: "START" },
+            primary: false,
         },
-        { label: "View Logs", icon: List, target: null, active: false, action: { navigate: "activity" } },
+        { label: "View Logs", icon: List, target: null, active: false, action: { navigate: "activity" }, primary: false },
     ];
 
     return (
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 h-full">
+        <div className="grid grid-cols-2 gap-1.5">
             {actions.map((action) => {
                 const isLoading = loading && action.target === loading;
                 return (
@@ -76,35 +93,18 @@ export function QuickActions({ actuatorState = {}, onAction, loading }) {
                         type="button"
                         disabled={isLoading}
                         onClick={() => onAction?.(action.action)}
-                        className={`relative overflow-hidden p-6 text-left flex flex-col justify-between min-h-[122px] rounded-[20px] border transition-smooth cursor-pointer disabled:opacity-70 disabled:cursor-wait ${
-                            action.active
-                                ? "text-white border-purple/70 shadow-[0_14px_36px_rgba(147,51,234,0.38)] bg-[linear-gradient(135deg,rgba(168,85,247,0.92),rgba(147,51,234,0.86))]"
-                                : "text-foreground border-white/10 bg-[linear-gradient(140deg,rgba(255,255,255,0.10),rgba(255,255,255,0.03)_58%,rgba(147,51,234,0.12))]"
+                        className={`h-8 border text-[8px] uppercase tracking-[0.08em] flex items-center justify-center gap-1.5 transition-smooth cursor-pointer disabled:opacity-50 disabled:cursor-wait ${
+                            action.primary
+                                ? "bg-accent text-white border-accent hover:bg-accent/80"
+                                : "bg-surface3 border-edge2 text-ink2 hover:border-accent hover:text-accent"
                         }`}
                     >
-                        <span
-                            className={`absolute inset-0 pointer-events-none ${
-                                action.active
-                                    ? "bg-[radial-gradient(130%_100%_at_0%_0%,rgba(255,255,255,0.36),transparent_62%)]"
-                                    : "bg-[radial-gradient(120%_110%_at_100%_0%,rgba(147,51,234,0.10),transparent_64%)]"
-                            }`}
-                        />
-                        <span
-                            className={`relative w-10 h-10 rounded-full flex items-center justify-center ${
-                                action.active
-                                    ? "bg-black/15"
-                                    : "bg-black/25 border border-white/10"
-                            }`}
-                        >
-                            {isLoading ? (
-                                <Loader2 className="w-5 h-5 animate-spin" />
-                            ) : (
-                                <action.icon className="w-5 h-5" />
-                            )}
-                        </span>
-                        <span className="relative text-2xl font-semibold">
-                            {action.label}
-                        </span>
+                        {isLoading ? (
+                            <Loader2 className="w-3 h-3 animate-spin" />
+                        ) : (
+                            <action.icon className="w-3 h-3" />
+                        )}
+                        {action.label}
                     </button>
                 );
             })}
