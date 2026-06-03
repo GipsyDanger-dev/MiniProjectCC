@@ -273,7 +273,7 @@ export default function Settings({
                             max="1000"
                             value={gas}
                             onChange={(e) => setGas(Number(e.target.value))}
-                            className="mt-2 w-full accent-lime"
+                            className="mt-2 w-full accent-purple"
                         />
                     </div>
                     <div>
@@ -289,7 +289,7 @@ export default function Settings({
                             max="100"
                             value={humidity}
                             onChange={(e) => setHumidity(Number(e.target.value))}
-                            className="mt-2 w-full accent-lime"
+                            className="mt-2 w-full accent-purple"
                         />
                     </div>
                     <div>
@@ -307,7 +307,7 @@ export default function Settings({
                             max="80"
                             value={temp}
                             onChange={(e) => setTemp(Number(e.target.value))}
-                            className="mt-2 w-full accent-lime"
+                            className="mt-2 w-full accent-purple"
                         />
                     </div>
                     <div>
@@ -351,7 +351,7 @@ export default function Settings({
                 <button
                     type="button"
                     onClick={saveThresholds}
-                    className="mt-4 h-11 w-full rounded-full bg-lime text-lime-foreground font-semibold inline-flex items-center justify-center gap-2 shadow-[0_12px_35px_rgba(204,255,0,0.35)]"
+                    className="mt-4 h-11 w-full rounded-full bg-purple text-purple-foreground font-semibold inline-flex items-center justify-center gap-2 shadow-[0_12px_35px_rgba(147,51,234,0.35)]"
                 >
                     <Save className="w-4 h-4" />
                     {saving ? "Saving..." : "Save Thresholds"}
@@ -439,7 +439,7 @@ export default function Settings({
                                     type="button"
                                     onClick={() => setDangerOnly((v) => !v)}
                                     className={`w-12 h-6 rounded-full p-1 transition-all ${
-                                        dangerOnly ? "bg-lime" : "bg-muted"
+                                        dangerOnly ? "bg-purple" : "bg-muted"
                                     }`}
                                 >
                                     <span
@@ -469,7 +469,7 @@ export default function Settings({
                                     onChange={(e) =>
                                         setPollingInterval(Number(e.target.value) * 1000)
                                     }
-                                    className="mt-2 w-full accent-lime"
+                                    className="mt-2 w-full accent-purple"
                                 />
                             </div>
                         </div>
@@ -493,7 +493,7 @@ export default function Settings({
                                     setSelectedDeviceId(Number(e.target.value))
                                 }
                                 disabled={devicesLoading || !devices.length}
-                                className="device-select text-sm mt-2 w-full bg-transparent outline-none border-b border-white/10 text-foreground pb-1 focus:border-lime/50 transition-smooth"
+                                className="device-select text-sm mt-2 w-full bg-transparent outline-none border-b border-white/10 text-foreground pb-1 focus:border-purple/50 transition-smooth"
                             >
                                 {!devices.length ? (
                                     <option value="">
@@ -541,7 +541,7 @@ export default function Settings({
                                     alert("API Key copied!");
                                 }}
                                 disabled={!apiKey}
-                                className="h-9 px-3 rounded-full border border-white/10 bg-black/20 inline-flex items-center gap-2 text-sm hover:border-lime/50 transition-smooth disabled:opacity-60 disabled:cursor-not-allowed"
+                                className="h-9 px-3 rounded-full border border-white/10 bg-black/20 inline-flex items-center gap-2 text-sm hover:border-purple/50 transition-smooth disabled:opacity-60 disabled:cursor-not-allowed"
                             >
                                 <Copy className="w-4 h-4" />
                                 Copy
@@ -556,7 +556,7 @@ export default function Settings({
                                 value={deviceName}
                                 onChange={(e) => setDeviceName(e.target.value)}
                                 disabled={!selectedDevice}
-                                className="text-sm mt-2 w-full bg-transparent outline-none border-b border-white/10 text-foreground pb-1 focus:border-lime/50 transition-smooth"
+                                className="text-sm mt-2 w-full bg-transparent outline-none border-b border-white/10 text-foreground pb-1 focus:border-purple/50 transition-smooth"
                             />
                         </div>
                         <div className="rounded-xl border border-white/10 bg-black/20 px-3 py-3">
@@ -570,7 +570,7 @@ export default function Settings({
                                     setDeviceLocation(e.target.value)
                                 }
                                 disabled={!selectedDevice}
-                                className="text-sm mt-2 w-full bg-transparent outline-none border-b border-white/10 text-foreground pb-1 focus:border-lime/50 transition-smooth"
+                                className="text-sm mt-2 w-full bg-transparent outline-none border-b border-white/10 text-foreground pb-1 focus:border-purple/50 transition-smooth"
                                 placeholder="Warehouse"
                             />
                         </div>
@@ -583,7 +583,7 @@ export default function Settings({
                                 !deviceName.trim() ||
                                 !deviceLocation.trim()
                             }
-                            className="h-10 w-full px-4 rounded-full bg-lime/20 text-lime border border-lime/35 font-semibold hover:bg-lime/30 transition-smooth disabled:opacity-60 disabled:cursor-not-allowed"
+                            className="h-10 w-full px-4 rounded-full bg-purple/20 text-purple border border-purple/35 font-semibold hover:bg-purple/30 transition-smooth disabled:opacity-60 disabled:cursor-not-allowed"
                         >
                             {deviceSaving ? "Saving..." : "Save Device"}
                         </button>

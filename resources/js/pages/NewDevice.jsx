@@ -81,7 +81,7 @@ export default function NewDevice({ onCreated, onReload }) {
                             type="text"
                             value={deviceName}
                             onChange={(e) => setDeviceName(e.target.value)}
-                            className="text-sm mt-2 w-full bg-transparent outline-none border-b border-white/10 text-foreground pb-1 focus:border-lime/50 transition-smooth"
+                            className="text-sm mt-2 w-full bg-transparent outline-none border-b border-white/10 text-foreground pb-1 focus:border-purple/50 transition-smooth"
                             placeholder="Warehouse Gateway"
                         />
                     </div>
@@ -95,7 +95,7 @@ export default function NewDevice({ onCreated, onReload }) {
                             type="text"
                             value={location}
                             onChange={(e) => setLocation(e.target.value)}
-                            className="text-sm mt-2 w-full bg-transparent outline-none border-b border-white/10 text-foreground pb-1 focus:border-lime/50 transition-smooth"
+                            className="text-sm mt-2 w-full bg-transparent outline-none border-b border-white/10 text-foreground pb-1 focus:border-purple/50 transition-smooth"
                             placeholder="Warehouse"
                         />
                     </div>
@@ -109,7 +109,7 @@ export default function NewDevice({ onCreated, onReload }) {
                             type="text"
                             value={apiKey}
                             onChange={(e) => setApiKey(e.target.value)}
-                            className="text-sm mt-2 w-full bg-transparent outline-none border-b border-white/10 text-foreground pb-1 focus:border-lime/50 transition-smooth"
+                            className="text-sm mt-2 w-full bg-transparent outline-none border-b border-white/10 text-foreground pb-1 focus:border-purple/50 transition-smooth"
                             placeholder="key-warehouse-001"
                         />
                     </div>
@@ -121,7 +121,7 @@ export default function NewDevice({ onCreated, onReload }) {
                         <select
                             value={status}
                             onChange={(e) => setStatus(e.target.value)}
-                            className="device-select text-sm mt-2 w-full bg-transparent outline-none border-b border-white/10 text-foreground pb-1 focus:border-lime/50 transition-smooth"
+                            className="device-select text-sm mt-2 w-full bg-transparent outline-none border-b border-white/10 text-foreground pb-1 focus:border-purple/50 transition-smooth"
                         >
                             <option value="offline">offline</option>
                             <option value="online">online</option>
@@ -143,7 +143,7 @@ export default function NewDevice({ onCreated, onReload }) {
                             !apiKey.trim() ||
                             !location.trim()
                         }
-                        className="h-11 px-6 rounded-full bg-lime/20 text-lime border border-lime/35 font-semibold hover:bg-lime/30 transition-smooth disabled:opacity-60 disabled:cursor-not-allowed inline-flex items-center gap-2"
+                        className="h-11 px-6 rounded-full bg-purple/20 text-purple border border-purple/35 font-semibold hover:bg-purple/30 transition-smooth disabled:opacity-60 disabled:cursor-not-allowed inline-flex items-center gap-2"
                     >
                         <PlusCircle className="w-4 h-4" />
                         {submitting ? "Creating..." : "Create Device"}
