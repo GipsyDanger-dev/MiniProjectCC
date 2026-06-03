@@ -14,8 +14,8 @@ export default function RoomTabs({ rooms, activeRoomId, onChange }) {
                         className={cn(
                             "px-4 py-2 rounded-full text-sm font-medium border transition-smooth",
                             isActive
-                                ? "bg-lime text-lime-foreground border-lime shadow-lime"
-                                : "glass-pill text-foreground hover:border-lime/40",
+                                ? "bg-purple text-purple-foreground border-purple shadow-purple"
+                                : "glass-pill text-foreground hover:border-purple/40",
                         )}
                     >
                         {room.label}

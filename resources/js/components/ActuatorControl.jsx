@@ -3,8 +3,8 @@ import { cn } from "../lib/utils";
 
 export default function ActuatorControl({ items, onToggle }) {
     return (
-        <div className="relative overflow-hidden rounded-[20px] border border-white/10 bg-[linear-gradient(145deg,rgba(255,255,255,0.10),rgba(255,255,255,0.03)_62%,rgba(168,85,247,0.10))] p-6">
-            <span className="absolute inset-0 pointer-events-none bg-[radial-gradient(120%_110%_at_100%_0%,rgba(204,255,0,0.08),transparent_66%)]" />
+        <div className="relative overflow-hidden rounded-[20px] border border-white/10 bg-[linear-gradient(145deg,rgba(255,255,255,0.10),rgba(255,255,255,0.03)_62%,rgba(147,51,234,0.10))] p-6">
+            <span className="absolute inset-0 pointer-events-none bg-[radial-gradient(120%_110%_at_100%_0%,rgba(147,51,234,0.08),transparent_66%)]" />
             <h3 className="text-sm font-semibold text-foreground relative">
                 Actuator Control
             </h3>
@@ -39,7 +39,7 @@ export default function ActuatorControl({ items, onToggle }) {
                                 className={cn(
                                     "w-12 h-6 rounded-full p-1 transition-all border",
                                     item.enabled
-                                        ? "bg-lime border-lime shadow-[0_0_18px_rgba(204,255,0,0.36)]"
+                                        ? "bg-purple border-purple shadow-[0_0_18px_rgba(147,51,234,0.36)]"
                                         : "bg-muted border-white/10",
                                 )}
                             >

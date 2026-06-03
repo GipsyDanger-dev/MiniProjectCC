@@ -7,7 +7,7 @@ function LoadingSpinner() {
     return (
         <Html center>
             <div className="flex flex-col items-center gap-2">
-                <div className="w-8 h-8 border-2 border-lime/30 border-t-lime rounded-full animate-spin" />
+                <div className="w-8 h-8 border-2 border-purple/30 border-t-purple rounded-full animate-spin" />
                 <span className="text-xs text-muted-foreground">Loading 3D Model...</span>
             </div>
         </Html>
@@ -195,7 +195,7 @@ export default function RoomModel({ room, iot }) {
                 <div className="flex items-center gap-2">
                     <span className={`inline-flex items-center px-2 py-1 rounded-full text-[10px] uppercase tracking-wider ${
                         fanStatus !== "OFF"
-                            ? "bg-lime/20 text-lime"
+                            ? "bg-purple/20 text-purple"
                             : "bg-muted/40 text-muted-foreground"
                     }`}>
                         Fan: {fanStatus}{fanSpeed ? ` ${fanSpeed}%` : ""}
