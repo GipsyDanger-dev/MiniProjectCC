@@ -81,30 +81,23 @@ export default function MainApp() {
         sensors: (
             <SensorData
                 activeRoom={activeRoom}
-                deviceId={activeDeviceId}
                 iot={iot}
             />
         ),
         devices: (
             <DeviceStatus
                 activeRoom={activeRoom}
-                deviceId={activeDeviceId}
                 iot={iot}
             />
         ),
         logs: (
             <ActivityLogs
                 activeRoom={activeRoom}
-                deviceId={activeDeviceId}
                 iot={iot}
             />
         ),
         settings: (
             <Settings
-                theme={theme}
-                toggleTheme={toggleTheme}
-                collapsed={collapsed}
-                setCollapsed={setCollapsed}
                 iot={iot}
                 pollingInterval={pollingInterval}
                 setPollingInterval={setPollingInterval}
@@ -132,7 +125,7 @@ export default function MainApp() {
     const currentContent = pages[currentPage] || pages.dashboard;
 
     return (
-        <div className="bg-transparent text-foreground">
+        <div className="bg-surface text-ink min-h-screen">
             <Sidebar
                 collapsed={collapsed}
                 setCollapsed={setCollapsed}
@@ -144,14 +137,13 @@ export default function MainApp() {
                 setMobileOpen={setMobileOpen}
             />
             <div className={cn(
-                "flex flex-col min-h-screen transition-all duration-300 ease-out",
-                collapsed ? "lg:ml-[84px]" : "lg:ml-[270px]"
+                "flex flex-col min-h-screen transition-all duration-200",
+                collapsed ? "lg:ml-[56px]" : "lg:ml-[176px]"
             )}>
                 <Topbar
-                    setCurrentPage={setCurrentPage}
                     onMenuClick={() => setMobileOpen(true)}
                 />
-                <main className="flex-1 px-4 pb-6 md:px-8 md:pb-10">
+                <main className="flex-1 px-3 pb-4 md:px-5 md:pb-6">
                     <div className="relative z-10">
                         <RoomSelectionBanner
                             rooms={rooms}

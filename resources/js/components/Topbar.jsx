@@ -1,111 +1,59 @@
-import React, { useEffect, useState } from "react";
-import { Menu, Search, LogOut } from "lucide-react";
+import React, { useState, useEffect } from "react";
+import { Menu } from "lucide-react";
 
-export default function Topbar({ setCurrentPage, onSearch, onMenuClick }) {
-    const [now, setNow] = useState(new Date());
-    const [userName, setUserName] = useState("");
-    const [showUserMenu, setShowUserMenu] = useState(false);
-    const [searchValue, setSearchValue] = useState("");
+export default function Topbar({
+    mobileOpen,
+    setMobileOpen,
+}) {
+    const [time, setTime] = useState(new Date());
 
     useEffect(() => {
-        const timer = setInterval(() => setNow(new Date()), 1000);
+        const timer = setInterval(() => setTime(new Date()), 1000);
         return () => clearInterval(timer);
     }, []);
-
-    useEffect(() => {
-        const fetchUser = async () => {
-            try {
-                const response = await fetch("/api/user");
-                const data = await response.json();
-                setUserName(data.name || data.user?.name || "Admin");
-            } catch (error) {
-                console.error("Error fetching user:", error);
-            }
-        };
-        fetchUser();
-    }, []);
-
-    const handleLogout = async () => {
-        try {
-            const response = await fetch("/api/logout", { method: "POST" });
-            const data = await response.json();
-            if (data.status === "success") {
-                window.location.href = "/login";
-            }
-        } catch (error) {
-            console.error("Logout error:", error);
-        }
-    };
 
     const formatted = new Intl.DateTimeFormat("id-ID", {
         timeZone: "Asia/Jakarta",
         hour: "2-digit",
         minute: "2-digit",
         second: "2-digit",
-        day: "2-digit",
-        month: "short",
-        year: "numeric",
-    }).format(now);
+    }).format(time);
+
+    const initials = "OP";
 
     return (
-        <header className="sticky top-0 z-20 border-b border-white/15 glass-header">
-            <div className="flex items-center gap-3 px-4 py-3 md:px-8 md:py-4">
-                <button
-                    type="button"
-                    onClick={onMenuClick}
-                    className="lg:hidden w-10 h-10 rounded-full glass-pill flex items-center justify-center shrink-0"
-                >
-                    <Menu className="w-5 h-5 text-foreground" />
-                </button>
+        <header className="glass-header h-9 flex items-center px-4 gap-3 shrink-0">
+            <button
+                type="button"
+                className="lg:hidden w-7 h-7 flex items-center justify-center text-[#7a7a6e]"
+                onClick={() => setMobileOpen(!mobileOpen)}
+            >
+                <Menu className="w-4 h-4" />
+            </button>
 
-                <div className="relative flex-1 min-w-0">
-                    <Search className="w-4 h-4 text-muted-foreground absolute left-4 top-1/2 -translate-y-1/2" />
-                    <input
-                        type="text"
-                        placeholder="Search..."
-                        value={searchValue}
-                        onChange={(e) => setSearchValue(e.target.value)}
-                        onKeyDown={(e) => {
-                            if (e.key === "Enter" && searchValue.trim()) {
-                                onSearch?.(searchValue.trim());
-                                setCurrentPage?.("sensors");
-                            }
-                        }}
-                        className="w-full h-10 md:h-11 rounded-full glass-pill pl-11 pr-4 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-purple/60"
-                    />
-                </div>
+            <div className="hidden md:flex items-center gap-2 text-[9px] uppercase tracking-[0.08em] text-[#7a7a6e]">
+                <span>Node:</span>
+                <span className="text-[#b0b0a0] font-medium">ESP32-A1</span>
+            </div>
+            <div className="hidden md:block w-px h-3.5 bg-[#2a2a26]" />
+            <div className="hidden md:flex items-center gap-2 text-[9px] uppercase tracking-[0.08em] text-[#7a7a6e]">
+                <span>Fuzzy:</span>
+                <span className="text-[#b0b0a0] font-medium">13 rules</span>
+            </div>
 
-                <span className="hidden lg:inline-flex items-center px-3 py-2 rounded-full glass-pill text-xs text-muted-foreground whitespace-nowrap">
-                    {formatted} WIB
-                </span>
+            <div className="flex-1" />
 
-                <div className="relative shrink-0">
-                    <button
-                        type="button"
-                        onClick={() => setShowUserMenu((v) => !v)}
-                        className="w-10 h-10 rounded-full glass-pill flex items-center justify-center"
-                    >
-                        <span className="text-sm font-semibold text-foreground">
-                            {(userName || "A").charAt(0).toUpperCase()}
-                        </span>
-                    </button>
-                    {showUserMenu && (
-                        <div className="absolute right-0 mt-2 w-48 rounded-lg glass-panel border border-white/15 shadow-lg overflow-hidden z-50">
-                            <div className="px-4 py-2 border-b border-white/10">
-                                <p className="text-sm font-medium text-foreground truncate">
-                                    {userName || "Admin"}
-                                </p>
-                            </div>
-                            <button
-                                onClick={handleLogout}
-                                className="w-full flex items-center gap-2 px-4 py-3 text-sm text-foreground hover:bg-white/10 transition-smooth"
-                            >
-                                <LogOut className="w-4 h-4" />
-                                Logout
-                            </button>
-                        </div>
-                    )}
-                </div>
+            <div className="hidden sm:flex items-center border border-accent px-2.5 py-1 text-[9px] uppercase tracking-[0.08em] text-accent cursor-pointer hover:bg-accent/5 transition-smooth h-6">
+                <span className="w-1.5 h-1.5 bg-accent mr-1.5" />
+                <span>AUTO MODE</span>
+            </div>
+
+            <span className="text-[10px] font-medium text-[#a0a090] tracking-[0.04em] tabular-nums">
+                {formatted} WIB
+            </span>
+
+            <div className="w-6 h-6 bg-[#222] border border-[#333] flex items-center justify-center text-[9px] font-medium text-[#888] uppercase">
+                {initials}
             </div>
         </header>
     );

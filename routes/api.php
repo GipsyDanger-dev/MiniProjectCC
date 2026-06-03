@@ -16,14 +16,6 @@ Route::middleware([CheckApiKey::class])->group(function () {
 
 Route::get('/dashboard/data', [ApiController::class, 'dashboard']);
 
-Route::post('/settings', [ApiController::class, 'saveSettings']);
-
-Route::post('/actuator', [ApiController::class, 'controlActuator']);
-
-Route::post('/mode', [ApiController::class, 'setMode']);
-
-Route::post('/worker/clear', [ApiController::class, 'clearWorkerStatus']);
-
 // Device CRUD
 Route::get('/devices', [ApiController::class, 'getDevices']);
 Route::post('/devices', [ApiController::class, 'createDevice']);
