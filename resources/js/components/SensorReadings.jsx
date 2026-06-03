@@ -63,7 +63,7 @@ export default function SensorReadings({ readings = [] }) {
                             onClick={() => setActive(metric)}
                             className={`px-4 py-2 rounded-full text-sm transition-smooth ${
                                 active === metric
-                                    ? "bg-card text-foreground"
+                                    ? "bg-purple/20 text-purple"
                                     : "text-muted-foreground"
                             }`}
                         >
@@ -92,7 +92,7 @@ export default function SensorReadings({ readings = [] }) {
                             </div>
                             <div className="h-56 rounded-[30px] bg-[#0f1118] border border-white/5 relative overflow-hidden p-1">
                                 <div
-                                    className="absolute bottom-1 left-1 right-1 rounded-[24px] bg-lime transition-all duration-500 shadow-[0_0_24px_rgba(204,255,0,0.28)]"
+                                    className="absolute bottom-1 left-1 right-1 rounded-[24px] bg-purple transition-all duration-500 shadow-[0_0_24px_rgba(147,51,234,0.28)]"
                                     style={{ height: `${height}%` }}
                                 />
                             </div>

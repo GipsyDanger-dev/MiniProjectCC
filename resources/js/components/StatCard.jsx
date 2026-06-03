@@ -20,7 +20,7 @@ export default function StatCard({
                         className={cn(
                             "w-9 h-9 rounded-full flex items-center justify-center",
                             accent === "lime"
-                                ? "bg-lime/20 text-lime"
+                                ? "bg-purple/20 text-purple"
                                 : "bg-accent/20 text-accent",
                         )}
                     >

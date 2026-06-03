@@ -53,7 +53,7 @@ function SidebarContent({
                     collapsed ? "justify-center" : "px-2",
                 )}
             >
-                <div className="w-9 h-9 rounded-full bg-lime flex items-center justify-center text-foreground text-xs font-bold">
+                <div className="w-9 h-9 rounded-full bg-purple flex items-center justify-center text-foreground text-xs font-bold">
                     SI
                 </div>
                 {!collapsed && (
@@ -80,7 +80,7 @@ function SidebarContent({
                                 "group flex items-center gap-3 h-11 rounded-full text-sm font-medium transition-smooth",
                                 collapsed ? "justify-center px-0" : "px-4",
                                 isActive
-                                    ? "bg-lime text-lime-foreground shadow-lime"
+                                    ? "bg-purple text-purple-foreground shadow-purple"
                                     : "text-sidebar-foreground hover:bg-muted",
                             )}
                         >
@@ -99,7 +99,7 @@ function SidebarContent({
                     <button
                         type="button"
                         onClick={() => handleClick("new-device")}
-                        className="w-full flex items-center justify-center gap-2 h-11 rounded-full bg-deep-green text-deep-green-foreground font-semibold hover:shadow-lime transition-smooth"
+                        className="w-full flex items-center justify-center gap-2 h-11 rounded-full bg-deep-green text-deep-green-foreground font-semibold hover:shadow-purple transition-smooth"
                     >
                         <Plus className="w-4 h-4" />
                         New Device
