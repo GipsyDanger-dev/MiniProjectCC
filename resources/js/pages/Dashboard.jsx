@@ -20,10 +20,7 @@ import { QuickActions, StatusCard } from "../components/StatusAndActions";
 
 function relativeTime(dateValue) {
     if (!dateValue) return "Updated just now";
-    const diffSec = Math.max(
-        0,
-        Math.floor((Date.now() - new Date(dateValue).getTime()) / 1000),
-    );
+    const diffSec = Math.max(0, Math.floor((Date.now() - new Date(dateValue).getTime()) / 1000));
     if (diffSec < 60) return `Updated ${diffSec}s ago`;
     if (diffSec < 3600) return `Updated ${Math.floor(diffSec / 60)}m ago`;
     return `Updated ${Math.floor(diffSec / 3600)}h ago`;
@@ -39,110 +36,53 @@ export default function Dashboard({ activeRoom, deviceId, iot, setCurrentPage })
     const emergency = iot.data?.emergency_status || "AMAN";
     const systemMode = iot.data?.system_mode || "auto";
 
+    const fanOn = actuator?.fan_status && actuator.fan_status !== "OFF";
+    const buzzerOn = actuator?.alarm_status === "ON";
+    const fanSpeed = actuator?.fan_speed || 0;
+    const fanLevel = fanSpeed > 70 ? "MAXIMUM" : fanSpeed > 40 ? "HIGH" : fanSpeed > 10 ? "MEDIUM" : "LOW";
+
     const stats = [
         {
             title: "System Status",
             value: emergency,
-            sub: workerOnline ? "Worker online" : "Worker offline",
-            icon: ShieldCheck,
-            badge: emergency === "BAHAYA" ? "Alert" : "Secure",
-            accent: "purple",
+            badge: emergency === "BAHAYA" ? "KRITIS" : "OPERASIONAL",
+            badgeVariant: emergency === "BAHAYA" ? "red" : "green",
         },
         {
             title: "Active Sensors",
             value: "4 / 4",
-            sub: "Gas, api, kelembapan, suhu live",
-            icon: Zap,
-            accent: "purple",
+            badge: "ONLINE",
+            badgeVariant: "green",
         },
         {
             title: "Events Today",
             value: `${logs.length}`,
-            sub: "Latest activity entries",
-            icon: Bell,
-            accent: "accent",
+            badge: logs.length > 0 ? `${logs.length} WARNING` : "ALL CLEAR",
+            badgeVariant: logs.length > 0 ? "orange" : "muted",
         },
         {
-            title: "Fan Speed",
-            value:
-                actuator?.fan_status && actuator.fan_status !== "OFF"
-                    ? actuator.fan_status
-                    : "OFF",
-            sub: actuator?.fan_speed ? `${actuator.fan_speed}% speed` : "Idle",
-            icon: Fan,
-            accent: "purple",
+            title: "Fan Output",
+            value: fanOn ? `${fanSpeed}%` : "0%",
+            badge: fanOn ? `${fanLevel} · RUNNING` : "IDLE",
+            badgeVariant: fanOn ? "orange" : "muted",
         },
     ];
 
     const sensors = [
-        {
-            name: "Gas",
-            type: "MQ-2 Gas Sensor",
-            value: `${Math.round(Number(latest?.gas_value || 0))} ppm`,
-            status: Number(latest?.gas_value || 0) > 250 ? "Alert" : "Normal",
-            icon: Wind,
-        },
-        {
-            name: "Api",
-            type: "KY-026 Flame Sensor",
-            value: `${Math.round(Number(latest?.flame_value || 0))}`,
-            status:
-                Number(latest?.flame_value || 9999) < 500 ? "Alert" : "Normal",
-            icon: Flame,
-        },
-        {
-            name: "Kelembapan",
-            type: "DHT22 Humidity",
-            value: `${Math.round(Number(latest?.humidity || 0))}%`,
-            status: Number(latest?.humidity || 0) > 70 ? "Alert" : "Normal",
-            icon: Droplets,
-        },
-        {
-            name: "Suhu",
-            type: "DHT22 Temperature",
-            value: `${Math.round(Number(latest?.temperature || 0))}°C`,
-            status: Number(latest?.temperature || 0) > 40 ? "Alert" : "Normal",
-            icon: Thermometer,
-        },
+        { name: "MQ-2 Gas", type: "GAS SENSOR", value: `${Math.round(Number(latest?.gas_value || 0))} PPM`, status: Number(latest?.gas_value || 0) > 250 ? "Alert" : "Normal", icon: Wind },
+        { name: "KY-026", type: "FLAME DETECTOR", value: `${Math.round(Number(latest?.flame_value || 0))}`, status: Number(latest?.flame_value || 9999) < 500 ? "Alert" : "Normal", icon: Flame },
+        { name: "DHT22-H", type: "HUMIDITY", value: `${Math.round(Number(latest?.humidity || 0))}%`, status: Number(latest?.humidity || 0) > 70 ? "Alert" : "Normal", icon: Droplets },
+        { name: "DHT22-T", type: "TEMPERATURE", value: `${Math.round(Number(latest?.temperature || 0))}°C`, status: Number(latest?.temperature || 0) > 40 ? "Alert" : "Normal", icon: Thermometer },
     ];
-
-    const fanOn = actuator?.fan_status && actuator.fan_status !== "OFF";
-    const buzzerOn = actuator?.alarm_status === "ON";
 
     const actuators = [
-        {
-            name: "Exhaust Fan",
-            subtitle: fanOn
-                ? `${actuator.fan_status} (${actuator.fan_speed || 0}%)`
-                : latestCommand?.target_device === "exhaust_fan"
-                  ? `${latestCommand.action} (${latestCommand.status})`
-                  : "Idle",
-            value: fanOn ? actuator.fan_status : "",
-            enabled: fanOn,
-            icon: Fan,
-        },
-        {
-            name: "Buzzer",
-            subtitle: buzzerOn
-                ? "ACTIVE"
-                : emergency === "BAHAYA"
-                  ? "Triggered by alert"
-                  : "Silent",
-            value: "",
-            enabled: buzzerOn,
-            icon: Bell,
-        },
+        { name: "Exhaust Fan", subtitle: fanOn ? `${actuator.fan_status} (${fanSpeed}%)` : "IDLE", value: fanOn ? actuator.fan_status : "", enabled: fanOn, icon: Fan },
+        { name: "Buzzer", subtitle: buzzerOn ? "ACTIVE" : "SILENT", value: "", enabled: buzzerOn, icon: Bell },
     ];
 
-    const dashboardEntries = logs.slice(0, 6).map((log, index) => ({
+    const dashboardEntries = logs.slice(0, 5).map((log, index) => ({
         id: `${log.id || index}`,
-        icon:
-            (log.action_type || "").includes("SENSOR") ||
-            (log.message || "").toLowerCase().includes("flame")
-                ? "flame"
-                : (log.message || "").toLowerCase().includes("temp")
-                  ? "temp"
-                  : "alert",
+        icon: (log.action_type || "").includes("SENSOR") || (log.message || "").toLowerCase().includes("flame") ? "flame" : (log.message || "").toLowerCase().includes("temp") ? "temp" : "alert",
         text: log.message || log.description || "System activity",
         time: relativeTime(log.created_at),
         status: log.status === "BAHAYA" ? "TRIGGERED" : "INFO",
@@ -162,20 +102,11 @@ export default function Dashboard({ activeRoom, deviceId, iot, setCurrentPage })
         try {
             const res = await fetch("/api/mode", {
                 method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    Accept: "application/json",
-                    "X-CSRF-TOKEN":
-                        document
-                            .querySelector('meta[name="csrf-token"]')
-                            ?.getAttribute("content") || "",
-                },
+                headers: { "Content-Type": "application/json", Accept: "application/json", "X-CSRF-TOKEN": document.querySelector('meta[name="csrf-token"]')?.getAttribute("content") || "" },
                 body: JSON.stringify({ mode: "auto" }),
             });
             const data = await res.json();
-            if (data.status === "success") {
-                setActuatorFeedback({ type: "success", msg: "Switched to AUTO mode" });
-            }
+            if (data.status === "success") setActuatorFeedback({ type: "success", msg: "Switched to AUTO mode" });
         } catch (_e) {
             setActuatorFeedback({ type: "error", msg: "Failed to switch mode" });
         } finally {
@@ -185,37 +116,21 @@ export default function Dashboard({ activeRoom, deviceId, iot, setCurrentPage })
     };
 
     const sendActuator = async (payload) => {
-        if (payload?.navigate === "activity") {
-            setCurrentPage?.("logs");
-            return;
-        }
+        if (payload?.navigate === "activity") { setCurrentPage?.("logs"); return; }
         setActuatorLoading(payload.target_device);
         try {
             const res = await fetch("/api/actuator", {
                 method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    Accept: "application/json",
-                    "X-CSRF-TOKEN":
-                        document
-                            .querySelector('meta[name="csrf-token"]')
-                            ?.getAttribute("content") || "",
-                },
+                headers: { "Content-Type": "application/json", Accept: "application/json", "X-CSRF-TOKEN": document.querySelector('meta[name="csrf-token"]')?.getAttribute("content") || "" },
                 body: JSON.stringify({ ...payload, device_id: deviceId }),
             });
             const data = await res.json();
-            if (data.status === "success") {
-                setActuatorFeedback({ type: "success", msg: `${payload.action} → ${payload.target_device}` });
-            } else {
-                setActuatorFeedback({ type: "error", msg: data.message || "Command failed" });
-            }
+            if (data.status === "success") setActuatorFeedback({ type: "success", msg: `${payload.action} → ${payload.target_device}` });
+            else setActuatorFeedback({ type: "error", msg: data.message || "Command failed" });
         } catch (e) {
             setActuatorFeedback({ type: "error", msg: "Connection failed" });
         } finally {
-            setTimeout(() => {
-                setActuatorLoading(null);
-                setActuatorFeedback(null);
-            }, 2000);
+            setTimeout(() => { setActuatorLoading(null); setActuatorFeedback(null); }, 2000);
         }
     };
 
@@ -223,110 +138,105 @@ export default function Dashboard({ activeRoom, deviceId, iot, setCurrentPage })
         try {
             const res = await fetch("/api/settings", {
                 method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    Accept: "application/json",
-                    "X-CSRF-TOKEN":
-                        document
-                            .querySelector('meta[name="csrf-token"]')
-                            ?.getAttribute("content") || "",
-                },
+                headers: { "Content-Type": "application/json", Accept: "application/json", "X-CSRF-TOKEN": document.querySelector('meta[name="csrf-token"]')?.getAttribute("content") || "" },
                 body: JSON.stringify(payload),
             });
-            if (!res.ok) {
-                console.error("Failed to save thresholds:", res.status);
-            }
+            if (!res.ok) console.error("Failed to save thresholds:", res.status);
         } catch (e) {
             console.error("Failed to save thresholds:", e);
         }
     };
 
     return (
-        <div className="py-5 space-y-5">
-            <div className="flex items-start justify-between">
-                <div>
-                    <h1 className="text-2xl md:text-3xl font-semibold text-foreground">
-                        Hello Admin
-                    </h1>
-                    <p className="text-sm text-muted-foreground">
-                        Monitoring {activeRoom} in real-time.
-                    </p>
-                    {iot.error ? (
-                        <p className="text-xs text-danger mt-1">
-                            API disconnected: {iot.error}
-                        </p>
-                    ) : null}
-                </div>
-                <div className="flex items-center gap-2">
-                    <span className={`inline-flex items-center px-3 py-1.5 rounded-full text-xs font-semibold border ${
-                        systemMode === "manual"
-                            ? "bg-amber-500/15 text-amber-400 border-amber-500/30"
-                            : "bg-success/15 text-success border-success/30"
-                    }`}>
-                        {systemMode === "manual" ? "MANUAL" : "AUTO"}
-                    </span>
-                    {systemMode === "manual" && (
-                        <button
-                            type="button"
-                            onClick={switchToAuto}
-                            disabled={modeLoading}
-                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold bg-purple text-purple-foreground shadow-purple disabled:opacity-60"
-                        >
-                            {modeLoading ? "Switching..." : "Switch to Auto"}
-                        </button>
-                    )}
-                </div>
-            </div>
-
-            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+        <div className="flex flex-col gap-2.5">
+            {/* Stat cards */}
+            <div className="grid grid-cols-2 xl:grid-cols-4 gap-2">
                 {stats.map((stat) => (
                     <StatCard key={stat.title} {...stat} />
                 ))}
             </div>
 
-            <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_340px]">
-                <div className="space-y-6">
-                    <RoomModel room={activeRoom} iot={iot} />
-                    <div className="grid gap-4 md:grid-cols-5">
-                        <div className="md:col-span-2">
-                            <StatusCard
-                                status={emergency}
-                                systemActive={workerOnline}
-                                deviceLabel={`Device-${deviceId}`}
-                                updatedLabel={relativeTime(latest?.created_at)}
-                            />
+            {/* Main panels */}
+            <div className="grid grid-cols-1 xl:grid-cols-2 gap-2.5">
+                {/* Room Monitor */}
+                <RoomModel room={activeRoom} iot={iot} />
+
+                <div className="flex flex-col gap-2.5">
+                    {/* Sensor Trend */}
+                    <SensorReadings readings={feed} />
+
+                    {/* System Control */}
+                    <div className="bg-surface2 border border-edge">
+                        <div className="flex items-center justify-between px-3 py-2 border-b border-edge">
+                            <p className="text-[9px] font-medium uppercase tracking-[0.10em] text-ink2">Kontrol Sistem</p>
+                            <div
+                                className={`w-9 h-[18px] border cursor-pointer relative transition-smooth ${systemMode === "auto" ? "bg-accent/10 border-accent" : "bg-surface3 border-edge2"}`}
+                                onClick={switchToAuto}
+                            >
+                                <span className={`absolute top-0.5 w-3 h-3 transition-all ${systemMode === "auto" ? "left-[18px] bg-accent" : "left-0.5 bg-edge2"}`} />
+                            </div>
                         </div>
-                        <div className="md:col-span-3">
-                            <QuickActions
-                                actuatorState={actuatorState}
-                                onAction={sendActuator}
-                                loading={actuatorLoading}
-                            />
+                        <div className="p-3">
+                            <div className="text-center py-3">
+                                <p className="text-[9px] uppercase tracking-[0.10em] text-ink3 mb-1.5">Status Indikasi</p>
+                                <p className={`text-2xl font-medium tracking-[0.02em] ${emergency === "BAHAYA" ? "text-danger animate-pulse" : "text-success"}`}>{emergency}</p>
+                                <p className="text-[9px] text-ink3 mt-1.5 tracking-[0.04em]">
+                                    ESP32-{deviceId} · {activeRoom} — Updated {relativeTime(latest?.created_at)}
+                                </p>
+                            </div>
                             {actuatorFeedback && (
-                                <div className={`mt-2 px-3 py-2 rounded-xl text-xs font-medium border ${
-                                    actuatorFeedback.type === "success"
-                                        ? "bg-success/15 text-success border-success/30"
-                                        : "bg-danger/15 text-danger border-danger/30"
-                                }`}>
+                                <div className={`mb-2 px-2 py-1.5 text-[9px] border ${actuatorFeedback.type === "success" ? "bg-success/10 text-success border-success" : "bg-danger/10 text-danger border-danger"}`}>
                                     {actuatorFeedback.msg}
                                 </div>
                             )}
+                            <QuickActions actuatorState={actuatorState} onAction={sendActuator} loading={actuatorLoading} />
                         </div>
                     </div>
-                    <SensorReadings readings={feed} />
-                    <ThresholdSettings
-                        settings={iot.data?.settings}
-                        onSave={saveThresholds}
-                    />
                 </div>
-                <div className="space-y-5">
-                    <ActiveSensors items={sensors} />
-                    <ActuatorControl items={actuators} onToggle={(name) => {
-                        const target = name === "Exhaust Fan" ? "exhaust_fan" : "buzzer";
-                        const isOn = actuators.find(a => a.name === name)?.enabled;
-                        sendActuator({ target_device: target, action: isOn ? "STOP" : "START" });
-                    }} />
-                    <ActivityLog entries={dashboardEntries} />
+
+                {/* Sensor Units */}
+                <ActiveSensors items={sensors} />
+
+                {/* Event Log */}
+                <ActivityLog entries={dashboardEntries} />
+            </div>
+
+            {/* Bottom panels */}
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-2">
+                <ActuatorControl items={actuators} onToggle={(name) => {
+                    const target = name === "Exhaust Fan" ? "exhaust_fan" : "buzzer";
+                    const isOn = actuators.find(a => a.name === name)?.enabled;
+                    sendActuator({ target_device: target, action: isOn ? "STOP" : "START" });
+                }} />
+                <ThresholdSettings settings={iot.data?.settings} onSave={saveThresholds} />
+                <div className="bg-surface2 border border-edge">
+                    <div className="px-3 py-2 border-b border-edge">
+                        <p className="text-[9px] font-medium uppercase tracking-[0.10em] text-ink2">Node Health</p>
+                    </div>
+                    <div className="px-3">
+                        <div className="flex items-center justify-between py-2.5 border-b border-edge">
+                            <span className="text-[9px] uppercase tracking-[0.08em] text-ink3">Worker Status</span>
+                            <span className={`text-[13px] font-medium tabular-nums ${workerOnline ? "text-success" : "text-danger"}`}>
+                                {workerOnline ? "ONLINE" : "OFFLINE"}
+                            </span>
+                        </div>
+                        <div className="flex items-center justify-between py-2.5 border-b border-edge">
+                            <span className="text-[9px] uppercase tracking-[0.08em] text-ink3">Last Command</span>
+                            <span className="text-[9px] uppercase tracking-[0.06em] text-ink2">
+                                {latestCommand ? `${latestCommand.target_device} · ${latestCommand.action}` : "—"}
+                            </span>
+                        </div>
+                        <div className="flex items-center justify-between py-2.5 border-b border-edge">
+                            <span className="text-[9px] uppercase tracking-[0.08em] text-ink3">Mode</span>
+                            <span className="inline-flex items-center gap-1.5 text-[9px] uppercase tracking-[0.06em]">
+                                <span className="w-1.5 h-1.5 bg-accent" /> {systemMode.toUpperCase()}
+                            </span>
+                        </div>
+                        <div className="flex items-center justify-between py-2.5">
+                            <span className="text-[9px] uppercase tracking-[0.08em] text-ink3">Device</span>
+                            <span className="text-[9px] text-ink2">ESP32-{deviceId}</span>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>

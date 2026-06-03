@@ -1,35 +1,6 @@
 import React from "react";
 import { BellRing, Cpu, Fan, Monitor } from "lucide-react";
 
-const deviceCards = [
-    {
-        title: "ESP32 Microcontroller",
-        status: "ONLINE",
-        icon: Cpu,
-        details: ["Health 98%", "Uptime 4h 52m", "IP Address 192.168.1.4"],
-    },
-    {
-        title: "Exhaust Fan",
-        status: "RUNNING",
-        icon: Fan,
-        value: "66%",
-        details: ["Fuzzy: MEDIUM-HIGH", "Running today: 2h 14m"],
-    },
-    {
-        title: "Buzzer",
-        status: "SILENT",
-        icon: BellRing,
-        value: "Silent",
-        details: ["Last trigger: 38 mins ago", "Triggers today: 4"],
-    },
-    {
-        title: "OLED Display",
-        status: "CONNECTED",
-        icon: Monitor,
-        details: ["SentinelIoT", "Status: AMAN", "Gas: 328ppm"],
-    },
-];
-
 export default function DeviceStatus({ activeRoom, iot }) {
     const latest = iot.latestReading;
     const emergency = iot.data?.emergency_status || "AMAN";
@@ -38,43 +9,32 @@ export default function DeviceStatus({ activeRoom, iot }) {
     const actuator = iot.data?.device_actuator;
     const fanOn = actuator?.fan_status && actuator.fan_status !== "OFF";
     const buzzerOn = actuator?.alarm_status === "ON";
-    const checks = [
-        {
-            endpoint: "GET /api/dashboard/data",
-            latency: iot.error ? "--" : "ok",
-            ok: !iot.error,
-        },
-        {
-            endpoint: "POST /api/ingest",
-            latency: latest ? "live" : "--",
-            ok: Boolean(latest),
-        },
-        {
-            endpoint: "GET /api/command/get",
-            latency: workerOnline ? "active" : "--",
-            ok: workerOnline,
-        },
-        {
-            endpoint: "POST /api/status/update",
-            latency: latestCommand ? "recent" : "--",
-            ok: Boolean(latestCommand),
-        },
-    ];
 
     const cards = [
-        deviceCards[0],
         {
-            ...deviceCards[1],
+            title: "ESP32 Microcontroller",
+            status: "ONLINE",
+            icon: Cpu,
+            details: ["Health 98%", "Uptime 4h 52m", "IP Address 192.168.1.4"],
+        },
+        {
+            title: "Exhaust Fan",
             status: fanOn ? "RUNNING" : "IDLE",
+            icon: Fan,
             value: fanOn ? actuator.fan_status : "OFF",
+            details: [`Fuzzy: ${actuator?.fan_status || "OFF"}`, "Running today: 2h 14m"],
         },
         {
-            ...deviceCards[2],
+            title: "Buzzer",
             status: buzzerOn ? "ACTIVE" : "SILENT",
+            icon: BellRing,
             value: buzzerOn ? "On" : "Silent",
+            details: ["Last trigger: 38 mins ago", "Triggers today: 4"],
         },
         {
-            ...deviceCards[3],
+            title: "OLED Display",
+            status: "CONNECTED",
+            icon: Monitor,
             details: [
                 `Gas: ${Math.round(Number(latest?.gas_value || 0))}ppm`,
                 `Api: ${Number(latest?.flame_value || 9999) < 500 ? "DETECTED" : "CLEAR"}`,
@@ -84,55 +44,72 @@ export default function DeviceStatus({ activeRoom, iot }) {
         },
     ];
 
+    const checks = [
+        { endpoint: "GET /api/dashboard/data", latency: iot.error ? "--" : "ok", ok: !iot.error },
+        { endpoint: "POST /api/ingest", latency: latest ? "live" : "--", ok: Boolean(latest) },
+        { endpoint: "GET /api/command/get", latency: workerOnline ? "active" : "--", ok: workerOnline },
+        { endpoint: "POST /api/status/update", latency: latestCommand ? "recent" : "--", ok: Boolean(latestCommand) },
+    ];
+
     return (
-        <div className="pb-6 space-y-5">
+        <div className="flex flex-col gap-2.5">
+            {/* Header */}
             <div>
-                <h1 className="text-2xl md:text-4xl font-semibold text-foreground">
-                    Device Status
-                </h1>
-                <p className="text-sm text-muted-foreground mt-1">
-                    Hardware, connectivity, and server diagnostics
-                </p>
+                <p className="text-[9px] font-medium uppercase tracking-[0.10em] text-ink2">Device Status</p>
+                <p className="text-[9px] text-ink3 mt-0.5">Hardware, connectivity, and server diagnostics</p>
             </div>
 
-            <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+            {/* Device cards */}
+            <div className="grid grid-cols-2 xl:grid-cols-4 gap-2">
                 {cards.map((card) => (
-                    <article
-                        key={card.title}
-                        className="rounded-[18px] border border-white/10 bg-[linear-gradient(145deg,rgba(255,255,255,0.1),rgba(255,255,255,0.03)_60%,rgba(99,102,241,0.1))] p-4"
-                    >
-                        <div className="flex items-start justify-between gap-2">
-                            <div className="flex items-center gap-2">
-                                <span className="w-8 h-8 rounded-full bg-black/30 border border-white/10 inline-flex items-center justify-center">
-                                    <card.icon className="w-4 h-4 text-purple" />
-                                </span>
-                                <div>
-                                    <h3 className="text-sm font-semibold">
-                                        {card.title}
-                                    </h3>
-                                    <p className="text-[10px] text-success mt-0.5">
-                                        {card.status}
-                                    </p>
-                                </div>
+                    <article key={card.title} className="bg-surface2 border border-edge">
+                        <div className="px-3 py-2 border-b border-edge">
+                            <div className="flex items-center gap-1.5">
+                                <card.icon className="w-3 h-3 text-accent" />
+                                <p className="text-[9px] font-medium uppercase tracking-[0.08em] text-ink2">{card.title}</p>
                             </div>
-                            {card.value ? (
-                                <span className="text-4xl leading-none font-semibold">
-                                    {card.value}
-                                </span>
-                            ) : null}
                         </div>
-                        <div className="mt-3 space-y-1">
-                            {card.details.map((detail) => (
-                                <p
-                                    key={detail}
-                                    className="text-xs text-muted-foreground"
-                                >
-                                    {detail}
-                                </p>
-                            ))}
+                        <div className="px-3 py-2.5">
+                            <div className="flex items-center justify-between">
+                                <span className={`text-[9px] uppercase tracking-[0.06em] px-1.5 py-0.5 border ${
+                                    card.status === "RUNNING" || card.status === "ONLINE" || card.status === "CONNECTED"
+                                        ? "text-success border-success bg-success/10"
+                                        : card.status === "ACTIVE"
+                                          ? "text-accent border-accent bg-accent/10"
+                                          : "text-ink3 border-edge2 bg-surface3"
+                                }`}>
+                                    {card.status}
+                                </span>
+                                {card.value ? (
+                                    <span className="text-sm font-medium text-ink tabular-nums">{card.value}</span>
+                                ) : null}
+                            </div>
+                            <div className="mt-2 space-y-1">
+                                {card.details.map((detail) => (
+                                    <p key={detail} className="text-[9px] text-ink3 tracking-[0.04em]">{detail}</p>
+                                ))}
+                            </div>
                         </div>
                     </article>
                 ))}
+            </div>
+
+            {/* API Health Checks */}
+            <div className="bg-surface2 border border-edge">
+                <div className="px-3 py-2 border-b border-edge">
+                    <p className="text-[9px] font-medium uppercase tracking-[0.10em] text-ink2">API Health Checks</p>
+                </div>
+                <div className="px-3">
+                    {checks.map((check, i) => (
+                        <div key={check.endpoint} className={`flex items-center justify-between py-2 ${i < checks.length - 1 ? "border-b border-edge" : ""}`}>
+                            <span className="text-[9px] text-ink2 tracking-[0.04em] font-mono">{check.endpoint}</span>
+                            <div className="flex items-center gap-2">
+                                <span className="text-[9px] text-ink3 tabular-nums">{check.latency}</span>
+                                <span className={`w-1.5 h-1.5 ${check.ok ? "bg-success" : "bg-danger"}`} />
+                            </div>
+                        </div>
+                    ))}
+                </div>
             </div>
         </div>
     );
