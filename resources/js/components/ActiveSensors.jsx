@@ -2,41 +2,39 @@ import React from "react";
 
 export default function ActiveSensors({ items }) {
     return (
-        <div className="relative isolate overflow-hidden rounded-[20px] border border-white/10 bg-[linear-gradient(145deg,rgba(255,255,255,0.10),rgba(255,255,255,0.03)_62%,rgba(147,51,234,0.10))] backdrop-blur-xl p-6">
-            <span className="absolute inset-0 pointer-events-none bg-[radial-gradient(120%_110%_at_100%_0%,rgba(147,51,234,0.10),transparent_66%)]" />
-            <div className="flex items-center justify-between">
-                <h3 className="text-sm font-semibold text-foreground relative">
-                    Active Sensors
-                </h3>
-                <span className="relative text-xs text-muted-foreground bg-black/20 border border-white/10 px-2 py-1 rounded-full">
-                    {items.length} online
+        <div className="bg-surface2 border border-edge">
+            <div className="flex items-center justify-between px-3 py-2 border-b border-edge">
+                <p className="text-[9px] font-medium uppercase tracking-[0.10em] text-ink2">
+                    Sensor Units
+                </p>
+                <span className="text-[9px] uppercase tracking-[0.08em] text-success">
+                    {items.length}/{items.length} Online
                 </span>
             </div>
-            <div className="mt-5 space-y-3 relative">
+            <div className="px-3">
                 {items.map((item) => (
                     <div
                         key={item.name}
-                        className="flex items-center justify-between rounded-2xl border border-white/8 bg-black/20 px-3 py-2"
+                        className="flex items-center justify-between py-2 border-b border-edge last:border-b-0"
                     >
-                        <div className="flex items-center gap-3">
-                            <div className="w-9 h-9 rounded-full bg-black/30 border border-white/10 flex items-center justify-center">
-                                <item.icon className="w-4 h-4 text-purple" />
-                            </div>
-                            <div>
-                                <p className="text-sm font-medium text-foreground">
-                                    {item.name}
-                                </p>
-                                <p className="text-xs text-muted-foreground">
-                                    {item.type}
-                                </p>
-                            </div>
-                        </div>
-                        <div className="text-right">
-                            <p className="text-sm font-semibold text-foreground">
-                                {item.value}
+                        <div className="flex flex-col gap-0.5">
+                            <p className="text-[10px] font-medium text-ink2">
+                                {item.name}
                             </p>
-                            <span className="inline-flex items-center px-2 py-1 rounded-full text-[10px] uppercase tracking-wider bg-success/20 text-success">
-                                {item.status}
+                            <p className="text-[8px] uppercase tracking-[0.08em] text-ink3">
+                                {item.type}
+                            </p>
+                        </div>
+                        <div className="flex items-center gap-2">
+                            <span className="text-[13px] font-medium text-ink2 tabular-nums">
+                                {item.value}
+                            </span>
+                            <span className={`text-[9px] uppercase tracking-[0.08em] px-1.5 py-0.5 border ${
+                                item.status === "Alert"
+                                    ? "text-danger border-danger bg-danger/10"
+                                    : "text-success border-success bg-success/10"
+                            }`}>
+                                {item.status === "Alert" ? "ALERT" : "NORMAL"}
                             </span>
                         </div>
                     </div>

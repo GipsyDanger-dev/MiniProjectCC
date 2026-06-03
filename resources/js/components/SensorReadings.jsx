@@ -4,15 +4,7 @@ export default function SensorReadings({ readings = [] }) {
     const metrics = ["Gas", "Api", "Kelembapan", "Suhu"];
     const [active, setActive] = useState("Gas");
     const MAX_POINTS = 8;
-    const fallbackLabels = [
-        "12:00",
-        "12:05",
-        "12:10",
-        "12:15",
-        "12:20",
-        "12:25",
-        "12:30",
-    ];
+    const fallbackLabels = ["12:00", "12:05", "12:10", "12:15", "12:20", "12:25", "12:30"];
 
     const values = useMemo(() => {
         if (!readings.length) {
@@ -24,7 +16,6 @@ export default function SensorReadings({ readings = [] }) {
                 Suhu: [30, 32, 31, 33, 35, 34, 32, 31],
             };
         }
-
         const series = [...readings].slice(0, MAX_POINTS).reverse();
         return {
             labels: series.map((item) =>
@@ -37,34 +28,31 @@ export default function SensorReadings({ readings = [] }) {
             Gas: series.map((item) => Math.round(Number(item.gas_value) || 0)),
             Api: series.map((item) => Math.round(Number(item.flame_value) || 0)),
             Kelembapan: series.map((item) => Math.round(Number(item.humidity) || 0)),
-            Suhu: series.map((item) =>
-                Math.round(Number(item.temperature) || 0),
-            ),
+            Suhu: series.map((item) => Math.round(Number(item.temperature) || 0)),
         };
     }, [readings]);
 
     const series = values[active];
-    const max = Math.max(...series);
+    const max = Math.max(...series, 1);
+    const thresholds = { Gas: 250, Api: 500, Kelembapan: 70, Suhu: 40 };
+    const threshold = thresholds[active] || 100;
 
     return (
-        <div className="card-surface p-6">
-            <div className="flex items-start justify-between gap-4">
-                <div>
-                    <h3 className="text-3xl font-semibold">Sensor Readings</h3>
-                    <p className="text-muted-foreground mt-1">
-                        Live data over last 30 minutes
-                    </p>
-                </div>
-                <div className="inline-flex rounded-full bg-muted/40 p-1">
+        <div className="bg-surface2 border border-edge">
+            <div className="flex items-center justify-between px-3 py-2 border-b border-edge">
+                <p className="text-[9px] font-medium uppercase tracking-[0.10em] text-ink2">
+                    Sensor Trend
+                </p>
+                <div className="flex">
                     {metrics.map((metric) => (
                         <button
                             key={metric}
                             type="button"
                             onClick={() => setActive(metric)}
-                            className={`px-4 py-2 rounded-full text-sm transition-smooth ${
+                            className={`px-2.5 py-1 text-[9px] uppercase tracking-[0.08em] border border-r-0 last:border-r transition-smooth ${
                                 active === metric
-                                    ? "bg-purple/20 text-purple"
-                                    : "text-muted-foreground"
+                                    ? "bg-surface text-accent border-accent"
+                                    : "bg-surface3 text-ink3 border-edge"
                             }`}
                         >
                             {metric}
@@ -72,36 +60,31 @@ export default function SensorReadings({ readings = [] }) {
                     ))}
                 </div>
             </div>
-
-            <div className="mt-6 overflow-x-auto thin-scroll pb-1">
-                <div className="flex gap-2 md:gap-3 min-w-max">
-                {series.map((value, idx) => {
-                    const height = Math.max(
-                        34,
-                        Math.round((value / max) * 100),
-                    );
-                    return (
-                        <div
-                            key={values.labels[idx]}
-                            className="text-center w-[58px] md:w-[62px] shrink-0"
-                        >
-                            <div className="text-xs text-muted-foreground mb-3 min-h-4">
-                                {idx === 0 || idx === 4
-                                    ? `${value}${active === "Gas" ? " ppm" : active === "Kelembapan" ? "%" : active === "Suhu" ? "°C" : ""}`
-                                    : ""}
-                            </div>
-                            <div className="h-56 rounded-[30px] bg-[#0f1118] border border-white/5 relative overflow-hidden p-1">
-                                <div
-                                    className="absolute bottom-1 left-1 right-1 rounded-[24px] bg-purple transition-all duration-500 shadow-[0_0_24px_rgba(147,51,234,0.28)]"
-                                    style={{ height: `${height}%` }}
-                                />
-                            </div>
-                            <p className="text-xs text-muted-foreground mt-3">
-                                {values.labels[idx]}
-                            </p>
-                        </div>
-                    );
-                })}
+            <div className="p-3">
+                <div className="h-20 flex items-end gap-1 px-1">
+                    {series.map((value, idx) => {
+                        const pct = Math.max(4, (value / Math.max(max, threshold * 1.2)) * 100);
+                        const color = value > threshold ? "bg-danger" : value < threshold * 0.2 ? "bg-edge" : "bg-accent";
+                        return (
+                            <div key={idx} className={`flex-1 min-w-0 transition-all duration-300 ${color}`} style={{ height: `${pct}%` }} />
+                        );
+                    })}
+                </div>
+                <div className="flex justify-between px-1 pt-1">
+                    {values.labels.map((l, i) => (
+                        <span key={i} className="text-[9px] text-ink3 tracking-[0.04em]">{l}</span>
+                    ))}
+                </div>
+                <div className="flex gap-3 pt-2">
+                    <div className="flex items-center gap-1 text-[9px] text-ink3 uppercase tracking-[0.06em]">
+                        <span className="w-1.5 h-1.5 bg-accent" /> Normal
+                    </div>
+                    <div className="flex items-center gap-1 text-[9px] text-ink3 uppercase tracking-[0.06em]">
+                        <span className="w-1.5 h-1.5 bg-danger" /> Alert
+                    </div>
+                    <div className="flex items-center gap-1 text-[9px] text-ink3 uppercase tracking-[0.06em]">
+                        <span className="w-1.5 h-1.5 bg-edge" /> Low
+                    </div>
                 </div>
             </div>
         </div>

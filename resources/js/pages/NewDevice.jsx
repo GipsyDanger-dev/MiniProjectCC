@@ -27,10 +27,7 @@ export default function NewDevice({ onCreated, onReload }) {
                 headers: {
                     "Content-Type": "application/json",
                     Accept: "application/json",
-                    "X-CSRF-TOKEN":
-                        document
-                            .querySelector('meta[name="csrf-token"]')
-                            ?.getAttribute("content") || "",
+                    "X-CSRF-TOKEN": document.querySelector('meta[name="csrf-token"]')?.getAttribute("content") || "",
                 },
                 body: JSON.stringify({
                     device_name: deviceName.trim(),
@@ -59,97 +56,87 @@ export default function NewDevice({ onCreated, onReload }) {
         }
     };
 
+    const FieldRow = ({ icon: Icon, label, children }) => (
+        <div className="py-2.5 border-b border-edge">
+            <p className="text-[8px] uppercase tracking-[0.08em] text-ink3 flex items-center gap-1.5 mb-1.5">
+                {Icon && <Icon className="w-3 h-3" />}
+                {label}
+            </p>
+            {children}
+        </div>
+    );
+
     return (
-        <div className="pb-6 space-y-5">
+        <div className="flex flex-col gap-2.5">
+            {/* Header */}
             <div>
-                <h1 className="text-4xl font-semibold text-foreground">
-                    New Device
-                </h1>
-                <p className="text-sm text-muted-foreground mt-1">
-                    Add a new device for your rooms and integrations.
-                </p>
+                <p className="text-[9px] font-medium uppercase tracking-[0.10em] text-ink2">New Device</p>
+                <p className="text-[9px] text-ink3 mt-0.5">Add a new device for your rooms and integrations.</p>
             </div>
 
-            <section className="rounded-[20px] border border-white/15 backdrop-blur-md bg-gradient-to-br from-white/10 to-white/5 p-5 shadow-xl max-w-2xl">
-                <form onSubmit={handleSubmit} className="space-y-4">
-                    <div className="rounded-xl border border-white/10 bg-black/20 px-3 py-3">
-                        <p className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground flex items-center gap-2">
-                            <Cpu className="w-3 h-3" />
-                            Device Name
-                        </p>
-                        <input
-                            type="text"
-                            value={deviceName}
-                            onChange={(e) => setDeviceName(e.target.value)}
-                            className="text-sm mt-2 w-full bg-transparent outline-none border-b border-white/10 text-foreground pb-1 focus:border-purple/50 transition-smooth"
-                            placeholder="Warehouse Gateway"
-                        />
+            <div className="max-w-xl">
+                <div className="bg-surface2 border border-edge">
+                    <div className="px-3 py-2 border-b border-edge">
+                        <p className="text-[9px] font-medium uppercase tracking-[0.10em] text-ink2">Device Configuration</p>
                     </div>
+                    <form onSubmit={handleSubmit} className="px-3">
+                        <FieldRow icon={Cpu} label="Device Name">
+                            <input
+                                type="text"
+                                value={deviceName}
+                                onChange={(e) => setDeviceName(e.target.value)}
+                                className="text-[9px] w-full bg-transparent outline-none border-b border-edge text-ink pb-0.5 focus:border-accent transition-smooth"
+                                placeholder="Warehouse Gateway"
+                            />
+                        </FieldRow>
 
-                    <div className="rounded-xl border border-white/10 bg-black/20 px-3 py-3">
-                        <p className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground flex items-center gap-2">
-                            <MapPin className="w-3 h-3" />
-                            Room / Location
-                        </p>
-                        <input
-                            type="text"
-                            value={location}
-                            onChange={(e) => setLocation(e.target.value)}
-                            className="text-sm mt-2 w-full bg-transparent outline-none border-b border-white/10 text-foreground pb-1 focus:border-purple/50 transition-smooth"
-                            placeholder="Warehouse"
-                        />
-                    </div>
+                        <FieldRow icon={MapPin} label="Room / Location">
+                            <input
+                                type="text"
+                                value={location}
+                                onChange={(e) => setLocation(e.target.value)}
+                                className="text-[9px] w-full bg-transparent outline-none border-b border-edge text-ink pb-0.5 focus:border-accent transition-smooth"
+                                placeholder="Warehouse"
+                            />
+                        </FieldRow>
 
-                    <div className="rounded-xl border border-white/10 bg-black/20 px-3 py-3">
-                        <p className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground flex items-center gap-2">
-                            <KeyRound className="w-3 h-3" />
-                            API Key
-                        </p>
-                        <input
-                            type="text"
-                            value={apiKey}
-                            onChange={(e) => setApiKey(e.target.value)}
-                            className="text-sm mt-2 w-full bg-transparent outline-none border-b border-white/10 text-foreground pb-1 focus:border-purple/50 transition-smooth"
-                            placeholder="key-warehouse-001"
-                        />
-                    </div>
+                        <FieldRow icon={KeyRound} label="API Key">
+                            <input
+                                type="text"
+                                value={apiKey}
+                                onChange={(e) => setApiKey(e.target.value)}
+                                className="text-[9px] w-full bg-transparent outline-none border-b border-edge text-ink pb-0.5 focus:border-accent transition-smooth"
+                                placeholder="key-warehouse-001"
+                            />
+                        </FieldRow>
 
-                    <div className="rounded-xl border border-white/10 bg-black/20 px-3 py-3">
-                        <p className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
-                            Status
-                        </p>
-                        <select
-                            value={status}
-                            onChange={(e) => setStatus(e.target.value)}
-                            className="device-select text-sm mt-2 w-full bg-transparent outline-none border-b border-white/10 text-foreground pb-1 focus:border-purple/50 transition-smooth"
-                        >
-                            <option value="offline">offline</option>
-                            <option value="online">online</option>
-                        </select>
-                    </div>
+                        <FieldRow label="Status">
+                            <select
+                                value={status}
+                                onChange={(e) => setStatus(e.target.value)}
+                                className="text-[9px] w-full bg-transparent outline-none border-b border-edge text-ink pb-0.5 focus:border-accent transition-smooth"
+                            >
+                                <option value="offline">offline</option>
+                                <option value="online">online</option>
+                            </select>
+                        </FieldRow>
 
-                    {error ? (
-                        <p className="text-sm text-danger">{error}</p>
-                    ) : null}
-                    {success ? (
-                        <p className="text-sm text-success">{success}</p>
-                    ) : null}
+                        {error && <p className="text-[9px] text-danger py-1.5">{error}</p>}
+                        {success && <p className="text-[9px] text-success py-1.5">{success}</p>}
 
-                    <button
-                        type="submit"
-                        disabled={
-                            submitting ||
-                            !deviceName.trim() ||
-                            !apiKey.trim() ||
-                            !location.trim()
-                        }
-                        className="h-11 px-6 rounded-full bg-purple/20 text-purple border border-purple/35 font-semibold hover:bg-purple/30 transition-smooth disabled:opacity-60 disabled:cursor-not-allowed inline-flex items-center gap-2"
-                    >
-                        <PlusCircle className="w-4 h-4" />
-                        {submitting ? "Creating..." : "Create Device"}
-                    </button>
-                </form>
-            </section>
+                        <div className="py-2.5">
+                            <button
+                                type="submit"
+                                disabled={submitting || !deviceName.trim() || !apiKey.trim() || !location.trim()}
+                                className="w-full h-8 bg-accent text-white text-[9px] uppercase tracking-[0.1em] font-medium flex items-center justify-center gap-1.5 hover:bg-accent/80 transition-smooth disabled:opacity-50"
+                            >
+                                <PlusCircle className="w-3 h-3" />
+                                {submitting ? "Creating..." : "Create Device"}
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
         </div>
     );
 }
