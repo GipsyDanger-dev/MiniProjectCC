@@ -7,8 +7,8 @@ function LoadingSpinner() {
     return (
         <Html center>
             <div className="flex flex-col items-center gap-2">
-                <div className="w-8 h-8 border-2 border-purple/30 border-t-purple rounded-full animate-spin" />
-                <span className="text-xs text-muted-foreground">Loading 3D Model...</span>
+                <div className="w-6 h-6 border-2 border-accent/30 border-t-accent animate-spin" />
+                <span className="text-[9px] uppercase tracking-[0.08em] text-ink3">Loading 3D Model...</span>
             </div>
         </Html>
     );
@@ -55,7 +55,7 @@ function EmergencyLighting({ emergency, fanStatus }) {
                 pointLightRef.current.color.setHSL(0, 0.9, 0.5 + pulse * 0.2);
             } else {
                 pointLightRef.current.intensity = 0.8;
-                pointLightRef.current.color.setHSL(0.28, 0.8, 0.5);
+                pointLightRef.current.color.setHSL(0.07, 0.8, 0.5);
             }
         }
     });
@@ -73,19 +73,19 @@ function EmergencyLighting({ emergency, fanStatus }) {
 }
 
 function SensorLabel({ position, label, value, unit, status }) {
-    const color = status === "Alert" ? "#ef4444" : "#22c55e";
+    const color = status === "Alert" ? "#dc2626" : "#c45a0a";
     return (
         <Html position={position} center distanceFactor={8} style={{ pointerEvents: "none" }}>
             <div className="flex flex-col items-center gap-0.5">
-                <div className="px-2 py-1 rounded-lg text-[10px] font-semibold whitespace-nowrap border backdrop-blur-sm"
+                <div className="px-2 py-1 text-[9px] font-medium uppercase tracking-[0.08em] whitespace-nowrap border"
                     style={{
-                        backgroundColor: status === "Alert" ? "rgba(239,68,68,0.15)" : "rgba(34,197,94,0.15)",
-                        borderColor: `${color}40`,
+                        backgroundColor: status === "Alert" ? "rgba(220,38,38,0.12)" : "rgba(196,90,10,0.12)",
+                        borderColor: status === "Alert" ? "rgba(220,38,38,0.4)" : "rgba(196,90,10,0.4)",
                         color: color,
                     }}>
                     {label}
                 </div>
-                <div className="px-1.5 py-0.5 rounded-md text-[9px] font-bold bg-black/60 text-white whitespace-nowrap">
+                <div className="px-1.5 py-0.5 text-[9px] font-medium bg-[#1a1a18] text-[#f4f2ec] whitespace-nowrap">
                     {value}{unit}
                 </div>
             </div>
@@ -182,35 +182,31 @@ export default function RoomModel({ room, iot }) {
     const flameValue = Number(latest?.flame_value || 9999);
 
     return (
-        <div className="card-surface p-6">
-            <div className="flex items-center justify-between">
+        <div className="bg-surface2 border border-edge">
+            <div className="flex items-center justify-between px-3 py-2 border-b border-edge">
                 <div>
-                    <p className="text-xs uppercase tracking-widest text-muted-foreground">
-                        3D Room Monitor
-                    </p>
-                    <h3 className="text-lg font-semibold text-foreground mt-1">
-                        {room}
-                    </h3>
+                    <p className="text-[9px] uppercase tracking-[0.10em] text-ink2">3D Room Monitor</p>
+                    <p className="text-[9px] text-ink3 mt-0.5">{room}</p>
                 </div>
-                <div className="flex items-center gap-2">
-                    <span className={`inline-flex items-center px-2 py-1 rounded-full text-[10px] uppercase tracking-wider ${
+                <div className="flex items-center gap-1.5">
+                    <span className={`text-[9px] uppercase tracking-[0.08em] px-1.5 py-0.5 border ${
                         fanStatus !== "OFF"
-                            ? "bg-purple/20 text-purple"
-                            : "bg-muted/40 text-muted-foreground"
+                            ? "text-accent border-accent bg-accent/10"
+                            : "text-ink3 border-edge2 bg-surface3"
                     }`}>
                         Fan: {fanStatus}{fanSpeed ? ` ${fanSpeed}%` : ""}
                     </span>
-                    <span className={`inline-flex items-center px-2 py-1 rounded-full text-[10px] uppercase tracking-wider ${
+                    <span className={`text-[9px] uppercase tracking-[0.08em] px-1.5 py-0.5 border ${
                         emergency === "BAHAYA"
-                            ? "bg-danger/20 text-danger"
-                            : "bg-success/20 text-success"
+                            ? "text-danger border-danger bg-danger/10"
+                            : "text-success border-success bg-success/10"
                     }`}>
                         {emergency}
                     </span>
                 </div>
             </div>
 
-            <div className="mt-4 h-[400px] rounded-2xl border border-border/40 overflow-hidden relative">
+            <div className="h-[320px] relative bg-[#1a1a18]">
                 <Canvas
                     camera={{ position: [1.5, 1, 1.5], fov: 50 }}
                     dpr={[1, 2]}
@@ -222,33 +218,31 @@ export default function RoomModel({ room, iot }) {
                     </Suspense>
                 </Canvas>
 
-                <div className="absolute bottom-3 left-3 right-3 flex items-center justify-between pointer-events-none">
-                    <div className="flex items-center gap-2">
-                        <div className={`w-2 h-2 rounded-full ${emergency === "BAHAYA" ? "bg-danger animate-pulse" : "bg-success"}`} />
-                        <span className="text-[10px] text-muted-foreground">
+                <div className="absolute bottom-2 left-2 right-2 flex items-center justify-between pointer-events-none">
+                    <div className="flex items-center gap-1.5">
+                        <div className={`w-1.5 h-1.5 ${emergency === "BAHAYA" ? "bg-danger animate-pulse" : "bg-success"}`} />
+                        <span className="text-[9px] text-ink3 uppercase tracking-[0.06em]">
                             {emergency === "BAHAYA" ? "Emergency Active" : "All Clear"}
                         </span>
                     </div>
-                    <span className="text-[10px] text-muted-foreground">
+                    <span className="text-[9px] text-ink3 uppercase tracking-[0.06em]">
                         Drag to rotate · Scroll to zoom
                     </span>
                 </div>
             </div>
 
-            <div className="mt-3 grid grid-cols-4 gap-2">
+            <div className="grid grid-cols-4 border-t border-edge">
                 {[
                     { label: "Gas", value: `${gas} ppm`, alert: gas > 250 },
                     { label: "Suhu", value: `${temp}°C`, alert: temp > 40 },
                     { label: "Humidity", value: `${humidity}%`, alert: humidity > 70 },
                     { label: "Flame", value: flameValue < 500 ? "DETECTED" : "CLEAR", alert: flameValue < 500 },
-                ].map((s) => (
-                    <div key={s.label} className={`px-3 py-2 rounded-xl text-center border ${
-                        s.alert
-                            ? "bg-danger/10 border-danger/30 text-danger"
-                            : "bg-muted/20 border-border/30 text-foreground"
+                ].map((s, i) => (
+                    <div key={s.label} className={`px-2 py-2 text-center border-r border-edge last:border-r-0 ${
+                        s.alert ? "bg-danger/8" : ""
                     }`}>
-                        <p className="text-[10px] uppercase tracking-wider text-muted-foreground">{s.label}</p>
-                        <p className="text-sm font-semibold mt-0.5">{s.value}</p>
+                        <p className="text-[8px] uppercase tracking-[0.08em] text-ink3">{s.label}</p>
+                        <p className={`text-[11px] font-medium mt-0.5 ${s.alert ? "text-danger" : "text-ink"}`}>{s.value}</p>
                     </div>
                 ))}
             </div>
