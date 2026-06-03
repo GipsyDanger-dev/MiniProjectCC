@@ -46,14 +46,14 @@ export default function Dashboard({ activeRoom, deviceId, iot, setCurrentPage })
             sub: workerOnline ? "Worker online" : "Worker offline",
             icon: ShieldCheck,
             badge: emergency === "BAHAYA" ? "Alert" : "Secure",
-            accent: "lime",
+            accent: "purple",
         },
         {
             title: "Active Sensors",
             value: "4 / 4",
             sub: "Gas, api, kelembapan, suhu live",
             icon: Zap,
-            accent: "lime",
+            accent: "purple",
         },
         {
             title: "Events Today",
@@ -70,7 +70,7 @@ export default function Dashboard({ activeRoom, deviceId, iot, setCurrentPage })
                     : "OFF",
             sub: actuator?.fan_speed ? `${actuator.fan_speed}% speed` : "Idle",
             icon: Fan,
-            accent: "lime",
+            accent: "purple",
         },
     ];
 
@@ -270,7 +270,7 @@ export default function Dashboard({ activeRoom, deviceId, iot, setCurrentPage })
                             type="button"
                             onClick={switchToAuto}
                             disabled={modeLoading}
-                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold bg-lime text-lime-foreground shadow-lime disabled:opacity-60"
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold bg-purple text-purple-foreground shadow-purple disabled:opacity-60"
                         >
                             {modeLoading ? "Switching..." : "Switch to Auto"}
                         </button>

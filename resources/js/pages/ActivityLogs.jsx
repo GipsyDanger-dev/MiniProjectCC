@@ -116,7 +116,7 @@ export default function ActivityLogs({ activeRoom, iot }) {
                     <button
                         type="button"
                         onClick={exportCSV}
-                        className="h-10 rounded-full bg-lime text-lime-foreground px-3 md:px-4 font-semibold inline-flex items-center gap-2 shadow-[0_10px_30px_rgba(204,255,0,0.35)]"
+                        className="h-10 rounded-full bg-purple text-purple-foreground px-3 md:px-4 font-semibold inline-flex items-center gap-2 shadow-[0_10px_30px_rgba(147,51,234,0.35)]"
                     >
                         <Download className="w-4 h-4" />
                         <span className="hidden sm:inline">Export</span>

@@ -104,7 +104,7 @@ export default function DeviceStatus({ activeRoom, iot }) {
                         <div className="flex items-start justify-between gap-2">
                             <div className="flex items-center gap-2">
                                 <span className="w-8 h-8 rounded-full bg-black/30 border border-white/10 inline-flex items-center justify-center">
-                                    <card.icon className="w-4 h-4 text-lime" />
+                                    <card.icon className="w-4 h-4 text-purple" />
                                 </span>
                                 <div>
                                     <h3 className="text-sm font-semibold">
