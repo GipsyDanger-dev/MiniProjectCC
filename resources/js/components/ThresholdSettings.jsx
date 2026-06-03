@@ -40,7 +40,7 @@ export default function ThresholdSettings({ settings, onSave }) {
                             setDirty(true);
                             setGas(Number(e.target.value));
                         }}
-                        className="mt-3 w-full accent-lime"
+                        className="mt-3 w-full accent-purple"
                     />
                     <div className="mt-1 flex justify-between text-sm text-muted-foreground">
                         <span>0ppm</span>
@@ -64,7 +64,7 @@ export default function ThresholdSettings({ settings, onSave }) {
                             setDirty(true);
                             setHumidity(Number(e.target.value));
                         }}
-                        className="mt-3 w-full accent-lime"
+                        className="mt-3 w-full accent-purple"
                     />
                     <div className="mt-1 flex justify-between text-sm text-muted-foreground">
                         <span>0%</span>
@@ -88,7 +88,7 @@ export default function ThresholdSettings({ settings, onSave }) {
                             setDirty(true);
                             setTemp(Number(e.target.value));
                         }}
-                        className="mt-3 w-full accent-lime"
+                        className="mt-3 w-full accent-purple"
                     />
                     <div className="mt-1 flex justify-between text-sm text-muted-foreground">
                         <span>0°C</span>
@@ -133,7 +133,7 @@ export default function ThresholdSettings({ settings, onSave }) {
                         setSaving(false);
                         setDirty(false);
                     }}
-                    className="inline-flex items-center gap-2 px-6 h-11 rounded-full bg-lime text-lime-foreground font-semibold shadow-lime"
+                    className="inline-flex items-center gap-2 px-6 h-11 rounded-full bg-purple text-purple-foreground font-semibold shadow-purple"
                 >
                     <Save className="w-4 h-4" />
                     {saving ? "Saving..." : "Save Settings"}

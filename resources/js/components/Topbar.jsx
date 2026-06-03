@@ -71,7 +71,7 @@ export default function Topbar({ setCurrentPage, onSearch, onMenuClick }) {
                                 setCurrentPage?.("sensors");
                             }
                         }}
-                        className="w-full h-10 md:h-11 rounded-full glass-pill pl-11 pr-4 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-lime/60"
+                        className="w-full h-10 md:h-11 rounded-full glass-pill pl-11 pr-4 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-purple/60"
                     />
                 </div>
 

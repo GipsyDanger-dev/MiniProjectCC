@@ -8,14 +8,14 @@ export function StatusCard({
     updatedLabel = "Updated 2s ago",
 }) {
     return (
-        <div className="card-surface p-6 h-full bg-[radial-gradient(120%_120%_at_100%_0%,rgba(204,255,0,0.12),transparent_62%)] border border-white/5">
+        <div className="card-surface p-6 h-full bg-[radial-gradient(120%_120%_at_100%_0%,rgba(147,51,234,0.12),transparent_62%)] border border-white/5">
             <div className="flex items-center justify-between">
                 <p className="text-xs uppercase tracking-widest text-muted-foreground">
                     System Status
                 </p>
                 <button
                     type="button"
-                    className={`w-12 h-7 rounded-full p-1 transition-all ${systemActive ? "bg-lime" : "bg-muted"}`}
+                    className={`w-12 h-7 rounded-full p-1 transition-all ${systemActive ? "bg-purple" : "bg-muted"}`}
                 >
                     <span
                         className={`block w-5 h-5 rounded-full bg-background transition-transform ${systemActive ? "translate-x-5" : "translate-x-0"}`}
@@ -25,7 +25,7 @@ export function StatusCard({
             <p className="inline-flex mt-3 items-center px-3 py-1 rounded-full text-xs bg-muted/40 text-muted-foreground">
                 {updatedLabel}
             </p>
-            <p className="mt-5 text-4xl md:text-6xl leading-none font-extrabold text-lime drop-shadow-[0_0_22px_rgba(204,255,0,0.32)]">
+            <p className="mt-5 text-4xl md:text-6xl leading-none font-extrabold text-purple drop-shadow-[0_0_22px_rgba(147,51,234,0.32)]">
                 {status}.
             </p>
             <div className="mt-5 flex items-end justify-between">
@@ -78,15 +78,15 @@ export function QuickActions({ actuatorState = {}, onAction, loading }) {
                         onClick={() => onAction?.(action.action)}
                         className={`relative overflow-hidden p-6 text-left flex flex-col justify-between min-h-[122px] rounded-[20px] border transition-smooth cursor-pointer disabled:opacity-70 disabled:cursor-wait ${
                             action.active
-                                ? "text-[#10130a] border-lime/70 shadow-[0_14px_36px_rgba(204,255,0,0.38)] bg-[linear-gradient(135deg,rgba(214,255,94,0.92),rgba(170,232,0,0.86))]"
-                                : "text-foreground border-white/10 bg-[linear-gradient(140deg,rgba(255,255,255,0.10),rgba(255,255,255,0.03)_58%,rgba(102,126,241,0.12))]"
+                                ? "text-white border-purple/70 shadow-[0_14px_36px_rgba(147,51,234,0.38)] bg-[linear-gradient(135deg,rgba(168,85,247,0.92),rgba(147,51,234,0.86))]"
+                                : "text-foreground border-white/10 bg-[linear-gradient(140deg,rgba(255,255,255,0.10),rgba(255,255,255,0.03)_58%,rgba(147,51,234,0.12))]"
                         }`}
                     >
                         <span
                             className={`absolute inset-0 pointer-events-none ${
                                 action.active
                                     ? "bg-[radial-gradient(130%_100%_at_0%_0%,rgba(255,255,255,0.36),transparent_62%)]"
-                                    : "bg-[radial-gradient(120%_110%_at_100%_0%,rgba(204,255,0,0.10),transparent_64%)]"
+                                    : "bg-[radial-gradient(120%_110%_at_100%_0%,rgba(147,51,234,0.10),transparent_64%)]"
                             }`}
                         />
                         <span
