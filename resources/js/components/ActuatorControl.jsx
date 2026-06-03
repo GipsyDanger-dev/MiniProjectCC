@@ -3,56 +3,48 @@ import { cn } from "../lib/utils";
 
 export default function ActuatorControl({ items, onToggle }) {
     return (
-        <div className="relative overflow-hidden rounded-[20px] border border-white/10 bg-[linear-gradient(145deg,rgba(255,255,255,0.10),rgba(255,255,255,0.03)_62%,rgba(147,51,234,0.10))] p-6">
-            <span className="absolute inset-0 pointer-events-none bg-[radial-gradient(120%_110%_at_100%_0%,rgba(147,51,234,0.08),transparent_66%)]" />
-            <h3 className="text-sm font-semibold text-foreground relative">
-                Actuator Control
-            </h3>
-            <div className="mt-4 space-y-3 relative">
+        <div className="bg-surface2 border border-edge">
+            <div className="px-3 py-2 border-b border-edge">
+                <p className="text-[9px] font-medium uppercase tracking-[0.10em] text-ink2">
+                    Actuator Control
+                </p>
+            </div>
+            <div className="px-3">
                 {items.map((item) => (
                     <div
                         key={item.name}
-                        className="flex items-center justify-between rounded-2xl border border-white/8 bg-black/20 px-3 py-2"
+                        className="flex items-center justify-between py-2.5 border-b border-edge last:border-b-0"
                     >
-                        <div className="flex items-center gap-3">
-                            <div className="w-9 h-9 rounded-full bg-black/30 border border-white/10 flex items-center justify-center">
-                                <item.icon className="w-4 h-4 text-foreground" />
-                            </div>
-                            <div>
-                                <p className="text-sm font-medium text-foreground">
-                                    {item.name}
-                                </p>
-                                <p className="text-xs text-muted-foreground">
-                                    {item.subtitle}
-                                </p>
-                            </div>
+                        <div>
+                            <p className="text-[9px] uppercase tracking-[0.08em] text-ink3">
+                                {item.name}
+                            </p>
+                            <p className={cn(
+                                "text-[9px] uppercase tracking-[0.06em] mt-0.5",
+                                item.enabled ? "text-accent" : "text-ink3",
+                            )}>
+                                {item.subtitle}
+                            </p>
                         </div>
-                        <div className="flex items-center gap-3">
-                            {item.value && (
-                                <span className="text-sm font-semibold text-foreground">
-                                    {item.value}
-                                </span>
+                        <button
+                            type="button"
+                            onClick={() => onToggle?.(item.name)}
+                            className={cn(
+                                "w-9 h-[18px] border cursor-pointer relative transition-smooth",
+                                item.enabled
+                                    ? "bg-accent/10 border-accent"
+                                    : "bg-surface3 border-edge2",
                             )}
-                            <button
-                                type="button"
-                                onClick={() => onToggle?.(item.name)}
+                        >
+                            <span
                                 className={cn(
-                                    "w-12 h-6 rounded-full p-1 transition-all border",
+                                    "absolute top-0.5 w-3 h-3 transition-all",
                                     item.enabled
-                                        ? "bg-purple border-purple shadow-[0_0_18px_rgba(147,51,234,0.36)]"
-                                        : "bg-muted border-white/10",
+                                        ? "left-[18px] bg-accent"
+                                        : "left-0.5 bg-edge2",
                                 )}
-                            >
-                                <span
-                                    className={cn(
-                                        "block w-4 h-4 rounded-full bg-background transition-transform",
-                                        item.enabled
-                                            ? "translate-x-6"
-                                            : "translate-x-0",
-                                    )}
-                                />
-                            </button>
-                        </div>
+                            />
+                        </button>
                     </div>
                 ))}
             </div>
