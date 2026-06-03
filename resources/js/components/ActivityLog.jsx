@@ -50,8 +50,8 @@ export default function ActivityLog({ entries: incomingEntries = [] }) {
     const entries = incomingEntries.length ? incomingEntries : defaultEntries;
 
     return (
-        <div className="relative isolate overflow-hidden rounded-[20px] border border-white/10 bg-[linear-gradient(150deg,rgba(255,255,255,0.10),rgba(255,255,255,0.03)_58%,rgba(99,102,241,0.12))] backdrop-blur-xl p-6">
-            <span className="absolute inset-0 pointer-events-none bg-[radial-gradient(120%_110%_at_100%_0%,rgba(204,255,0,0.10),transparent_66%)]" />
+        <div className="relative isolate overflow-hidden rounded-[20px] border border-white/10 bg-[linear-gradient(150deg,rgba(255,255,255,0.10),rgba(255,255,255,0.03)_58%,rgba(147,51,234,0.12))] backdrop-blur-xl p-6">
+            <span className="absolute inset-0 pointer-events-none bg-[radial-gradient(120%_110%_at_100%_0%,rgba(147,51,234,0.10),transparent_66%)]" />
             <h3 className="text-3xl font-semibold relative">Activity Log</h3>
             <div className="mt-5 space-y-3 max-h-[380px] overflow-auto thin-scroll pr-1 relative">
                 {entries.map((entry) => {
