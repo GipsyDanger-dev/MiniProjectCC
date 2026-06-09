@@ -142,6 +142,7 @@ export default function MainApp() {
             )}>
                 <Topbar
                     onMenuClick={() => setMobileOpen(true)}
+                    systemMode={iot.data?.system_mode || "auto"}
                 />
                 <main className="flex-1 px-3 pb-4 md:px-5 md:pb-6">
                     <div className="relative z-10">

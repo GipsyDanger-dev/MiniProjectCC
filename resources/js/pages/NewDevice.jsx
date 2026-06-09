@@ -47,7 +47,7 @@ export default function NewDevice({ onCreated, onReload }) {
             setDeviceName("");
             setApiKey("");
             setStatus("offline");
-            onCreated?.(payload.device);
+            onCreated?.(payload.data);
             onReload?.();
         } catch (_err) {
             setError("Failed to create device.");
@@ -58,7 +58,7 @@ export default function NewDevice({ onCreated, onReload }) {
 
     const FieldRow = ({ icon: Icon, label, children }) => (
         <div className="py-2.5 border-b border-edge">
-            <p className="text-[8px] uppercase tracking-[0.08em] text-ink3 flex items-center gap-1.5 mb-1.5">
+            <p className="text-[9px] uppercase tracking-[0.08em] text-ink3 flex items-center gap-1.5 mb-1.5">
                 {Icon && <Icon className="w-3 h-3" />}
                 {label}
             </p>
@@ -70,14 +70,14 @@ export default function NewDevice({ onCreated, onReload }) {
         <div className="flex flex-col gap-2.5">
             {/* Header */}
             <div>
-                <p className="text-[9px] font-medium uppercase tracking-[0.10em] text-ink2">New Device</p>
-                <p className="text-[9px] text-ink3 mt-0.5">Add a new device for your rooms and integrations.</p>
+                <p className="text-[10px] font-medium uppercase tracking-[0.10em] text-ink2">New Device</p>
+                <p className="text-[10px] text-ink3 mt-0.5">Add a new device for your rooms and integrations.</p>
             </div>
 
             <div className="max-w-xl">
                 <div className="bg-surface2 border border-edge">
                     <div className="px-3 py-2 border-b border-edge">
-                        <p className="text-[9px] font-medium uppercase tracking-[0.10em] text-ink2">Device Configuration</p>
+                        <p className="text-[10px] font-medium uppercase tracking-[0.10em] text-ink2">Device Configuration</p>
                     </div>
                     <form onSubmit={handleSubmit} className="px-3">
                         <FieldRow icon={Cpu} label="Device Name">
@@ -85,7 +85,7 @@ export default function NewDevice({ onCreated, onReload }) {
                                 type="text"
                                 value={deviceName}
                                 onChange={(e) => setDeviceName(e.target.value)}
-                                className="text-[9px] w-full bg-transparent outline-none border-b border-edge text-ink pb-0.5 focus:border-accent transition-smooth"
+                                className="text-[10px] w-full bg-transparent outline-none border-b border-edge text-ink pb-0.5 focus:border-accent transition-smooth"
                                 placeholder="Warehouse Gateway"
                             />
                         </FieldRow>
@@ -95,7 +95,7 @@ export default function NewDevice({ onCreated, onReload }) {
                                 type="text"
                                 value={location}
                                 onChange={(e) => setLocation(e.target.value)}
-                                className="text-[9px] w-full bg-transparent outline-none border-b border-edge text-ink pb-0.5 focus:border-accent transition-smooth"
+                                className="text-[10px] w-full bg-transparent outline-none border-b border-edge text-ink pb-0.5 focus:border-accent transition-smooth"
                                 placeholder="Warehouse"
                             />
                         </FieldRow>
@@ -105,7 +105,7 @@ export default function NewDevice({ onCreated, onReload }) {
                                 type="text"
                                 value={apiKey}
                                 onChange={(e) => setApiKey(e.target.value)}
-                                className="text-[9px] w-full bg-transparent outline-none border-b border-edge text-ink pb-0.5 focus:border-accent transition-smooth"
+                                className="text-[10px] w-full bg-transparent outline-none border-b border-edge text-ink pb-0.5 focus:border-accent transition-smooth"
                                 placeholder="key-warehouse-001"
                             />
                         </FieldRow>
@@ -114,21 +114,21 @@ export default function NewDevice({ onCreated, onReload }) {
                             <select
                                 value={status}
                                 onChange={(e) => setStatus(e.target.value)}
-                                className="text-[9px] w-full bg-transparent outline-none border-b border-edge text-ink pb-0.5 focus:border-accent transition-smooth"
+                                className="text-[10px] w-full bg-transparent outline-none border-b border-edge text-ink pb-0.5 focus:border-accent transition-smooth"
                             >
                                 <option value="offline">offline</option>
                                 <option value="online">online</option>
                             </select>
                         </FieldRow>
 
-                        {error && <p className="text-[9px] text-danger py-1.5">{error}</p>}
-                        {success && <p className="text-[9px] text-success py-1.5">{success}</p>}
+                        {error && <p className="text-[10px] text-danger py-1.5">{error}</p>}
+                        {success && <p className="text-[10px] text-success py-1.5">{success}</p>}
 
                         <div className="py-2.5">
                             <button
                                 type="submit"
                                 disabled={submitting || !deviceName.trim() || !apiKey.trim() || !location.trim()}
-                                className="w-full h-8 bg-accent text-white text-[9px] uppercase tracking-[0.1em] font-medium flex items-center justify-center gap-1.5 hover:bg-accent/80 transition-smooth disabled:opacity-50"
+                                className="w-full h-8 bg-accent text-white text-[10px] uppercase tracking-[0.1em] font-medium flex items-center justify-center gap-1.5 hover:bg-accent/80 transition-smooth disabled:opacity-50"
                             >
                                 <PlusCircle className="w-3 h-3" />
                                 {submitting ? "Creating..." : "Create Device"}

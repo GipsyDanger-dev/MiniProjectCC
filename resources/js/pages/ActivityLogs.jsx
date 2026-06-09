@@ -1,16 +1,63 @@
 import React, { useState } from "react";
-import { Calendar, ChevronDown, Download, Flame, Siren, Waves } from "lucide-react";
+import { ChevronDown, Download, AlertTriangle, CheckCircle, Settings, Zap, Activity } from "lucide-react";
 
-const filters = ["All", "Danger", "Warning", "Info", "Resolved"];
+const filters = ["All", "Danger", "Safe", "System"];
 
 function formatTime(value) {
-    if (!value) return "just now";
+    if (!value) return "";
     return new Date(value).toLocaleString("en-GB", {
         hour: "2-digit",
         minute: "2-digit",
         day: "2-digit",
         month: "short",
     });
+}
+
+function parseDescription(desc) {
+    if (!desc) return null;
+    const triggered = desc.match(/Triggered:\s*([^|]+)/)?.[1]?.trim();
+    const nearLimit = desc.match(/Near limit:\s*([^|]+)/)?.[1]?.trim();
+    const sensors = [];
+    const re = /(Gas|Smoke|Temp|Flame):\s*([\d.]+(?:C?))\/([\d.]+(?:C?))/g;
+    let m;
+    while ((m = re.exec(desc)) !== null) {
+        const [, name, current, threshold] = m;
+        const cur = parseFloat(current);
+        const thr = parseFloat(threshold);
+        let pct;
+        if (name === "Flame") {
+            // Flame: lower = worse
+            pct = thr > 0 ? Math.round((1 - cur / thr) * 100) : 0;
+        } else {
+            pct = thr > 0 ? Math.round((cur / thr) * 100) : 0;
+        }
+        sensors.push({ name, current: current.replace("C", ""), threshold: threshold.replace("C", ""), pct });
+    }
+    return { triggered, nearLimit, sensors };
+}
+
+function getIcon(actionType) {
+    if (actionType === "MANUAL_COMMAND") return Zap;
+    if (actionType === "SYSTEM_UPDATE" || actionType === "MODE_SWITCH") return Settings;
+    return Activity;
+}
+
+function SensorBar({ name, current, threshold, pct, isDanger }) {
+    const barPct = Math.min(100, Math.max(2, pct));
+    return (
+        <div className="flex items-center gap-2">
+            <span className="text-[9px] text-ink3 w-12 shrink-0">{name}</span>
+            <div className="flex-1 h-1 bg-edge rounded-full overflow-hidden">
+                <div
+                    className={`h-full rounded-full transition-all ${isDanger ? "bg-danger" : pct > 80 ? "bg-amber-500" : "bg-edge2"}`}
+                    style={{ width: `${barPct}%` }}
+                />
+            </div>
+            <span className={`text-[9px] tabular-nums shrink-0 ${isDanger ? "text-danger" : "text-ink3"}`}>
+                {current}/{threshold}
+            </span>
+        </div>
+    );
 }
 
 export default function ActivityLogs({ activeRoom, iot }) {
@@ -20,10 +67,9 @@ export default function ActivityLogs({ activeRoom, iot }) {
 
     const filteredLogs = logs.filter((log) => {
         if (activeFilter === "All") return true;
-        if (activeFilter === "Danger") return log.status === "BAHAYA" && log.action_type === "SENSOR_DATA";
-        if (activeFilter === "Resolved") return log.status === "AMAN";
-        if (activeFilter === "Warning") return log.status === "BAHAYA" && log.action_type !== "SENSOR_DATA";
-        if (activeFilter === "Info") return log.action_type === "SYSTEM_UPDATE" || log.action_type === "MODE_SWITCH";
+        if (activeFilter === "Danger") return log.status === "BAHAYA";
+        if (activeFilter === "Safe") return log.status === "AMAN";
+        if (activeFilter === "System") return log.action_type === "SYSTEM_UPDATE" || log.action_type === "MODE_SWITCH";
         return true;
     });
 
@@ -41,25 +87,11 @@ export default function ActivityLogs({ activeRoom, iot }) {
         URL.revokeObjectURL(url);
     };
 
-    const entries = filteredLogs.length
-        ? filteredLogs.slice(0, 8).map((item) => ({
-              id: item.id,
-              title: item.status === "BAHAYA" ? "Danger Event Triggered" : "Normal Event",
-              desc: item.message || item.description,
-              time: formatTime(item.created_at),
-              duration: "auto",
-              status: item.status === "BAHAYA" ? "TRIGGERED" : "INFO",
-              room: activeRoom,
-              icon: item.status === "BAHAYA" ? Flame : Siren,
-              tone: item.status === "BAHAYA" ? "danger" : "info",
-          }))
-        : [];
-
     const stats = [
-        { label: "Total Events Today", value: `${logs.length}`, tone: "text-ink" },
-        { label: "Danger Events", value: `${logs.filter((l) => l.status === "BAHAYA").length}`, tone: "text-danger" },
-        { label: "Resolved", value: `${logs.filter((l) => l.status === "AMAN").length}`, tone: "text-success" },
-        { label: "Worker Online", value: iot.data?.worker_online ? "YES" : "NO", tone: "text-ink" },
+        { label: "Total Events", value: `${logs.length}`, tone: "text-ink" },
+        { label: "Danger", value: `${logs.filter((l) => l.status === "BAHAYA").length}`, tone: "text-danger" },
+        { label: "Safe", value: `${logs.filter((l) => l.status === "AMAN").length}`, tone: "text-success" },
+        { label: "Worker", value: iot.data?.worker_online ? "Online" : "Offline", tone: iot.data?.worker_online ? "text-success" : "text-danger" },
     ];
 
     return (
@@ -67,13 +99,13 @@ export default function ActivityLogs({ activeRoom, iot }) {
             {/* Header */}
             <div className="flex flex-wrap items-center justify-between gap-2">
                 <div>
-                    <p className="text-[9px] font-medium uppercase tracking-[0.10em] text-ink2">Activity Log</p>
-                    <p className="text-[9px] text-ink3 mt-0.5">Chronological event timeline & alerts</p>
+                    <p className="text-[10px] font-medium uppercase tracking-[0.10em] text-ink2">Activity Log</p>
+                    <p className="text-[10px] text-ink3 mt-0.5">All system events and sensor alerts</p>
                 </div>
                 <button
                     type="button"
                     onClick={exportCSV}
-                    className="h-7 px-3 bg-accent text-white text-[9px] uppercase tracking-[0.1em] font-medium inline-flex items-center gap-1.5 hover:bg-accent/80 transition-smooth"
+                    className="h-7 px-3 bg-accent text-white text-[10px] uppercase tracking-[0.1em] font-medium inline-flex items-center gap-1.5 hover:bg-accent/80 transition-smooth"
                 >
                     <Download className="w-3 h-3" />
                     Export
@@ -84,13 +116,13 @@ export default function ActivityLogs({ activeRoom, iot }) {
             <div className="grid grid-cols-2 xl:grid-cols-4 gap-2">
                 {stats.map((stat) => (
                     <div key={stat.label} className="bg-surface2 border border-edge px-3 py-2.5">
-                        <p className="text-[9px] uppercase tracking-[0.08em] text-ink3">{stat.label}</p>
+                        <p className="text-[10px] uppercase tracking-[0.08em] text-ink3">{stat.label}</p>
                         <p className={`text-lg font-medium mt-1 tabular-nums ${stat.tone}`}>{stat.value}</p>
                     </div>
                 ))}
             </div>
 
-            {/* Event timeline */}
+            {/* Event list */}
             <div className="bg-surface2 border border-edge">
                 <div className="flex flex-wrap items-center justify-between gap-2 px-3 py-2 border-b border-edge">
                     <div className="flex flex-wrap gap-1">
@@ -99,7 +131,7 @@ export default function ActivityLogs({ activeRoom, iot }) {
                                 key={filter}
                                 type="button"
                                 onClick={() => setActiveFilter(filter)}
-                                className={`px-2 py-1 text-[9px] uppercase tracking-[0.08em] border border-r-0 last:border-r transition-smooth ${
+                                className={`px-2 py-1 text-[10px] uppercase tracking-[0.08em] border border-r-0 last:border-r transition-smooth ${
                                     activeFilter === filter
                                         ? "bg-surface text-accent border-accent"
                                         : "bg-surface3 text-ink3 border-edge"
@@ -109,70 +141,97 @@ export default function ActivityLogs({ activeRoom, iot }) {
                             </button>
                         ))}
                     </div>
-                    <span className="text-[9px] text-ink3">
-                        {entries.length} of {filteredLogs.length} filtered ({logs.length} total)
+                    <span className="text-[10px] text-ink3">
+                        {filteredLogs.length} events
                     </span>
                 </div>
 
-                <div className="px-3 py-2 space-y-2">
-                    {entries.length === 0 && (
-                        <p className="text-[9px] text-ink3 py-4 text-center uppercase tracking-[0.06em]">No entries found</p>
+                <div className="divide-y divide-edge">
+                    {filteredLogs.length === 0 && (
+                        <p className="text-[10px] text-ink3 py-4 text-center px-3">No events found</p>
                     )}
-                    {entries.map((entry, index) => {
-                        const Icon = entry.icon;
-                        const isDanger = entry.tone === "danger";
-                        return (
-                            <div key={entry.id} className="flex gap-2">
-                                <div className="pt-2 flex flex-col items-center">
-                                    <span className={`w-1.5 h-1.5 ${index === 0 ? "bg-accent" : "bg-edge2"}`} />
-                                    {index < entries.length - 1 && <span className="w-px flex-1 bg-edge mt-1" />}
-                                </div>
+                    {filteredLogs.slice(0, 10).map((log) => {
+                        const isDanger = log.status === "BAHAYA";
+                        const isSystem = log.action_type === "SYSTEM_UPDATE" || log.action_type === "MODE_SWITCH";
+                        const Icon = isDanger ? AlertTriangle : isSystem ? Settings : CheckCircle;
+                        const parsed = parseDescription(log.description);
+                        const isExpanded = expandedId === log.id;
 
-                                <div className="flex-1 border border-edge bg-surface p-2.5">
-                                    <div className="flex items-start justify-between gap-2">
-                                        <div className="flex items-start gap-2">
-                                            <div className={`w-6 h-6 flex items-center justify-center shrink-0 ${
-                                                isDanger ? "text-danger" : "text-ink3"
-                                            }`}>
-                                                <Icon className="w-3 h-3" strokeWidth={1.5} />
-                                            </div>
-                                            <div>
-                                                <div className="flex flex-wrap items-center gap-1.5">
-                                                    <span className="text-[9px] font-medium text-ink tracking-[0.02em]">{entry.title}</span>
-                                                    <span className={`text-[8px] uppercase tracking-[0.08em] px-1 py-0.5 border ${
-                                                        isDanger
-                                                            ? "text-danger border-danger bg-danger/10"
-                                                            : "text-ink3 border-edge2 bg-surface3"
-                                                    }`}>
-                                                        {entry.status}
-                                                    </span>
-                                                    <span className="text-[8px] text-ink3">{entry.room}</span>
-                                                </div>
-                                                <p className="text-[9px] text-ink3 mt-0.5">{entry.desc}</p>
-                                                <div className="mt-1 flex items-center gap-2 text-[8px] text-ink3">
-                                                    <span>{entry.time}</span>
-                                                    <span className="inline-flex items-center gap-0.5">
-                                                        <Waves className="w-2.5 h-2.5" />
-                                                        {entry.duration}
-                                                    </span>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <button
-                                            type="button"
-                                            onClick={() => setExpandedId(expandedId === entry.id ? null : entry.id)}
-                                            className="w-5 h-5 border border-edge bg-surface3 inline-flex items-center justify-center"
-                                        >
-                                            <ChevronDown className={`w-3 h-3 text-ink3 transition-transform ${expandedId === entry.id ? "rotate-180" : ""}`} />
-                                        </button>
+                        return (
+                            <div
+                                key={log.id}
+                                className={`border-l-2 ${
+                                    isDanger ? "border-l-danger bg-danger/[0.03]" : "border-l-transparent"
+                                }`}
+                            >
+                                <div className="flex items-start gap-2 px-3 py-2.5">
+                                    <div className={`shrink-0 mt-0.5 ${isDanger ? "text-danger" : "text-ink3"}`}>
+                                        <Icon className="w-3.5 h-3.5" strokeWidth={1.5} />
                                     </div>
-                                    {expandedId === entry.id && (
-                                        <div className="mt-2 pt-2 border-t border-edge text-[9px] text-ink3 space-y-0.5">
-                                            <p><span className="text-ink2">Action:</span> {logs.find(l => l.id === entry.id)?.action_type || "N/A"}</p>
-                                            <p><span className="text-ink2">Description:</span> {logs.find(l => l.id === entry.id)?.description || "N/A"}</p>
+                                    <div className="flex-1 min-w-0">
+                                        <div className="flex items-center gap-2">
+                                            <p className={`text-[10px] leading-snug ${isDanger ? "text-danger font-medium" : "text-ink2"}`}>
+                                                {log.message}
+                                            </p>
+                                            <span className="text-[9px] text-ink3 whitespace-nowrap">
+                                                {formatTime(log.created_at)}
+                                            </span>
                                         </div>
-                                    )}
+
+                                        {/* Triggered sensors */}
+                                        {parsed?.triggered && (
+                                            <p className="text-[9px] text-danger leading-snug mt-1">
+                                                Triggered: {parsed.triggered}
+                                            </p>
+                                        )}
+
+                                        {/* Near limit sensors */}
+                                        {parsed?.nearLimit && (
+                                            <p className="text-[9px] text-amber-500 leading-snug mt-0.5">
+                                                Near limit: {parsed.nearLimit}
+                                            </p>
+                                        )}
+
+                                        {/* Fallback description */}
+                                        {!parsed?.triggered && !parsed?.nearLimit && log.description && (
+                                            <p className="text-[9px] text-ink3 leading-snug mt-0.5">{log.description}</p>
+                                        )}
+
+                                        {/* Sensor bars (always show for sensor events) */}
+                                        {parsed?.sensors?.length > 0 && (
+                                            <div className="mt-1.5 space-y-0.5 max-w-xs">
+                                                {parsed.sensors.map((s) => {
+                                                    const isTriggered = parsed.triggered?.includes(s.name);
+                                                    return (
+                                                        <SensorBar
+                                                            key={s.name}
+                                                            name={s.name}
+                                                            current={s.current}
+                                                            threshold={s.threshold}
+                                                            pct={s.pct}
+                                                            isDanger={isTriggered}
+                                                        />
+                                                    );
+                                                })}
+                                            </div>
+                                        )}
+                                    </div>
+
+                                    <button
+                                        type="button"
+                                        onClick={() => setExpandedId(isExpanded ? null : log.id)}
+                                        className="w-5 h-5 border border-edge bg-surface3 inline-flex items-center justify-center shrink-0"
+                                    >
+                                        <ChevronDown className={`w-3 h-3 text-ink3 transition-transform ${isExpanded ? "rotate-180" : ""}`} />
+                                    </button>
                                 </div>
+                                {isExpanded && (
+                                    <div className="px-3 pb-2.5 ml-5 text-[9px] text-ink3 space-y-0.5">
+                                        <p><span className="text-ink2">Type:</span> {log.action_type || "N/A"}</p>
+                                        <p><span className="text-ink2">Room:</span> {activeRoom}</p>
+                                        {log.description && <p><span className="text-ink2">Raw:</span> {log.description}</p>}
+                                    </div>
+                                )}
                             </div>
                         );
                     })}

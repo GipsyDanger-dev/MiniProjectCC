@@ -11,8 +11,9 @@ export function useRealtimeIoT(deviceId, intervalMs = 3000) {
 
         async function fetchData() {
             try {
-                const res = await fetch(`/api/dashboard/data?device_id=${deviceId}`, {
-                    headers: { Accept: "application/json" },
+                const res = await fetch(`/api/dashboard/data?device_id=${deviceId}&_t=${Date.now()}`, {
+                    headers: { Accept: "application/json", "Cache-Control": "no-cache" },
+                    cache: "no-store",
                 });
                 if (!res.ok) {
                     throw new Error(`HTTP ${res.status}`);

@@ -19,7 +19,7 @@ export default function StatCard({
 
     return (
         <div className="bg-surface2 border border-edge p-3">
-            <p className="text-[9px] uppercase tracking-[0.10em] text-ink3 mb-1.5">
+            <p className="text-[10px] uppercase tracking-[0.10em] text-ink3 mb-1.5">
                 {title}
             </p>
             <p className={cn(
@@ -33,7 +33,7 @@ export default function StatCard({
             </p>
             {badge && (
                 <span className={cn(
-                    "inline-block text-[9px] uppercase tracking-[0.08em] px-1.5 py-0.5 border",
+                    "inline-block text-[10px] uppercase tracking-[0.08em] px-1.5 py-0.5 border",
                     tagClass[badgeVariant] || tagClass.muted,
                 )}>
                     {badge}

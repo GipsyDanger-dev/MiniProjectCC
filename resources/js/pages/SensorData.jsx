@@ -11,18 +11,24 @@ import {
     YAxis,
 } from "recharts";
 
-const sensorCharts = [
-    { key: "gas", label: "Gas (PPM)", stroke: "#c45a0a", gradient: "gasGradient", threshold: 250 },
-    { key: "flame", label: "Api (Analog)", stroke: "#dc2626", gradient: "flameGradient", threshold: 500 },
-    { key: "humidity", label: "Kelembapan (%)", stroke: "#9a7b4f", gradient: "humidityGradient", threshold: 70 },
-    { key: "temp", label: "Suhu (°C)", stroke: "#b45309", gradient: "tempGradient", threshold: 40 },
-];
 
 export default function SensorData({ activeRoom, iot }) {
     const [activeRange, setActiveRange] = useState("1H");
     const [searchTerm, setSearchTerm] = useState("");
     const rawRows = iot.data?.sensor_data || [];
     const latest = rawRows[0];
+    const settings = iot.data?.settings || {};
+    const gasTh = Number(settings.gas_threshold) || 2500;
+    const flameTh = Number(settings.flame_threshold) || 500;
+    const humidityTh = Number(settings.humidity_threshold) || 70;
+    const tempTh = Number(settings.temperature_threshold) || 45;
+
+    const sensorCharts = [
+        { key: "gas", label: "Gas (PPM)", stroke: "#c45a0a", gradient: "gasGradient", threshold: gasTh },
+        { key: "flame", label: "Api (Analog)", stroke: "#dc2626", gradient: "flameGradient", threshold: flameTh },
+        { key: "humidity", label: "Kelembapan (%)", stroke: "#9a7b4f", gradient: "humidityGradient", threshold: humidityTh },
+        { key: "temp", label: "Suhu (°C)", stroke: "#b45309", gradient: "tempGradient", threshold: tempTh },
+    ];
 
     const exportCSV = () => {
         const header = "Timestamp,Gas,Api,Suhu,Kelembapan,Status\n";
@@ -95,16 +101,16 @@ export default function SensorData({ activeRoom, iot }) {
     }, [activeRange, baseTrend]);
 
     const metricCards = [
-        { title: "Gas", value: Math.round(Number(latest?.gas_value || 0)), unit: "ppm", delta: latest && Number(latest.gas_value) > 250 ? "Alert" : "Normal" },
-        { title: "Api", value: latest && Number(latest.flame_value) < 500 ? "DETECTED" : "CLEAR", unit: "", delta: latest?.status_indikasi || "Stable" },
-        { title: "Kelembapan", value: Math.round(Number(latest?.humidity || 0)), unit: "%", delta: latest && Number(latest.humidity) > 70 ? "Alert" : "Normal" },
-        { title: "Suhu", value: Math.round(Number(latest?.temperature || 0)), unit: "°C", delta: latest && Number(latest.temperature) > 40 ? "Alert" : "Normal" },
+        { title: "Gas", value: Math.round(Number(latest?.gas_value || 0)), unit: "ppm", delta: latest && Number(latest.gas_value) > gasTh ? "Alert" : "Normal" },
+        { title: "Api", value: Math.round(Number(latest?.flame_value || 0)), unit: "Analog", delta: latest && Number(latest.flame_value) < flameTh ? "Alert" : "Normal" },
+        { title: "Kelembapan", value: Math.round(Number(latest?.humidity || 0)), unit: "%", delta: latest && Number(latest.humidity) > humidityTh ? "Alert" : "Normal" },
+        { title: "Suhu", value: Math.round(Number(latest?.temperature || 0)), unit: "°C", delta: latest && Number(latest.temperature) > tempTh ? "Alert" : "Normal" },
     ];
 
     const allReadings = rawRows.slice(0, 24).map((item) => [
         new Date(item.created_at).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" }),
         `${Math.round(Number(item.gas_value) || 0)}`,
-        Number(item.flame_value) < 500 ? "DETECTED" : "CLEAR",
+        `${Math.round(Number(item.flame_value) || 0)}`,
         `${Math.round(Number(item.humidity || 0))}`,
         `${Math.round(Number(item.temperature) || 0)}`,
         item.status_indikasi || "AMAN",
@@ -121,13 +127,13 @@ export default function SensorData({ activeRoom, iot }) {
             {/* Header */}
             <div className="flex flex-wrap items-center justify-between gap-2">
                 <div>
-                    <p className="text-[9px] font-medium uppercase tracking-[0.10em] text-ink2">Sensor Data</p>
-                    <p className="text-[9px] text-ink3 mt-0.5">Detailed readings for {activeRoom}</p>
+                    <p className="text-[10px] font-medium uppercase tracking-[0.10em] text-ink2">Sensor Data</p>
+                    <p className="text-[10px] text-ink3 mt-0.5">Detailed readings for {activeRoom}</p>
                 </div>
                 <button
                     type="button"
                     onClick={exportCSV}
-                    className="h-7 px-3 bg-accent text-white text-[9px] uppercase tracking-[0.1em] font-medium inline-flex items-center gap-1.5 hover:bg-accent/80 transition-smooth"
+                    className="h-7 px-3 bg-accent text-white text-[10px] uppercase tracking-[0.1em] font-medium inline-flex items-center gap-1.5 hover:bg-accent/80 transition-smooth"
                 >
                     <Download className="w-3 h-3" />
                     Export CSV
@@ -138,11 +144,11 @@ export default function SensorData({ activeRoom, iot }) {
             <div className="grid grid-cols-2 xl:grid-cols-4 gap-2">
                 {metricCards.map((card) => (
                     <div key={card.title} className="bg-surface2 border border-edge px-3 py-2.5">
-                        <p className="text-[9px] uppercase tracking-[0.08em] text-ink3">{card.title}</p>
+                        <p className="text-[10px] uppercase tracking-[0.08em] text-ink3">{card.title}</p>
                         <p className="text-lg font-medium text-ink mt-1 tabular-nums">
-                            {card.value}{card.unit ? <span className="text-[9px] text-ink3 ml-1">{card.unit}</span> : null}
+                            {card.value}{card.unit ? <span className="text-[10px] text-ink3 ml-1">{card.unit}</span> : null}
                         </p>
-                        <span className={`inline-block mt-1 text-[9px] uppercase tracking-[0.06em] px-1.5 py-0.5 border ${
+                        <span className={`inline-block mt-1 text-[10px] uppercase tracking-[0.06em] px-1.5 py-0.5 border ${
                             card.delta === "Alert" ? "text-danger border-danger bg-danger/10" : "text-ink3 border-edge2 bg-surface3"
                         }`}>
                             {card.delta}
@@ -154,7 +160,7 @@ export default function SensorData({ activeRoom, iot }) {
             {/* Sensor Trends */}
             <div className="bg-surface2 border border-edge">
                 <div className="flex items-center justify-between px-3 py-2 border-b border-edge">
-                    <p className="text-[9px] font-medium uppercase tracking-[0.10em] text-ink2">Sensor Trends</p>
+                    <p className="text-[10px] font-medium uppercase tracking-[0.10em] text-ink2">Sensor Trends</p>
                     <div className="flex">
                         {["1H", "6H", "24H", "7D"].map((item) => {
                             const isRealtime = item === "1H";
@@ -165,7 +171,7 @@ export default function SensorData({ activeRoom, iot }) {
                                     disabled={!isRealtime}
                                     onClick={() => setActiveRange(item)}
                                     title={isRealtime ? "Real-time data" : "Historical data not available yet"}
-                                    className={`px-2.5 py-1 text-[9px] uppercase tracking-[0.08em] border border-r-0 last:border-r transition-smooth ${
+                                    className={`px-2.5 py-1 text-[10px] uppercase tracking-[0.08em] border border-r-0 last:border-r transition-smooth ${
                                         activeRange === item
                                             ? "bg-surface text-accent border-accent"
                                             : isRealtime
@@ -183,7 +189,7 @@ export default function SensorData({ activeRoom, iot }) {
                 <div className="p-3 grid gap-2 md:grid-cols-2">
                     {sensorCharts.map((sensor) => (
                         <div key={sensor.key} className="h-[180px] border border-edge bg-surface p-2">
-                            <div className="px-1 pt-0.5 text-[9px] uppercase tracking-[0.06em] text-ink3">
+                            <div className="px-1 pt-0.5 text-[10px] uppercase tracking-[0.06em] text-ink3">
                                 {sensor.label}
                             </div>
                             <ResponsiveContainer width="100%" height="90%">
@@ -227,13 +233,13 @@ export default function SensorData({ activeRoom, iot }) {
                     ))}
                 </div>
                 <div className="px-3 pb-2 flex gap-4">
-                    <div className="flex items-center gap-1.5 text-[9px] text-ink3 uppercase tracking-[0.06em]">
+                    <div className="flex items-center gap-1.5 text-[10px] text-ink3 uppercase tracking-[0.06em]">
                         <span className="w-1.5 h-1.5 bg-accent" /> Normal
                     </div>
-                    <div className="flex items-center gap-1.5 text-[9px] text-ink3 uppercase tracking-[0.06em]">
+                    <div className="flex items-center gap-1.5 text-[10px] text-ink3 uppercase tracking-[0.06em]">
                         <span className="w-1.5 h-1.5 bg-danger" /> Alert
                     </div>
-                    <div className="flex items-center gap-1.5 text-[9px] text-ink3 uppercase tracking-[0.06em]">
+                    <div className="flex items-center gap-1.5 text-[10px] text-ink3 uppercase tracking-[0.06em]">
                         <span className="w-1.5 h-1.5 bg-edge" /> Threshold
                     </div>
                 </div>
@@ -243,8 +249,8 @@ export default function SensorData({ activeRoom, iot }) {
             <div className="bg-surface2 border border-edge">
                 <div className="flex items-center justify-between px-3 py-2 border-b border-edge">
                     <div>
-                        <p className="text-[9px] font-medium uppercase tracking-[0.10em] text-ink2">Raw Readings</p>
-                        <p className="text-[9px] text-ink3">{rawReadings.length} entries</p>
+                        <p className="text-[10px] font-medium uppercase tracking-[0.10em] text-ink2">Raw Readings</p>
+                        <p className="text-[10px] text-ink3">{rawReadings.length} entries</p>
                     </div>
                     <div className="flex items-center gap-1.5">
                         <div className="h-7 border border-edge bg-surface px-2 flex items-center gap-1.5">
@@ -254,7 +260,7 @@ export default function SensorData({ activeRoom, iot }) {
                                 placeholder="Filter..."
                                 value={searchTerm}
                                 onChange={(e) => setSearchTerm(e.target.value)}
-                                className="bg-transparent border-none outline-none text-[9px] text-ink w-20 md:w-28 placeholder-ink3"
+                                className="bg-transparent border-none outline-none text-[10px] text-ink w-20 md:w-28 placeholder-ink3"
                             />
                         </div>
                     </div>
@@ -263,10 +269,10 @@ export default function SensorData({ activeRoom, iot }) {
                 <div className="overflow-auto thin-scroll">
                     <table className="w-full min-w-[640px]">
                         <thead>
-                            <tr className="text-[9px] uppercase tracking-[0.08em] text-ink3 border-b border-edge">
+                            <tr className="text-[10px] uppercase tracking-[0.08em] text-ink3 border-b border-edge">
                                 <th className="text-left px-3 py-2">Timestamp</th>
                                 <th className="text-left px-3 py-2">Gas (PPM)</th>
-                                <th className="text-left px-3 py-2">Api</th>
+                                <th className="text-left px-3 py-2">Api (Analog)</th>
                                 <th className="text-left px-3 py-2">Kelembapan (%)</th>
                                 <th className="text-left px-3 py-2">Suhu (°C)</th>
                                 <th className="text-right px-3 py-2">Status</th>
@@ -275,13 +281,13 @@ export default function SensorData({ activeRoom, iot }) {
                         <tbody>
                             {rawReadings.map((row, index) => (
                                 <tr key={`${row[0]}-${index}`} className="border-b border-edge hover:bg-surface3 transition-smooth">
-                                    <td className="px-3 py-2 text-[9px] text-ink2 tabular-nums">{row[0]}</td>
-                                    <td className="px-3 py-2 text-[9px] text-ink tabular-nums">{row[1]}</td>
-                                    <td className="px-3 py-2 text-[9px] text-ink">{row[2]}</td>
-                                    <td className="px-3 py-2 text-[9px] text-ink tabular-nums">{row[3]}</td>
-                                    <td className="px-3 py-2 text-[9px] text-ink tabular-nums">{row[4]}</td>
+                                    <td className="px-3 py-2 text-[10px] text-ink2 tabular-nums">{row[0]}</td>
+                                    <td className="px-3 py-2 text-[10px] text-ink tabular-nums">{row[1]}</td>
+                                    <td className="px-3 py-2 text-[10px] text-ink">{row[2]}</td>
+                                    <td className="px-3 py-2 text-[10px] text-ink tabular-nums">{row[3]}</td>
+                                    <td className="px-3 py-2 text-[10px] text-ink tabular-nums">{row[4]}</td>
                                     <td className="px-3 py-2 text-right">
-                                        <span className={`inline-flex px-1.5 py-0.5 text-[9px] uppercase tracking-[0.06em] border ${
+                                        <span className={`inline-flex px-1.5 py-0.5 text-[10px] uppercase tracking-[0.06em] border ${
                                             row[5] === "BAHAYA"
                                                 ? "text-danger border-danger bg-danger/10"
                                                 : "text-success border-success bg-success/10"

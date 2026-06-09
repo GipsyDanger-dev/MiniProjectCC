@@ -37,7 +37,7 @@ export default function DeviceStatus({ activeRoom, iot }) {
             icon: Monitor,
             details: [
                 `Gas: ${Math.round(Number(latest?.gas_value || 0))}ppm`,
-                `Api: ${Number(latest?.flame_value || 9999) < 500 ? "DETECTED" : "CLEAR"}`,
+                `Api: ${Math.round(Number(latest?.flame_value || 0))} Analog`,
                 `Kelembapan: ${Math.round(Number(latest?.humidity || 0))}%`,
                 `Suhu: ${Math.round(Number(latest?.temperature || 0))}°C`,
             ],
@@ -55,8 +55,8 @@ export default function DeviceStatus({ activeRoom, iot }) {
         <div className="flex flex-col gap-2.5">
             {/* Header */}
             <div>
-                <p className="text-[9px] font-medium uppercase tracking-[0.10em] text-ink2">Device Status</p>
-                <p className="text-[9px] text-ink3 mt-0.5">Hardware, connectivity, and server diagnostics</p>
+                <p className="text-[10px] font-medium uppercase tracking-[0.10em] text-ink2">Device Status</p>
+                <p className="text-[10px] text-ink3 mt-0.5">Hardware, connectivity, and server diagnostics</p>
             </div>
 
             {/* Device cards */}
@@ -66,12 +66,12 @@ export default function DeviceStatus({ activeRoom, iot }) {
                         <div className="px-3 py-2 border-b border-edge">
                             <div className="flex items-center gap-1.5">
                                 <card.icon className="w-3 h-3 text-accent" />
-                                <p className="text-[9px] font-medium uppercase tracking-[0.08em] text-ink2">{card.title}</p>
+                                <p className="text-[10px] font-medium uppercase tracking-[0.08em] text-ink2">{card.title}</p>
                             </div>
                         </div>
                         <div className="px-3 py-2.5">
                             <div className="flex items-center justify-between">
-                                <span className={`text-[9px] uppercase tracking-[0.06em] px-1.5 py-0.5 border ${
+                                <span className={`text-[10px] uppercase tracking-[0.06em] px-1.5 py-0.5 border ${
                                     card.status === "RUNNING" || card.status === "ONLINE" || card.status === "CONNECTED"
                                         ? "text-success border-success bg-success/10"
                                         : card.status === "ACTIVE"
@@ -86,7 +86,7 @@ export default function DeviceStatus({ activeRoom, iot }) {
                             </div>
                             <div className="mt-2 space-y-1">
                                 {card.details.map((detail) => (
-                                    <p key={detail} className="text-[9px] text-ink3 tracking-[0.04em]">{detail}</p>
+                                    <p key={detail} className="text-[10px] text-ink3 tracking-[0.04em]">{detail}</p>
                                 ))}
                             </div>
                         </div>
@@ -97,14 +97,14 @@ export default function DeviceStatus({ activeRoom, iot }) {
             {/* API Health Checks */}
             <div className="bg-surface2 border border-edge">
                 <div className="px-3 py-2 border-b border-edge">
-                    <p className="text-[9px] font-medium uppercase tracking-[0.10em] text-ink2">API Health Checks</p>
+                    <p className="text-[10px] font-medium uppercase tracking-[0.10em] text-ink2">API Health Checks</p>
                 </div>
                 <div className="px-3">
                     {checks.map((check, i) => (
                         <div key={check.endpoint} className={`flex items-center justify-between py-2 ${i < checks.length - 1 ? "border-b border-edge" : ""}`}>
-                            <span className="text-[9px] text-ink2 tracking-[0.04em] font-mono">{check.endpoint}</span>
+                            <span className="text-[10px] text-ink2 tracking-[0.04em] font-mono">{check.endpoint}</span>
                             <div className="flex items-center gap-2">
-                                <span className="text-[9px] text-ink3 tabular-nums">{check.latency}</span>
+                                <span className="text-[10px] text-ink3 tabular-nums">{check.latency}</span>
                                 <span className={`w-1.5 h-1.5 ${check.ok ? "bg-success" : "bg-danger"}`} />
                             </div>
                         </div>

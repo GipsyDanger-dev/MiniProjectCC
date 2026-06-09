@@ -63,7 +63,7 @@ function SidebarContent({
                         <p className="font-medium text-xs text-surface tracking-[0.14em] uppercase">
                             Sentinel
                         </p>
-                        <p className="text-[9px] text-sidebar-muted">
+                        <p className="text-[10px] text-sidebar-muted">
                             IoT — v2.4
                         </p>
                     </div>
@@ -71,7 +71,7 @@ function SidebarContent({
             </div>
 
             <div className="pt-4">
-                <p className="text-[9px] uppercase tracking-[0.12em] text-sidebar-muted px-4 pb-2">
+                <p className="text-[10px] uppercase tracking-[0.12em] text-sidebar-muted px-4 pb-2">
                     Main
                 </p>
                 <nav className="flex flex-col">
@@ -83,7 +83,7 @@ function SidebarContent({
                                 onClick={() => handleClick(id)}
                                 title={collapsed ? label : undefined}
                                 className={cn(
-                                    "group flex items-center gap-3 h-9 text-[10px] uppercase tracking-[0.08em] transition-smooth border-l-2",
+                                    "group flex items-center gap-3 h-9 text-[12px] uppercase tracking-[0.08em] transition-smooth border-l-2",
                                     collapsed ? "justify-center px-0" : "px-4",
                                     isActive
                                         ? "text-surface bg-[#1c1c18] border-l-accent"
@@ -102,7 +102,7 @@ function SidebarContent({
             </div>
 
             <div className="pt-4">
-                <p className="text-[9px] uppercase tracking-[0.12em] text-sidebar-muted px-4 pb-2">
+                <p className="text-[10px] uppercase tracking-[0.12em] text-sidebar-muted px-4 pb-2">
                     Config
                 </p>
                 <nav className="flex flex-col">
@@ -114,7 +114,7 @@ function SidebarContent({
                                 onClick={() => handleClick(id)}
                                 title={collapsed ? label : undefined}
                                 className={cn(
-                                    "group flex items-center gap-3 h-9 text-[10px] uppercase tracking-[0.08em] transition-smooth border-l-2",
+                                    "group flex items-center gap-3 h-9 text-[12px] uppercase tracking-[0.08em] transition-smooth border-l-2",
                                     collapsed ? "justify-center px-0" : "px-4",
                                     isActive
                                         ? "text-surface bg-[#1c1c18] border-l-accent"
@@ -139,7 +139,7 @@ function SidebarContent({
                     <button
                         type="button"
                         onClick={() => handleClick("new-device")}
-                        className="w-full h-8 border border-[#333] text-sidebar-muted text-[9px] uppercase tracking-[0.1em] hover:border-accent hover:text-accent transition-smooth flex items-center justify-center gap-1.5"
+                        className="w-full h-8 border border-[#333] text-sidebar-muted text-[10px] uppercase tracking-[0.1em] hover:border-accent hover:text-accent transition-smooth flex items-center justify-center gap-1.5"
                     >
                         <Plus className="w-3 h-3" />
                         Add Device
@@ -150,7 +150,7 @@ function SidebarContent({
                     type="button"
                     onClick={handleLogout}
                     className={cn(
-                        "w-full flex items-center gap-3 h-9 text-[9px] uppercase tracking-[0.08em] transition-smooth text-[#444] hover:text-accent",
+                        "w-full flex items-center gap-3 h-9 text-[10px] uppercase tracking-[0.08em] transition-smooth text-[#444] hover:text-accent",
                         collapsed ? "justify-center px-0" : "px-4 justify-center",
                     )}
                 >
@@ -161,7 +161,7 @@ function SidebarContent({
                     type="button"
                     onClick={() => setCollapsed(!collapsed)}
                     className={cn(
-                        "w-full flex items-center gap-3 h-9 text-[9px] uppercase tracking-[0.08em] transition-smooth text-[#444] hover:text-accent",
+                        "w-full flex items-center gap-3 h-9 text-[10px] uppercase tracking-[0.08em] transition-smooth text-[#444] hover:text-accent",
                         collapsed ? "justify-center px-0" : "px-4 justify-center",
                     )}
                 >

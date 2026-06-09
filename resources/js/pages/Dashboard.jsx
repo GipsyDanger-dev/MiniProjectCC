@@ -68,11 +68,17 @@ export default function Dashboard({ activeRoom, deviceId, iot, setCurrentPage })
         },
     ];
 
+    const settings = iot.data?.settings || {};
+    const gasTh = Number(settings.gas_threshold) || 2500;
+    const flameTh = Number(settings.flame_threshold) || 500;
+    const humidityTh = Number(settings.humidity_threshold) || 70;
+    const tempTh = Number(settings.temperature_threshold) || 45;
+
     const sensors = [
-        { name: "MQ-2 Gas", type: "GAS SENSOR", value: `${Math.round(Number(latest?.gas_value || 0))} PPM`, status: Number(latest?.gas_value || 0) > 250 ? "Alert" : "Normal", icon: Wind },
-        { name: "KY-026", type: "FLAME DETECTOR", value: `${Math.round(Number(latest?.flame_value || 0))}`, status: Number(latest?.flame_value || 9999) < 500 ? "Alert" : "Normal", icon: Flame },
-        { name: "DHT22-H", type: "HUMIDITY", value: `${Math.round(Number(latest?.humidity || 0))}%`, status: Number(latest?.humidity || 0) > 70 ? "Alert" : "Normal", icon: Droplets },
-        { name: "DHT22-T", type: "TEMPERATURE", value: `${Math.round(Number(latest?.temperature || 0))}°C`, status: Number(latest?.temperature || 0) > 40 ? "Alert" : "Normal", icon: Thermometer },
+        { name: "MQ-2 Gas", type: "GAS SENSOR", value: `${Math.round(Number(latest?.gas_value || 0))} PPM`, status: Number(latest?.gas_value || 0) > gasTh ? "Alert" : "Normal", icon: Wind },
+        { name: "KY-026", type: "FLAME INTENSITY", value: `${Math.round(Number(latest?.flame_value || 0))} Analog`, status: latest?.flame_value !== undefined && Number(latest.flame_value) < flameTh ? "Alert" : "Normal", icon: Flame },
+        { name: "DHT22-H", type: "HUMIDITY", value: `${Math.round(Number(latest?.humidity || 0))}%`, status: Number(latest?.humidity || 0) > humidityTh ? "Alert" : "Normal", icon: Droplets },
+        { name: "DHT22-T", type: "TEMPERATURE", value: `${Math.round(Number(latest?.temperature || 0))}°C`, status: Number(latest?.temperature || 0) > tempTh ? "Alert" : "Normal", icon: Thermometer },
     ];
 
     const actuators = [
@@ -80,13 +86,7 @@ export default function Dashboard({ activeRoom, deviceId, iot, setCurrentPage })
         { name: "Buzzer", subtitle: buzzerOn ? "ACTIVE" : "SILENT", value: "", enabled: buzzerOn, icon: Bell },
     ];
 
-    const dashboardEntries = logs.slice(0, 5).map((log, index) => ({
-        id: `${log.id || index}`,
-        icon: (log.action_type || "").includes("SENSOR") || (log.message || "").toLowerCase().includes("flame") ? "flame" : (log.message || "").toLowerCase().includes("temp") ? "temp" : "alert",
-        text: log.message || log.description || "System activity",
-        time: relativeTime(log.created_at),
-        status: log.status === "BAHAYA" ? "TRIGGERED" : "INFO",
-    }));
+    const dashboardEntries = logs.slice(0, 5);
 
     const actuatorState = {
         exhaust_fan: fanOn ? actuator.fan_status : "OFF",
@@ -97,16 +97,17 @@ export default function Dashboard({ activeRoom, deviceId, iot, setCurrentPage })
     const [actuatorFeedback, setActuatorFeedback] = useState(null);
     const [modeLoading, setModeLoading] = useState(false);
 
-    const switchToAuto = async () => {
+    const toggleMode = async () => {
         setModeLoading(true);
+        const newMode = systemMode === "auto" ? "manual" : "auto";
         try {
             const res = await fetch("/api/mode", {
                 method: "POST",
                 headers: { "Content-Type": "application/json", Accept: "application/json", "X-CSRF-TOKEN": document.querySelector('meta[name="csrf-token"]')?.getAttribute("content") || "" },
-                body: JSON.stringify({ mode: "auto" }),
+                body: JSON.stringify({ mode: newMode }),
             });
             const data = await res.json();
-            if (data.status === "success") setActuatorFeedback({ type: "success", msg: "Switched to AUTO mode" });
+            if (data.status === "success") setActuatorFeedback({ type: "success", msg: `Switched to ${newMode.toUpperCase()} mode` });
         } catch (_e) {
             setActuatorFeedback({ type: "error", msg: "Failed to switch mode" });
         } finally {
@@ -168,24 +169,24 @@ export default function Dashboard({ activeRoom, deviceId, iot, setCurrentPage })
                     {/* System Control */}
                     <div className="bg-surface2 border border-edge">
                         <div className="flex items-center justify-between px-3 py-2 border-b border-edge">
-                            <p className="text-[9px] font-medium uppercase tracking-[0.10em] text-ink2">Kontrol Sistem</p>
+                            <p className="text-[10px] font-medium uppercase tracking-[0.10em] text-ink2">Kontrol Sistem</p>
                             <div
                                 className={`w-9 h-[18px] border cursor-pointer relative transition-smooth ${systemMode === "auto" ? "bg-accent/10 border-accent" : "bg-surface3 border-edge2"}`}
-                                onClick={switchToAuto}
+                                onClick={toggleMode}
                             >
                                 <span className={`absolute top-0.5 w-3 h-3 transition-all ${systemMode === "auto" ? "left-[18px] bg-accent" : "left-0.5 bg-edge2"}`} />
                             </div>
                         </div>
                         <div className="p-3">
                             <div className="text-center py-3">
-                                <p className="text-[9px] uppercase tracking-[0.10em] text-ink3 mb-1.5">Status Indikasi</p>
+                                <p className="text-[10px] uppercase tracking-[0.10em] text-ink3 mb-1.5">Status Indikasi</p>
                                 <p className={`text-2xl font-medium tracking-[0.02em] ${emergency === "BAHAYA" ? "text-danger animate-pulse" : "text-success"}`}>{emergency}</p>
-                                <p className="text-[9px] text-ink3 mt-1.5 tracking-[0.04em]">
+                                <p className="text-[10px] text-ink3 mt-1.5 tracking-[0.04em]">
                                     ESP32-{deviceId} · {activeRoom} — Updated {relativeTime(latest?.created_at)}
                                 </p>
                             </div>
                             {actuatorFeedback && (
-                                <div className={`mb-2 px-2 py-1.5 text-[9px] border ${actuatorFeedback.type === "success" ? "bg-success/10 text-success border-success" : "bg-danger/10 text-danger border-danger"}`}>
+                                <div className={`mb-2 px-2 py-1.5 text-[10px] border ${actuatorFeedback.type === "success" ? "bg-success/10 text-success border-success" : "bg-danger/10 text-danger border-danger"}`}>
                                     {actuatorFeedback.msg}
                                 </div>
                             )}
@@ -198,7 +199,7 @@ export default function Dashboard({ activeRoom, deviceId, iot, setCurrentPage })
                 <ActiveSensors items={sensors} />
 
                 {/* Event Log */}
-                <ActivityLog entries={dashboardEntries} />
+                <ActivityLog entries={dashboardEntries} onViewAll={() => setCurrentPage?.("logs")} />
             </div>
 
             {/* Bottom panels */}
@@ -211,30 +212,30 @@ export default function Dashboard({ activeRoom, deviceId, iot, setCurrentPage })
                 <ThresholdSettings settings={iot.data?.settings} onSave={saveThresholds} />
                 <div className="bg-surface2 border border-edge">
                     <div className="px-3 py-2 border-b border-edge">
-                        <p className="text-[9px] font-medium uppercase tracking-[0.10em] text-ink2">Node Health</p>
+                        <p className="text-[10px] font-medium uppercase tracking-[0.10em] text-ink2">Node Health</p>
                     </div>
                     <div className="px-3">
                         <div className="flex items-center justify-between py-2.5 border-b border-edge">
-                            <span className="text-[9px] uppercase tracking-[0.08em] text-ink3">Worker Status</span>
-                            <span className={`text-[13px] font-medium tabular-nums ${workerOnline ? "text-success" : "text-danger"}`}>
+                            <span className="text-[10px] uppercase tracking-[0.08em] text-ink3">Worker Status</span>
+                            <span className={`text-[15px] font-medium tabular-nums ${workerOnline ? "text-success" : "text-danger"}`}>
                                 {workerOnline ? "ONLINE" : "OFFLINE"}
                             </span>
                         </div>
                         <div className="flex items-center justify-between py-2.5 border-b border-edge">
-                            <span className="text-[9px] uppercase tracking-[0.08em] text-ink3">Last Command</span>
-                            <span className="text-[9px] uppercase tracking-[0.06em] text-ink2">
+                            <span className="text-[10px] uppercase tracking-[0.08em] text-ink3">Last Command</span>
+                            <span className="text-[10px] uppercase tracking-[0.06em] text-ink2">
                                 {latestCommand ? `${latestCommand.target_device} · ${latestCommand.action}` : "—"}
                             </span>
                         </div>
                         <div className="flex items-center justify-between py-2.5 border-b border-edge">
-                            <span className="text-[9px] uppercase tracking-[0.08em] text-ink3">Mode</span>
-                            <span className="inline-flex items-center gap-1.5 text-[9px] uppercase tracking-[0.06em]">
+                            <span className="text-[10px] uppercase tracking-[0.08em] text-ink3">Mode</span>
+                            <span className="inline-flex items-center gap-1.5 text-[10px] uppercase tracking-[0.06em]">
                                 <span className="w-1.5 h-1.5 bg-accent" /> {systemMode.toUpperCase()}
                             </span>
                         </div>
                         <div className="flex items-center justify-between py-2.5">
-                            <span className="text-[9px] uppercase tracking-[0.08em] text-ink3">Device</span>
-                            <span className="text-[9px] text-ink2">ESP32-{deviceId}</span>
+                            <span className="text-[10px] uppercase tracking-[0.08em] text-ink3">Device</span>
+                            <span className="text-[10px] text-ink2">ESP32-{deviceId}</span>
                         </div>
                     </div>
                 </div>

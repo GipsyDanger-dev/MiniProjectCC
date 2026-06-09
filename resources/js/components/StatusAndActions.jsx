@@ -12,7 +12,7 @@ export function StatusCard({
     return (
         <div className="bg-surface2 border border-edge p-4 h-full flex flex-col">
             <div className="flex items-center justify-between mb-3">
-                <p className="text-[9px] uppercase tracking-[0.10em] text-ink3">
+                <p className="text-[10px] uppercase tracking-[0.10em] text-ink3">
                     Status Indikasi
                 </p>
                 <div
@@ -32,7 +32,7 @@ export function StatusCard({
                     />
                 </div>
             </div>
-            <p className="text-center text-[9px] text-ink3 mb-3 tracking-[0.04em]">
+            <p className="text-center text-[10px] text-ink3 mb-3 tracking-[0.04em]">
                 {updatedLabel}
             </p>
             <p
@@ -44,7 +44,7 @@ export function StatusCard({
             </p>
             <div className="mt-auto pt-3 flex items-end justify-between">
                 <div>
-                    <p className="text-[9px] uppercase tracking-[0.10em] text-ink3">
+                    <p className="text-[10px] uppercase tracking-[0.10em] text-ink3">
                         Device ID
                     </p>
                     <p className="text-sm font-medium mt-0.5">{deviceLabel}</p>
@@ -93,7 +93,7 @@ export function QuickActions({ actuatorState = {}, onAction, loading }) {
                         type="button"
                         disabled={isLoading}
                         onClick={() => onAction?.(action.action)}
-                        className={`h-8 border text-[8px] uppercase tracking-[0.08em] flex items-center justify-center gap-1.5 transition-smooth cursor-pointer disabled:opacity-50 disabled:cursor-wait ${
+                        className={`h-8 border text-[9px] uppercase tracking-[0.08em] flex items-center justify-center gap-1.5 transition-smooth cursor-pointer disabled:opacity-50 disabled:cursor-wait ${
                             action.primary
                                 ? "bg-accent text-white border-accent hover:bg-accent/80"
                                 : "bg-surface3 border-edge2 text-ink2 hover:border-accent hover:text-accent"

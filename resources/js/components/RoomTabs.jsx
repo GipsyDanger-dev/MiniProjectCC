@@ -12,7 +12,7 @@ export default function RoomTabs({ rooms, activeRoomId, onChange }) {
                         type="button"
                         onClick={() => onChange(room.id)}
                         className={cn(
-                            "px-4 py-2 text-[9px] uppercase tracking-[0.08em] whitespace-nowrap border-b-2 transition-smooth",
+                            "px-4 py-2 text-[10px] uppercase tracking-[0.08em] whitespace-nowrap border-b-2 transition-smooth",
                             isActive
                                 ? "text-accent border-b-accent bg-surface"
                                 : "text-ink3 border-b-transparent hover:text-ink2",

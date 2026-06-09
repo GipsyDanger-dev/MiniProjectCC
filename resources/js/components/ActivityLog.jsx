@@ -1,57 +1,93 @@
 import React from "react";
-import { Fan, Flame, Thermometer, Bell } from "lucide-react";
+import { AlertTriangle, CheckCircle, Settings, Zap, Activity } from "lucide-react";
 
-const iconMap = {
-    fan: Fan,
-    flame: Flame,
-    temp: Thermometer,
-    alert: Bell,
-};
+function formatTime(value) {
+    if (!value) return "";
+    const d = new Date(value);
+    const now = new Date();
+    const diffMs = now - d;
+    const diffMin = Math.floor(diffMs / 60000);
+    if (diffMin < 1) return "now";
+    if (diffMin < 60) return `${diffMin}m`;
+    const diffHr = Math.floor(diffMin / 60);
+    if (diffHr < 24) return `${diffHr}h`;
+    return d.toLocaleDateString("en-GB", { day: "2-digit", month: "short" });
+}
 
-const statusStyles = {
-    TRIGGERED: { color: "text-danger", tag: "text-danger border-danger bg-danger/10", label: "DANGER" },
-    RESOLVED: { color: "text-success", tag: "text-success border-success bg-success/10", label: "RESOLVED" },
-    INFO: { color: "text-accent", tag: "text-ink3 border-edge2 bg-surface3", label: "INFO" },
-};
+function parseDescription(desc) {
+    if (!desc) return null;
+    const triggered = desc.match(/Triggered:\s*([^|]+)/)?.[1]?.trim();
+    const nearLimit = desc.match(/Near limit:\s*([^|]+)/)?.[1]?.trim();
+    const sensors = desc.match(/(?:Gas|Smoke|Temp|Flame):\s*[\d.]+\/[\d.]+(?:C?)/g);
+    return { triggered, nearLimit, sensors };
+}
 
-export default function ActivityLog({ entries: incomingEntries = [] }) {
-    const defaultEntries = [
-        { id: "1", icon: "fan", text: "Exhaust fan activated automatically", time: "2m ago", status: "INFO" },
-        { id: "2", icon: "flame", text: "Flame sensor normalized", time: "12m ago", status: "RESOLVED" },
-        { id: "3", icon: "temp", text: "Temperature spike detected", time: "18m ago", status: "TRIGGERED" },
-        { id: "4", icon: "alert", text: "Buzzer test completed", time: "24m ago", status: "INFO" },
-        { id: "5", icon: "temp", text: "Temperature returned to baseline", time: "41m ago", status: "RESOLVED" },
-    ];
+function getIcon(actionType) {
+    if (actionType === "MANUAL_COMMAND") return Zap;
+    if (actionType === "SYSTEM_UPDATE" || actionType === "MODE_SWITCH") return Settings;
+    return Activity;
+}
 
-    const entries = incomingEntries.length ? incomingEntries : defaultEntries;
+export default function ActivityLog({ entries: incomingEntries = [], onViewAll }) {
+    const entries = incomingEntries.length ? incomingEntries : [];
 
     return (
         <div className="bg-surface2 border border-edge">
             <div className="flex items-center justify-between px-3 py-2 border-b border-edge">
-                <p className="text-[9px] font-medium uppercase tracking-[0.10em] text-ink2">
+                <p className="text-[10px] font-medium uppercase tracking-[0.10em] text-ink2">
                     Event Log
                 </p>
-                <span className="text-[9px] uppercase tracking-[0.08em] text-accent cursor-pointer">
-                    Lihat Semua →
+                <span
+                    className="text-[10px] uppercase tracking-[0.08em] text-accent cursor-pointer hover:underline"
+                    onClick={onViewAll}
+                >
+                    View All
                 </span>
             </div>
-            <div className="px-3 max-h-[300px] overflow-auto thin-scroll">
+            <div className="max-h-[300px] overflow-auto thin-scroll">
+                {entries.length === 0 && (
+                    <p className="text-[10px] text-ink3 py-4 text-center px-3">No recent events</p>
+                )}
                 {entries.slice(0, 5).map((entry) => {
-                    const Icon = iconMap[entry.icon] || Bell;
-                    const style = statusStyles[entry.status] || statusStyles.INFO;
+                    const isDanger = entry.status === "BAHAYA";
+                    const isSystem = entry.action_type === "SYSTEM_UPDATE" || entry.action_type === "MODE_SWITCH";
+                    const Icon = isDanger ? AlertTriangle : isSystem ? Settings : CheckCircle;
+                    const parsed = parseDescription(entry.description);
+
                     return (
-                        <div key={entry.id} className="flex items-center gap-2 py-[7px] border-b border-edge last:border-b-0">
-                            <div className={`w-[18px] h-[18px] flex items-center justify-center shrink-0 ${style.color}`}>
+                        <div
+                            key={entry.id}
+                            className={`flex items-start gap-2 px-3 py-2 border-b border-edge last:border-b-0 border-l-2 ${
+                                isDanger
+                                    ? "border-l-danger bg-danger/[0.03]"
+                                    : "border-l-transparent"
+                            }`}
+                        >
+                            <div className={`shrink-0 mt-0.5 ${isDanger ? "text-danger" : "text-ink3"}`}>
                                 <Icon className="w-3 h-3" strokeWidth={1.5} />
                             </div>
-                            <span className="flex-1 text-[9px] text-ink2 tracking-[0.02em] leading-snug">
-                                {entry.text}
-                            </span>
-                            <span className="text-[9px] text-ink3 tracking-[0.04em] whitespace-nowrap">
-                                {entry.time}
-                            </span>
-                            <span className={`text-[9px] uppercase tracking-[0.08em] px-1.5 py-0.5 border ${style.tag}`}>
-                                {style.label}
+                            <div className="flex-1 min-w-0">
+                                <p className={`text-[10px] leading-snug ${isDanger ? "text-danger font-medium" : "text-ink2"}`}>
+                                    {entry.message}
+                                </p>
+                                {parsed?.triggered && (
+                                    <p className="text-[9px] text-danger/80 leading-snug mt-0.5">
+                                        Triggered: {parsed.triggered}
+                                    </p>
+                                )}
+                                {parsed?.nearLimit && (
+                                    <p className="text-[9px] text-amber-500 leading-snug mt-0.5">
+                                        Near limit: {parsed.nearLimit}
+                                    </p>
+                                )}
+                                {!parsed?.triggered && !parsed?.nearLimit && entry.description && (
+                                    <p className="text-[9px] text-ink3 leading-snug mt-0.5">
+                                        {entry.description}
+                                    </p>
+                                )}
+                            </div>
+                            <span className="text-[9px] text-ink3 whitespace-nowrap shrink-0 mt-0.5">
+                                {formatTime(entry.created_at || entry.time)}
                             </span>
                         </div>
                     );

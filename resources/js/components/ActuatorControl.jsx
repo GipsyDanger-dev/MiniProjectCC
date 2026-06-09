@@ -5,7 +5,7 @@ export default function ActuatorControl({ items, onToggle }) {
     return (
         <div className="bg-surface2 border border-edge">
             <div className="px-3 py-2 border-b border-edge">
-                <p className="text-[9px] font-medium uppercase tracking-[0.10em] text-ink2">
+                <p className="text-[10px] font-medium uppercase tracking-[0.10em] text-ink2">
                     Actuator Control
                 </p>
             </div>
@@ -16,11 +16,11 @@ export default function ActuatorControl({ items, onToggle }) {
                         className="flex items-center justify-between py-2.5 border-b border-edge last:border-b-0"
                     >
                         <div>
-                            <p className="text-[9px] uppercase tracking-[0.08em] text-ink3">
+                            <p className="text-[10px] uppercase tracking-[0.08em] text-ink3">
                                 {item.name}
                             </p>
                             <p className={cn(
-                                "text-[9px] uppercase tracking-[0.06em] mt-0.5",
+                                "text-[10px] uppercase tracking-[0.06em] mt-0.5",
                                 item.enabled ? "text-accent" : "text-ink3",
                             )}>
                                 {item.subtitle}
