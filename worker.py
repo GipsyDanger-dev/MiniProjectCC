@@ -2,9 +2,9 @@ import requests
 import time
 import json
 
-GET_COMMAND_URL = "http://127.0.0.1:8000/api/command/get"
-UPDATE_STATUS_URL = "http://127.0.0.1:8000/api/status/update"
-HEARTBEAT_URL = "http://127.0.0.1:8000/api/worker/heartbeat"
+GET_COMMAND_URL = "https://sentinel.socrapper.my.id/api/command/get"
+UPDATE_STATUS_URL = "https://sentinel.socrapper.my.id/api/status/update"
+HEARTBEAT_URL = "https://sentinel.socrapper.my.id/api/worker/heartbeat"
 
 DEVICE_ID = 1
 

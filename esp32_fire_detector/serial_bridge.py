@@ -20,7 +20,7 @@ import requests
 # =============================================
 SERIAL_PORT = sys.argv[1] if len(sys.argv) > 1 else "COM7"
 BAUD_RATE = 115200
-SERVER_URL = "http://127.0.0.1:8000/api"
+SERVER_URL = "https://sentinel.socrapper.my.id/api"
 API_KEY = "apa-hayo-kuncinya-99"
 DEVICE_ID = 1
 
