@@ -34,40 +34,44 @@ function SensorLabel({ position, label, value, unit, status }) {
 function FanBlades({ fanSpeed, fanStatus, position = [0, 0, 0] }) {
     const groupRef = useRef();
     const currentSpeed = useRef(0);
-    const bladeMatRef = useRef();
+
+    const BLADE_COUNT = 6;
+    const bladeMat = useRef();
 
     useFrame((_, delta) => {
         if (!groupRef.current) return;
-        // Map fan status to rotation speed (rad/s)
-        const speedMap = { LOW: 5, MEDIUM: 12, HIGH: 22 };
-        const target = fanStatus !== "OFF" ? (speedMap[fanStatus] || (fanSpeed > 0 ? fanSpeed / 5 : 0)) : 0;
-        currentSpeed.current += (target - currentSpeed.current) * 0.08;
-        groupRef.current.rotation.y += currentSpeed.current * delta;
-
-        // Glow when spinning
-        if (bladeMatRef.current) {
-            bladeMatRef.current.emissiveIntensity = currentSpeed.current > 0.5 ? 0.3 : 0;
-        }
+        const speedMap = { LOW: 3, MEDIUM: 7, HIGH: 14 };
+        const target = fanStatus !== "OFF" ? (speedMap[fanStatus] || (fanSpeed > 0 ? fanSpeed / 8 : 0)) : 0;
+        currentSpeed.current += (target - currentSpeed.current) * 0.06;
+        groupRef.current.rotation.z += currentSpeed.current * delta;
     });
 
     return (
         <group ref={groupRef} position={position}>
-            {[0, 1, 2, 3].map((i) => (
-                <mesh key={i} rotation={[0, (Math.PI / 2) * i, 0.15]}>
-                    <boxGeometry args={[0.6, 0.015, 0.12]} />
-                    <meshStandardMaterial
-                        ref={i === 0 ? bladeMatRef : undefined}
-                        color="#aaa"
-                        emissive="#ff8800"
-                        emissiveIntensity={0}
-                        metalness={0.7}
-                        roughness={0.3}
-                    />
-                </mesh>
-            ))}
-            <mesh>
-                <cylinderGeometry args={[0.06, 0.06, 0.06, 16]} />
-                <meshStandardMaterial color="#777" metalness={0.9} roughness={0.2} />
+            {Array.from({ length: BLADE_COUNT }).map((_, i) => {
+                const angle = (i / BLADE_COUNT) * Math.PI * 2;
+                return (
+                    <mesh
+                        key={i}
+                        position={[Math.cos(angle) * 0.28, Math.sin(angle) * 0.28, 0]}
+                        rotation={[0, 0, angle + Math.PI / 6]}
+                    >
+                        <boxGeometry args={[0.48, 0.10, 0.02]} />
+                        <meshStandardMaterial
+                            ref={i === 0 ? bladeMat : undefined}
+                            color="#999"
+                            emissive="#c45a0a"
+                            emissiveIntensity={0}
+                            roughness={0.4}
+                            metalness={0.8}
+                        />
+                    </mesh>
+                );
+            })}
+            {/* Hub — orange industrial */}
+            <mesh rotation={[Math.PI / 2, 0, 0]}>
+                <cylinderGeometry args={[0.09, 0.09, 0.06, 12]} />
+                <meshStandardMaterial color="#c45a0a" metalness={0.95} roughness={0.3} />
             </mesh>
         </group>
     );
@@ -308,32 +312,152 @@ function SensorModule({ position, rotation, bodyColor = "#2a5a2a", capColor, cap
     );
 }
 
-// ─── ExhaustFan (housing + blades) ────────────────────────────────────────────
+// ─── ExhaustFan (industrial, back wall upper-left) ──────────────────────────
 
 function ExhaustFan({ fanSpeed, fanStatus }) {
+    const grillePositions = [-2, -1, 0, 1, 2];
     return (
-        <group position={[1.8, 2.5, -2.44]}>
-            {/* Housing rim */}
-            <mesh rotation={[Math.PI / 2, 0, 0]} position={[0, 0, -0.04]}>
-                <cylinderGeometry args={[0.38, 0.38, 0.03, 24]} />
-                <meshStandardMaterial color="#666" metalness={0.8} roughness={0.2} />
+        <group position={[-2, 2.3, -2.44]}>
+            {/* Housing — dark industrial square */}
+            <mesh>
+                <boxGeometry args={[1.4, 1.4, 0.25]} />
+                <meshStandardMaterial color="#1e1e1c" roughness={0.7} metalness={0.8} />
             </mesh>
-            {/* Housing body */}
-            <mesh rotation={[Math.PI / 2, 0, 0]}>
-                <cylinderGeometry args={[0.35, 0.35, 0.12, 24]} />
+
+            {/* Orange accent frame — 4 sides */}
+            {[
+                { size: [1.4, 0.06, 0.28], pos: [0, 0.67, 0] },
+                { size: [1.4, 0.06, 0.28], pos: [0, -0.67, 0] },
+                { size: [0.06, 1.4, 0.28], pos: [0.67, 0, 0] },
+                { size: [0.06, 1.4, 0.28], pos: [-0.67, 0, 0] },
+            ].map(({ size, pos }, i) => (
+                <mesh key={`frame-${i}`} position={pos}>
+                    <boxGeometry args={size} />
+                    <meshStandardMaterial color="#c45a0a" roughness={0.4} metalness={0.9} />
+                </mesh>
+            ))}
+
+            {/* Fan blades — in front, visible */}
+            <FanBlades fanSpeed={fanSpeed} fanStatus={fanStatus} position={[0, 0, 0.14]} />
+
+            {/* Wire guard — behind blades, thin ring */}
+            {grillePositions.map((i) => (
+                <React.Fragment key={`grille-${i}`}>
+                    <mesh position={[0, i * 0.22, 0.17]}>
+                        <boxGeometry args={[1.2, 0.02, 0.005]} />
+                        <meshStandardMaterial color="#555" roughness={0.5} metalness={0.8} transparent opacity={0.5} />
+                    </mesh>
+                    <mesh position={[i * 0.22, 0, 0.17]}>
+                        <boxGeometry args={[0.02, 1.2, 0.005]} />
+                        <meshStandardMaterial color="#555" roughness={0.5} metalness={0.8} transparent opacity={0.5} />
+                    </mesh>
+                </React.Fragment>
+            ))}
+        </group>
+    );
+}
+
+// ─── FilingCabinet ───────────────────────────────────────────────────────────
+
+function FilingCabinet({ position }) {
+    return (
+        <group position={position}>
+            <mesh position={[0, 0.5, 0]} castShadow>
+                <boxGeometry args={[0.45, 1, 0.4]} />
+                <meshStandardMaterial color="#4a4a42" roughness={0.7} metalness={0.3} />
+            </mesh>
+            {/* Drawer handles */}
+            {[0.25, 0.55, 0.85].map((y) => (
+                <mesh key={y} position={[0, y, 0.21]}>
+                    <boxGeometry args={[0.15, 0.02, 0.02]} />
+                    <meshStandardMaterial color="#888" metalness={0.8} roughness={0.3} />
+                </mesh>
+            ))}
+        </group>
+    );
+}
+
+// ─── Whiteboard ──────────────────────────────────────────────────────────────
+
+function Whiteboard({ position }) {
+    return (
+        <group position={position}>
+            {/* Board */}
+            <mesh>
+                <boxGeometry args={[1.6, 1, 0.04]} />
+                <meshStandardMaterial color="#e8e8e0" roughness={0.3} metalness={0.05} />
+            </mesh>
+            {/* Frame */}
+            {[
+                { size: [1.64, 0.03, 0.05], pos: [0, 0.5, 0] },
+                { size: [1.64, 0.03, 0.05], pos: [0, -0.5, 0] },
+                { size: [0.03, 1, 0.05], pos: [0.8, 0, 0] },
+                { size: [0.03, 1, 0.05], pos: [-0.8, 0, 0] },
+            ].map(({ size, pos }, i) => (
+                <mesh key={i} position={pos}>
+                    <boxGeometry args={size} />
+                    <meshStandardMaterial color="#888" metalness={0.6} roughness={0.4} />
+                </mesh>
+            ))}
+            {/* Tray */}
+            <mesh position={[0, -0.55, 0.05]}>
+                <boxGeometry args={[0.8, 0.04, 0.08]} />
                 <meshStandardMaterial color="#777" metalness={0.7} roughness={0.3} />
             </mesh>
-            {/* Guard grill (cross) */}
-            <mesh position={[0, 0, 0.065]}>
-                <boxGeometry args={[0.6, 0.015, 0.005]} />
-                <meshStandardMaterial color="#888" metalness={0.6} roughness={0.4} />
+        </group>
+    );
+}
+
+// ─── FireExtinguisher ────────────────────────────────────────────────────────
+
+function FireExtinguisher({ position }) {
+    return (
+        <group position={position}>
+            {/* Body */}
+            <mesh position={[0, 0.2, 0]}>
+                <cylinderGeometry args={[0.06, 0.06, 0.4, 12]} />
+                <meshStandardMaterial color="#cc2200" roughness={0.6} metalness={0.3} />
             </mesh>
-            <mesh position={[0, 0, 0.065]} rotation={[0, 0, Math.PI / 2]}>
-                <boxGeometry args={[0.6, 0.015, 0.005]} />
-                <meshStandardMaterial color="#888" metalness={0.6} roughness={0.4} />
+            {/* Handle */}
+            <mesh position={[0, 0.42, 0.04]}>
+                <boxGeometry args={[0.08, 0.03, 0.03]} />
+                <meshStandardMaterial color="#333" metalness={0.8} roughness={0.3} />
             </mesh>
-            {/* Fan blades */}
-            <FanBlades fanSpeed={fanSpeed} fanStatus={fanStatus} position={[0, 0, 0.03]} />
+            {/* Nozzle */}
+            <mesh position={[0.04, 0.42, 0]} rotation={[0, 0, -0.4]}>
+                <cylinderGeometry args={[0.015, 0.01, 0.1, 8]} />
+                <meshStandardMaterial color="#333" metalness={0.7} roughness={0.4} />
+            </mesh>
+        </group>
+    );
+}
+
+// ─── Monitor ─────────────────────────────────────────────────────────────────
+
+function Monitor({ position }) {
+    const screenRef = useRef();
+    useFrame(({ clock }) => {
+        if (screenRef.current) {
+            screenRef.current.emissiveIntensity = 0.3 + Math.sin(clock.elapsedTime * 0.5) * 0.1;
+        }
+    });
+    return (
+        <group position={position}>
+            {/* Screen */}
+            <mesh position={[0, 0.12, 0]} rotation={[-0.1, 0, 0]}>
+                <boxGeometry args={[0.45, 0.28, 0.015]} />
+                <meshStandardMaterial color="#111" roughness={0.9} metalness={0.1} />
+            </mesh>
+            {/* Display */}
+            <mesh position={[0, 0.12, 0.009]} rotation={[-0.1, 0, 0]}>
+                <planeGeometry args={[0.4, 0.24]} />
+                <meshStandardMaterial ref={screenRef} color="#002244" emissive="#0066cc" emissiveIntensity={0.3} />
+            </mesh>
+            {/* Stand */}
+            <mesh position={[0, -0.02, 0.02]}>
+                <boxGeometry args={[0.06, 0.04, 0.06]} />
+                <meshStandardMaterial color="#444" metalness={0.7} roughness={0.4} />
+            </mesh>
         </group>
     );
 }
@@ -437,7 +561,7 @@ function ServerRack() {
 
 const cablePoints = {
     mq2: [[-2.95, 1.8, -0.5], [-2.95, 0.3, -0.5], [-2.95, 0.3, 0.5], [-1.5, 0.78, 0.5]],
-    ky026: [[0.5, 1.8, -2.45], [0.5, 0.3, -2.45], [-1.0, 0.3, -2.45], [-1.5, 0.3, 0.5], [-1.5, 0.78, 0.5]],
+    ky026: [[2, 1.5, -2.45], [2, 0.3, -2.45], [-1.0, 0.3, -2.45], [-1.5, 0.3, 0.5], [-1.5, 0.78, 0.5]],
     dht22: [[2.95, 1.8, 0.5], [2.95, 0.3, 0.5], [-1.5, 0.3, 0.5], [-1.5, 0.78, 0.5]],
 };
 
@@ -469,6 +593,10 @@ function OfficeScene({ iot }) {
                 <Room />
                 <Workstation />
                 <ServerRack />
+                <FilingCabinet position={[2.5, 0, 1.2]} />
+                <Whiteboard position={[1.5, 1.8, -2.44]} />
+                <FireExtinguisher position={[2.7, 0, -2.2]} />
+                <Monitor position={[-1.5, 0.78, 0.3]} />
 
                 {/* MQ-2 Gas sensor — left wall */}
                 <SensorModule
@@ -479,9 +607,9 @@ function OfficeScene({ iot }) {
                     capRadius={0.03}
                 />
 
-                {/* KY-026 Flame sensor — back wall */}
+                {/* KY-026 Flame sensor — back wall right side */}
                 <SensorModule
-                    position={[0.5, 1.8, -2.45]}
+                    position={[2, 1.5, -2.45]}
                     rotation={[0, 0, 0]}
                     bodyColor="#8a5a5a"
                 />
@@ -493,11 +621,11 @@ function OfficeScene({ iot }) {
                     bodyColor="#ffffff"
                 />
 
-                {/* Exhaust fan — back wall upper */}
+                {/* Exhaust fan — back wall upper-left */}
                 <ExhaustFan fanSpeed={fanSpeed} fanStatus={fanStatus} />
 
-                {/* Buzzer — left wall */}
-                <Buzzer active={buzzerOn} position={[-2.95, 2.2, -1.5]} />
+                {/* Buzzer — left wall, near fan */}
+                <Buzzer active={buzzerOn} position={[-2.95, 2.3, -1.5]} />
 
                 {/* Cable runs */}
                 <CableRun points={cablePoints.mq2} color="#8a7060" />
@@ -505,11 +633,11 @@ function OfficeScene({ iot }) {
                 <CableRun points={cablePoints.dht22} color="#506080" />
             </group>
 
-            {/* Sensor labels */}
-            <SensorLabel position={[-2.95, 2.2, -0.5]} label="MQ-2 Gas" value={gas} unit="ppm" status={gas > gasTh ? "Alert" : "Normal"} />
-            <SensorLabel position={[0.5, 2.2, -2.45]} label="KY-026 Flame" value={flameDetected ? "DETECTED" : "CLEAR"} unit="" status={flameDetected ? "Alert" : "Normal"} />
-            <SensorLabel position={[2.95, 2.2, 0.5]} label="DHT22 Suhu" value={temp} unit="°C" status={temp > tempTh ? "Alert" : "Normal"} />
-            <SensorLabel position={[2.95, 2.5, 0.5]} label="DHT22 Humidity" value={humidity} unit="%" status={humidity > humidityTh ? "Alert" : "Normal"} />
+            {/* Sensor labels — spread out, no overlap */}
+            <SensorLabel position={[-2.95, 2.4, -0.5]} label="MQ-2 Gas" value={gas} unit=" ppm" status={gas > gasTh ? "Alert" : "Normal"} />
+            <SensorLabel position={[2, 2.0, -2.45]} label="KY-026 Flame" value={flameDetected ? "DETECTED" : "CLEAR"} unit="" status={flameDetected ? "Alert" : "Normal"} />
+            <SensorLabel position={[2.95, 2.3, 0.5]} label="DHT22 Temp" value={`${temp}`} unit="°C" status={temp > tempTh ? "Alert" : "Normal"} />
+            <SensorLabel position={[2.95, 1.6, 0.5]} label="DHT22 Humid" value={`${humidity}`} unit="%" status={humidity > humidityTh ? "Alert" : "Normal"} />
 
             <OrbitControls
                 target={[0, 1.2, 0]}

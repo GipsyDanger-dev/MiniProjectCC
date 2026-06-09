@@ -80,11 +80,11 @@ export default function SensorReadings({ readings = [] }) {
                         const isFlame = active === "Api";
                         const isDanger = isFlame ? value < threshold : value > threshold;
                         const isLow = isFlame ? value > threshold * 1.5 : value < threshold * 0.2;
-                        const color = isDanger ? "bg-danger" : isLow ? "bg-edge" : "bg-accent";
+                        const color = isDanger ? "bg-danger" : isLow ? "bg-edge" : "bg-success";
                         return (
                             <div
                                 key={idx}
-                                className="flex-1 min-w-0 relative flex items-end"
+                                className="flex-1 min-w-0 relative flex items-end h-full"
                                 onMouseEnter={() => setHovered(idx)}
                                 onMouseLeave={() => setHovered(null)}
                             >
@@ -112,7 +112,7 @@ export default function SensorReadings({ readings = [] }) {
                 </div>
                 <div className="flex gap-3 pt-2">
                     <div className="flex items-center gap-1 text-[10px] text-ink3 uppercase tracking-[0.06em]">
-                        <span className="w-1.5 h-1.5 bg-accent" /> Normal
+                        <span className="w-1.5 h-1.5 bg-success" /> Normal
                     </div>
                     <div className="flex items-center gap-1 text-[10px] text-ink3 uppercase tracking-[0.06em]">
                         <span className="w-1.5 h-1.5 bg-danger" /> Alert
