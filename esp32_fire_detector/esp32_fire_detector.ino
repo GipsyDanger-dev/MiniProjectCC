@@ -1,16 +1,5 @@
-#include <WiFi.h>
-#include <HTTPClient.h>
 #include <ArduinoJson.h>
 #include <DHT.h>
-
-// =============================================
-// KONFIGURASI WiFi & SERVER
-// =============================================
-const char* WIFI_SSID     = "Kolcer";
-const char* WIFI_PASSWORD = "Kontrakankalcer";
-const char* SERVER_URL    = "http://192.168.1.30:8000/api";
-const char* API_KEY       = "apa-hayo-kuncinya-99";
-const int   DEVICE_ID     = 1;
 
 // =============================================
 // PIN SENSOR & AKTUATOR
@@ -27,18 +16,16 @@ const int   DEVICE_ID     = 1;
 // =============================================
 // INTERVAL (milidetik)
 // =============================================
-#define INTERVAL_INGEST     5000   // kirim data sensor tiap 5 detik
-#define INTERVAL_POLL       2000   // polling command tiap 2 detik
-#define INTERVAL_HEARTBEAT  30000  // heartbeat tiap 30 detik
-#define PREHEAT_MS          5000   // warm-up MQ-2 (dikurangi biar gak kepanasan)
+#define INTERVAL_SEND     3000   // kirim data tiap 3 detik
+#define PREHEAT_MS        2000   // warm-up MQ-2
 
 // =============================================
 // PWM SPEED LEVELS
 // =============================================
 #define FAN_OFF     0
-#define FAN_LOW     130   // 51% — minimum untuk start motor
-#define FAN_MEDIUM  190   // 75%
-#define FAN_HIGH    255   // 100%
+#define FAN_LOW     650   // 63% (10-bit: 1023 * 0.63)
+#define FAN_MEDIUM  800   // 78% (10-bit: 1023 * 0.78)
+#define FAN_HIGH    1023  // 100%
 
 // =============================================
 // STATE AKTUATOR
@@ -50,11 +37,7 @@ int  fanSpeed     = FAN_OFF;
 // =============================================
 // TIMER
 // =============================================
-unsigned long lastIngest    = 0;
-unsigned long lastPoll      = 0;
-unsigned long lastHeartbeat = 0;
-unsigned long lastDebug     = 0;
-#define INTERVAL_DEBUG 3000  // print status tiap 3 detik
+unsigned long lastSend = 0;
 
 // =============================================
 // SENSOR
@@ -66,8 +49,6 @@ DHT dht(DHT_PIN, DHT_TYPE);
 // =============================================
 void setExhaust(String action) {
   action.toUpperCase();
-
-  // Map START/STOP ke HIGH/OFF
   if (action == "START") action = "HIGH";
   if (action == "STOP")  action = "OFF";
 
@@ -81,180 +62,100 @@ void setExhaust(String action) {
 
   digitalWrite(IN1, exhaustAktif ? HIGH : LOW);
   digitalWrite(IN2, LOW);
-
-  analogWrite(ENA, pwm);
-
-  if (exhaustAktif) {
-    Serial.printf("[EXHAUST] ON - %s (PWM=%d)\n", action.c_str(), pwm);
-  } else {
-    Serial.println("[EXHAUST] OFF");
-  }
+  ledcWrite(ENA, pwm);  // PWM ke pin ENA
 }
 
 void setBuzzer(bool aktif) {
   buzzerAktif = aktif;
   digitalWrite(BUZZER_PIN, aktif ? HIGH : LOW);
-  Serial.printf("[BUZZER] %s\n", aktif ? "ON" : "OFF");
 }
 
 // =============================================
-// KIRIM DATA SENSOR → POST /api/ingest
+// KIRIM DATA SENSOR → Serial (JSON)
 // =============================================
 void kirimDataSensor() {
-  int nilaiMQ2   = analogRead(MQ2_AO);   // Gas + Asap (satu sensor)
-  int nilaiApi   = analogRead(KY026_AO);  // Api
+  int nilaiMQ2   = analogRead(MQ2_AO);
+  int nilaiApi   = analogRead(KY026_AO);
 
-  // Baca DHT22
   float suhu       = dht.readTemperature();
   float kelembaban = dht.readHumidity();
 
-  // Fallback jika DHT22 gagal baca
-  if (isnan(suhu)) {
-    Serial.println("[DHT22] Gagal baca suhu, pakai default 30.0");
-    suhu = 30.0;
-  }
-  if (isnan(kelembaban)) {
-    Serial.println("[DHT22] Gagal baca kelembaban, pakai default 0.0");
-    kelembaban = 0.0;
-  }
+  if (isnan(suhu))       { suhu = 0.0; Serial.println("[WARN] DHT read failed"); }
+  if (isnan(kelembaban)) { kelembaban = 0.0; }
 
-  Serial.println("========== INGEST ==========");
-  Serial.printf("Gas/Asap : %d\n", nilaiMQ2);
-  Serial.printf("Suhu     : %.1f C\n", suhu);
-  Serial.printf("Kelembaban: %.1f %%\n", kelembaban);
-  Serial.printf("Flame    : %d\n", nilaiApi);
-
-  HTTPClient http;
-  http.begin(String(SERVER_URL) + "/ingest");
-  http.addHeader("Content-Type", "application/json");
-  http.addHeader("x-api-key", API_KEY);
-
+  // Kirim sebagai JSON ke Serial
   StaticJsonDocument<256> doc;
-  doc["device_id"]   = DEVICE_ID;
+  doc["type"]        = "sensor";
   doc["gas_value"]   = nilaiMQ2;
-  doc["smoke_value"] = nilaiMQ2;  // sama-sama dari MQ-2
+  doc["smoke_value"] = nilaiMQ2;
   doc["temperature"] = suhu;
   doc["humidity"]    = kelembaban;
   doc["flame_value"] = nilaiApi;
 
-  String body;
-  serializeJson(doc, body);
-
-  int httpCode = http.POST(body);
-  if (httpCode == 201) {
-    Serial.println("[INGEST] OK - data terkirim ke server");
-  } else {
-    Serial.printf("[INGEST] GAGAL - HTTP %d\n", httpCode);
-  }
-  http.end();
+  String output;
+  serializeJson(doc, output);
+  Serial.println(output);
 }
 
 // =============================================
-// POLLING COMMAND → GET /api/command/get
+// TERIMA COMMAND ← Serial (JSON)
 // =============================================
-void pollingCommand() {
-  HTTPClient http;
-  http.begin(String(SERVER_URL) + "/command/get?device_id=" + String(DEVICE_ID));
-  http.addHeader("x-api-key", API_KEY);
+static String serialBuffer = "";
+#define SERIAL_BUFFER_MAX 512
 
-  int httpCode = http.GET();
-
-  if (httpCode == 200) {
-    String payload = http.getString();
-    StaticJsonDocument<512> doc;
-    DeserializationError err = deserializeJson(doc, payload);
-
-    if (!err && doc["status"] == "success") {
-      int    commandId   = doc["data"]["id"];
-      String target      = doc["data"]["target_device"].as<String>();
-      String action      = doc["data"]["action"].as<String>();
-
-      Serial.printf("[COMMAND] id=%d | target=%s | action=%s\n",
-                    commandId, target.c_str(), action.c_str());
-
-      bool berhasil = true;
-      if (target == "exhaust_fan") {
-        setExhaust(action);  // Kirim action langsung (LOW/MEDIUM/HIGH/OFF)
-      } else if (target == "buzzer") {
-        setBuzzer(action == "START");
-      } else {
-        berhasil = false;
-        Serial.println("[COMMAND] target tidak dikenal");
+void terimaCommand() {
+  while (Serial.available()) {
+    char c = Serial.read();
+    if (c == '\n') {
+      serialBuffer.trim();
+      if (serialBuffer.length() > 0) {
+        prosesPesan(serialBuffer);
       }
-
-      laporStatusCommand(commandId, berhasil ? "completed" : "failed");
+      serialBuffer = "";
+    } else if (c != '\r') {
+      if (serialBuffer.length() < SERIAL_BUFFER_MAX) {
+        serialBuffer += c;
+      } else {
+        serialBuffer = "";  // overflow protection: discard
+      }
     }
-  } else {
-    Serial.printf("[POLL] GAGAL - HTTP %d\n", httpCode);
   }
-  http.end();
 }
 
-// =============================================
-// LAPOR HASIL EKSEKUSI → POST /api/status/update
-// =============================================
-void laporStatusCommand(int commandId, String status) {
-  HTTPClient http;
-  http.begin(String(SERVER_URL) + "/status/update");
-  http.addHeader("Content-Type", "application/json");
-  http.addHeader("x-api-key", API_KEY);
+void prosesPesan(String input) {
+  // Debug: print pesan yang diterima
+  Serial.print("[RECV] ");
+  Serial.println(input);
 
-  StaticJsonDocument<128> doc;
-  doc["command_id"] = commandId;
-  doc["status"]     = status;
+  StaticJsonDocument<256> doc;
+  DeserializationError err = deserializeJson(doc, input);
+  if (err) {
+    Serial.print("[ERR] JSON parse failed: ");
+    Serial.println(err.c_str());
+    return;
+  }
 
-  String body;
-  serializeJson(doc, body);
+  // Command aktuator: {"target":"exhaust_fan","action":"HIGH","id":1}
+  String target = doc["target"] | "";
+  String action = doc["action"] | "";
+  int cmdId     = doc["id"] | 0;
 
-  int httpCode = http.POST(body);
-  Serial.printf("[STATUS UPDATE] command_id=%d status=%s HTTP=%d\n",
-                commandId, status.c_str(), httpCode);
-  http.end();
-}
+  if (target == "exhaust_fan") {
+    setExhaust(action);
+    Serial.print("[FAN] → ");
+    Serial.println(action);
+  } else if (target == "buzzer") {
+    setBuzzer(action == "START");
+  }
 
-// =============================================
-// HEARTBEAT → POST /api/worker/heartbeat
-// =============================================
-void kirimHeartbeat() {
-  String state = "online";
-  if (exhaustAktif && buzzerAktif) state = "BAHAYA-aktif";
-  else if (exhaustAktif || buzzerAktif) state = "WASPADA-aktif";
-
-  HTTPClient http;
-  http.begin(String(SERVER_URL) + "/worker/heartbeat");
-  http.addHeader("Content-Type", "application/json");
-  http.addHeader("x-api-key", API_KEY);
-
-  StaticJsonDocument<128> doc;
-  doc["component_name"] = "ESP32-FireDetector";
-  doc["current_state"]  = state;
-
-  String body;
-  serializeJson(doc, body);
-
-  int httpCode = http.POST(body);
-  Serial.printf("[HEARTBEAT] state=%s HTTP=%d\n", state.c_str(), httpCode);
-  http.end();
-}
-
-// =============================================
-// DEBUG STATUS
-// =============================================
-void printFanStatus() {
-  String level;
-  if (fanSpeed == FAN_OFF)         level = "OFF";
-  else if (fanSpeed <= FAN_LOW)    level = "LOW";
-  else if (fanSpeed <= FAN_MEDIUM) level = "MEDIUM";
-  else                             level = "HIGH";
-
-  int persen = map(fanSpeed, 0, 255, 0, 100);
-
-  Serial.println("---------- STATUS ----------");
-  Serial.printf("Fan      : %s (PWM=%d, %d%%)\n", level.c_str(), fanSpeed, persen);
-  Serial.printf("Exhaust  : %s\n", exhaustAktif ? "AKTIF" : "MATI");
-  Serial.printf("Buzzer   : %s\n", buzzerAktif ? "AKTIF" : "MATI");
-  Serial.printf("Uptime   : %lu detik\n", millis() / 1000);
-  Serial.println("----------------------------");
+  // Kirim konfirmasi balik
+  StaticJsonDocument<128> ack;
+  ack["type"]    = "ack";
+  ack["id"]      = cmdId;
+  ack["status"]  = "completed";
+  String ackOut;
+  serializeJson(ack, ackOut);
+  Serial.println(ackOut);
 }
 
 // =============================================
@@ -264,31 +165,27 @@ void setup() {
   Serial.begin(115200);
   delay(500);
 
-  // Setup aktuator
   pinMode(IN1, OUTPUT);
   pinMode(IN2, OUTPUT);
-  pinMode(ENA, OUTPUT);
   pinMode(BUZZER_PIN, OUTPUT);
+
+  // Setup LEDC PWM untuk ESP32 (pin, freq, resolution)
+  ledcAttach(ENA, 5000, 10);  // ENA pin, 5000Hz, 10-bit resolution
+
   setExhaust("OFF");
   setBuzzer(false);
 
-  // Setup DHT22
   dht.begin();
-  Serial.println("[DHT22] Initialized");
-
-  // Koneksi WiFi
-  Serial.printf("Connecting to WiFi: %s\n", WIFI_SSID);
-  WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
-  while (WiFi.status() != WL_CONNECTED) {
-    delay(500);
-    Serial.print(".");
-  }
-  Serial.printf("\nWiFi OK - IP: %s\n", WiFi.localIP().toString().c_str());
 
   // Preheat MQ-2
-  Serial.println("Memanaskan MQ-2... tunggu 5 detik");
   delay(PREHEAT_MS);
-  Serial.println("Sensor siap!");
+
+  // Signal siap
+  StaticJsonDocument<64> ready;
+  ready["type"] = "ready";
+  String readyOut;
+  serializeJson(ready, readyOut);
+  Serial.println(readyOut);
 }
 
 // =============================================
@@ -297,36 +194,12 @@ void setup() {
 void loop() {
   unsigned long now = millis();
 
-  // 1. Kirim data sensor ke server
-  if (now - lastIngest >= INTERVAL_INGEST) {
-    lastIngest = now;
-    if (WiFi.status() == WL_CONNECTED) {
-      kirimDataSensor();
-    } else {
-      Serial.println("[WiFi] Terputus, mencoba reconnect...");
-      WiFi.reconnect();
-    }
+  // Kirim data sensor tiap 3 detik
+  if (now - lastSend >= INTERVAL_SEND) {
+    lastSend = now;
+    kirimDataSensor();
   }
 
-  // 2. Polling command dari server
-  if (now - lastPoll >= INTERVAL_POLL) {
-    lastPoll = now;
-    if (WiFi.status() == WL_CONNECTED) {
-      pollingCommand();
-    }
-  }
-
-  // 3. Heartbeat
-  if (now - lastHeartbeat >= INTERVAL_HEARTBEAT) {
-    lastHeartbeat = now;
-    if (WiFi.status() == WL_CONNECTED) {
-      kirimHeartbeat();
-    }
-  }
-
-  // 4. Debug status
-  if (now - lastDebug >= INTERVAL_DEBUG) {
-    lastDebug = now;
-    printFanStatus();
-  }
+  // Cek command dari Python
+  terimaCommand();
 }
