@@ -72,7 +72,7 @@ class FuzzyLogicTest extends TestCase
         $this->assertEquals('FLAME_OVERRIDE', $result['profile']);
         $this->assertEquals('HIGH', $result['fan_status']);
         $this->assertEquals(100, $result['fan_speed']);
-        $this->assertEquals('START', $result['buzzer_action']);
+        $this->assertEquals('HIGH', $result['buzzer_action']);
         $this->assertEquals(100.0, $result['score']);
     }
 
@@ -144,7 +144,7 @@ class FuzzyLogicTest extends TestCase
 
         $this->assertEquals('MEDIUM', $result['fan_status']);
         $this->assertEquals(60, $result['fan_speed']);
-        $this->assertEquals('START', $result['buzzer_action']);
+        $this->assertEquals('MEDIUM', $result['buzzer_action']);
     }
 
     // ── LOW Zone ────────────────────────────────────────────────
@@ -197,7 +197,7 @@ class FuzzyLogicTest extends TestCase
     public function test_buzzer_starts_on_high_danger(): void
     {
         $result = $this->fuzzy(500, 300, 50, 800);
-        $this->assertEquals('START', $result['buzzer_action']);
+        $this->assertEquals('HIGH', $result['buzzer_action']);
     }
 
     public function test_buzzer_stops_when_safe(): void

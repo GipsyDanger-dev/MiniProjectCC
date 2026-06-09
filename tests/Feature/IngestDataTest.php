@@ -56,7 +56,7 @@ class IngestDataTest extends TestCase
 
         $response->assertCreated();
         $response->assertJsonPath('decision.fan_status', 'HIGH');
-        $response->assertJsonPath('decision.buzzer_action', 'START');
+        $response->assertJsonPath('decision.buzzer_action', 'HIGH');
         $response->assertJsonPath('decision.profile', 'FLAME_OVERRIDE');
 
         $this->assertDatabaseHas('sensor_data', [
@@ -214,7 +214,7 @@ class IngestDataTest extends TestCase
         $this->assertDatabaseHas('commands', [
             'device_id' => 1,
             'target_device' => 'buzzer',
-            'action' => 'START',
+            'action' => 'HIGH',
             'status' => 'pending',
         ]);
     }

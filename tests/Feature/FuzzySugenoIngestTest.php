@@ -38,7 +38,7 @@ class FuzzySugenoIngestTest extends TestCase
 
         $response->assertCreated();
         $response->assertJsonPath('decision.fan_status', 'HIGH');
-        $response->assertJsonPath('decision.buzzer_action', 'START');
+        $response->assertJsonPath('decision.buzzer_action', 'HIGH');
 
         $this->assertDatabaseHas('sensor_data', [
             'device_id' => 1,
@@ -66,7 +66,7 @@ class FuzzySugenoIngestTest extends TestCase
         $this->assertDatabaseHas('commands', [
             'device_id' => 1,
             'target_device' => 'buzzer',
-            'action' => 'START',
+            'action' => 'HIGH',
             'status' => 'pending',
         ]);
     }

@@ -197,7 +197,7 @@ class ActuatorControlTest extends TestCase
     {
         $response = $this->postJson('/api/actuator', [
             'target_device' => 'buzzer',
-            'action' => 'HIGH',
+            'action' => 'INVALID',
         ]);
 
         $response->assertStatus(422);
