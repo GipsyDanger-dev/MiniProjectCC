@@ -12,6 +12,8 @@
 #define IN2        19   // Motor driver IN2
 #define ENA        21   // Motor driver ENA (PWM)
 #define BUZZER_PIN 26   // Buzzer aktif
+#define LED1_PIN   25   // LED merah 1
+#define LED2_PIN   14   // LED merah 2
 
 // =============================================
 // INTERVAL (milidetik)
@@ -31,8 +33,26 @@
 // STATE AKTUATOR
 // =============================================
 bool exhaustAktif = false;
-bool buzzerAktif  = false;
 int  fanSpeed     = FAN_OFF;
+
+// =============================================
+// BUZZER & LED PATTERN (non-blocking)
+// =============================================
+enum BuzzerMode { BUZZ_OFF, BUZZ_MEDIUM, BUZZ_HIGH };
+BuzzerMode buzzerMode    = BUZZ_OFF;
+bool       buzzerState   = false;       // current on/off state
+unsigned long buzzerLast = 0;
+// MEDIUM: beep lambat (waspada)
+#define BUZZ_MED_ON   500
+#define BUZZ_MED_OFF  500
+// HIGH: beep cepat konstan (sangat bahaya)
+#define BUZZ_HIGH_ON  150
+#define BUZZ_HIGH_OFF 100
+
+// LED berkedip bergantian (hanya saat HIGH)
+bool       ledAlternate  = false;       // false=LED1 on, true=LED2 on
+unsigned long ledLast    = 0;
+#define LED_BLINK_MS  150              // interval kedip LED (sinkron dengan buzzer HIGH)
 
 // =============================================
 // TIMER
@@ -65,9 +85,59 @@ void setExhaust(String action) {
   ledcWrite(ENA, pwm);  // PWM ke pin ENA
 }
 
-void setBuzzer(bool aktif) {
-  buzzerAktif = aktif;
-  digitalWrite(BUZZER_PIN, aktif ? HIGH : LOW);
+void setBuzzer(String mode) {
+  mode.toUpperCase();
+  if (mode == "HIGH") {
+    buzzerMode = BUZZ_HIGH;
+  } else if (mode == "MEDIUM") {
+    buzzerMode = BUZZ_MEDIUM;
+  } else {
+    buzzerMode = BUZZ_OFF;
+    buzzerState = false;
+    digitalWrite(BUZZER_PIN, LOW);
+    digitalWrite(LED1_PIN, LOW);
+    digitalWrite(LED2_PIN, LOW);
+  }
+  buzzerLast = millis();
+  ledLast = millis();
+  Serial.print("[BUZZ] mode=");
+  Serial.println(mode);
+}
+
+void updateBuzzer() {
+  if (buzzerMode == BUZZ_OFF) return;
+
+  unsigned long now = millis();
+
+  if (buzzerMode == BUZZ_HIGH) {
+    // Buzzer: beep cepat
+    unsigned long elapsed = now - buzzerLast;
+    unsigned long period = buzzerState ? BUZZ_HIGH_ON : BUZZ_HIGH_OFF;
+    if (elapsed >= period) {
+      buzzerState = !buzzerState;
+      digitalWrite(BUZZER_PIN, buzzerState ? HIGH : LOW);
+      buzzerLast = now;
+    }
+    // LED: berkedip bergantian cepat (sinkron dengan buzzer)
+    unsigned long ledElapsed = now - ledLast;
+    if (ledElapsed >= LED_BLINK_MS) {
+      ledAlternate = !ledAlternate;
+      digitalWrite(LED1_PIN, ledAlternate ? HIGH : LOW);
+      digitalWrite(LED2_PIN, ledAlternate ? LOW : HIGH);
+      ledLast = now;
+    }
+  } else if (buzzerMode == BUZZ_MEDIUM) {
+    // Buzzer: beep lambat, LED mati
+    digitalWrite(LED1_PIN, LOW);
+    digitalWrite(LED2_PIN, LOW);
+    unsigned long elapsed = now - buzzerLast;
+    unsigned long period = buzzerState ? BUZZ_MED_ON : BUZZ_MED_OFF;
+    if (elapsed >= period) {
+      buzzerState = !buzzerState;
+      digitalWrite(BUZZER_PIN, buzzerState ? HIGH : LOW);
+      buzzerLast = now;
+    }
+  }
 }
 
 // =============================================
@@ -145,7 +215,7 @@ void prosesPesan(String input) {
     Serial.print("[FAN] → ");
     Serial.println(action);
   } else if (target == "buzzer") {
-    setBuzzer(action == "START");
+    setBuzzer(action);
   }
 
   // Kirim konfirmasi balik
@@ -168,12 +238,14 @@ void setup() {
   pinMode(IN1, OUTPUT);
   pinMode(IN2, OUTPUT);
   pinMode(BUZZER_PIN, OUTPUT);
+  pinMode(LED1_PIN, OUTPUT);
+  pinMode(LED2_PIN, OUTPUT);
 
   // Setup LEDC PWM untuk ESP32 (pin, freq, resolution)
   ledcAttach(ENA, 5000, 10);  // ENA pin, 5000Hz, 10-bit resolution
 
   setExhaust("OFF");
-  setBuzzer(false);
+  setBuzzer("STOP");
 
   dht.begin();
 
@@ -202,4 +274,7 @@ void loop() {
 
   // Cek command dari Python
   terimaCommand();
+
+  // Update buzzer pattern (non-blocking)
+  updateBuzzer();
 }
