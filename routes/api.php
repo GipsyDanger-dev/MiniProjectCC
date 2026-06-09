@@ -29,6 +29,7 @@ Route::middleware([CheckApiKey::class])->group(function () {
     // Actuator & mode control
     Route::post('/actuator', [ApiController::class, 'controlActuator']);
     Route::post('/mode', [ApiController::class, 'setMode']);
+    Route::post('/emergency', [ApiController::class, 'emergency']);
     Route::post('/worker/clear', [ApiController::class, 'clearWorkerStatus']);
 
     // User & Auth

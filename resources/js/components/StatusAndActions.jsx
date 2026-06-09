@@ -54,7 +54,7 @@ export function StatusCard({
     );
 }
 
-export function QuickActions({ actuatorState = {}, onAction, loading }) {
+export function QuickActions({ actuatorState = {}, onAction, loading, emergencyActive = false }) {
     const actions = [
         {
             label: "Aktifkan Fan",
@@ -73,18 +73,27 @@ export function QuickActions({ actuatorState = {}, onAction, loading }) {
             primary: false,
         },
         {
-            label: "Test Buzzer",
+            label: "Start Buzzer",
             icon: Bell,
             target: "buzzer",
             active: actuatorState.buzzer === "START",
             action: { target_device: "buzzer", action: "START" },
             primary: false,
         },
+        {
+            label: "Stop Buzzer",
+            icon: Square,
+            target: "buzzer",
+            active: actuatorState.buzzer === "STOP",
+            action: { target_device: "buzzer", action: "STOP" },
+            primary: false,
+        },
         { label: "View Logs", icon: List, target: null, active: false, action: { navigate: "activity" }, primary: false },
+        { label: emergencyActive ? "MATIKAN" : "EMERGENCY", icon: emergencyActive ? Square : Zap, target: "emergency", active: emergencyActive, action: { emergency: true }, primary: true, danger: !emergencyActive, success: emergencyActive },
     ];
 
     return (
-        <div className="grid grid-cols-2 gap-1.5">
+        <div className="grid grid-cols-3 gap-1.5">
             {actions.map((action) => {
                 const isLoading = loading && action.target === loading;
                 return (
@@ -94,7 +103,11 @@ export function QuickActions({ actuatorState = {}, onAction, loading }) {
                         disabled={isLoading}
                         onClick={() => onAction?.(action.action)}
                         className={`h-8 border text-[9px] uppercase tracking-[0.08em] flex items-center justify-center gap-1.5 transition-smooth cursor-pointer disabled:opacity-50 disabled:cursor-wait ${
-                            action.primary
+                            action.success
+                                ? "bg-success text-white border-success hover:bg-success/80 col-span-3"
+                                : action.danger
+                                ? "bg-danger text-white border-danger hover:bg-danger/80 col-span-3 animate-pulse"
+                                : action.primary
                                 ? "bg-accent text-white border-accent hover:bg-accent/80"
                                 : "bg-surface3 border-edge2 text-ink2 hover:border-accent hover:text-accent"
                         }`}

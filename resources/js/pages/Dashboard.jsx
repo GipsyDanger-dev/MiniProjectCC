@@ -96,6 +96,7 @@ export default function Dashboard({ activeRoom, deviceId, iot, setCurrentPage })
     const [actuatorLoading, setActuatorLoading] = useState(null);
     const [actuatorFeedback, setActuatorFeedback] = useState(null);
     const [modeLoading, setModeLoading] = useState(false);
+    const emergencyActive = fanOn && buzzerOn && systemMode === "manual";
 
     const toggleMode = async () => {
         setModeLoading(true);
@@ -118,6 +119,24 @@ export default function Dashboard({ activeRoom, deviceId, iot, setCurrentPage })
 
     const sendActuator = async (payload) => {
         if (payload?.navigate === "activity") { setCurrentPage?.("logs"); return; }
+        if (payload?.emergency) {
+            setActuatorLoading("emergency");
+            try {
+                const res = await fetch("/api/emergency", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json", Accept: "application/json", "X-CSRF-TOKEN": document.querySelector('meta[name="csrf-token"]')?.getAttribute("content") || "" },
+                    body: JSON.stringify({ device_id: deviceId }),
+                });
+                const data = await res.json();
+                if (data.status === "success") setActuatorFeedback({ type: data.active ? "error" : "success", msg: data.active ? "EMERGENCY AKTIF — Semua aktuator MAX" : "Emergency dimatikan" });
+                else setActuatorFeedback({ type: "error", msg: data.message || "Emergency failed" });
+            } catch (e) {
+                setActuatorFeedback({ type: "error", msg: "Connection failed" });
+            } finally {
+                setTimeout(() => { setActuatorLoading(null); setActuatorFeedback(null); }, 3000);
+            }
+            return;
+        }
         setActuatorLoading(payload.target_device);
         try {
             const res = await fetch("/api/actuator", {
@@ -190,7 +209,7 @@ export default function Dashboard({ activeRoom, deviceId, iot, setCurrentPage })
                                     {actuatorFeedback.msg}
                                 </div>
                             )}
-                            <QuickActions actuatorState={actuatorState} onAction={sendActuator} loading={actuatorLoading} />
+                            <QuickActions actuatorState={actuatorState} onAction={sendActuator} loading={actuatorLoading} emergencyActive={emergencyActive} />
                         </div>
                     </div>
                 </div>
