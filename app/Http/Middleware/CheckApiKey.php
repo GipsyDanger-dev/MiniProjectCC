@@ -13,6 +13,12 @@ class CheckApiKey
      */
 public function handle(Request $request, Closure $next)
     {
+        // Allow requests from frontend (same origin with session cookie)
+        $hasSession = $request->hasCookie('XSRF-TOKEN') || $request->cookie('laravel_session');
+        if ($hasSession) {
+            return $next($request);
+        }
+
         $apiKey = $request->header('x-api-key');
 
         if (!$apiKey) {
