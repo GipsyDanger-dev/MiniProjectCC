@@ -53,7 +53,7 @@ class ApiController extends Controller
                 'score' => 100.0,
                 'fan_status' => 'HIGH',
                 'fan_speed' => 100,
-                'buzzer_action' => 'START',
+                'buzzer_action' => 'HIGH',
                 'profile' => 'FLAME_OVERRIDE',
                 'rules' => [['Flame override', 1.0, 100]],
                 'reason' => 'Flame sensor crossed the emergency threshold'
@@ -149,12 +149,12 @@ class ApiController extends Controller
         if ($score > 70) {
             $fanStatus = 'HIGH';
             $fanSpeed = 100;
-            $buzzerAction = 'START';
+            $buzzerAction = 'HIGH';
             $profile = 'HIGH';
         } elseif ($score > 40) {
             $fanStatus = 'MEDIUM';
             $fanSpeed = 60;
-            $buzzerAction = 'START';
+            $buzzerAction = 'MEDIUM';
             $profile = 'MEDIUM';
         } elseif ($score > 20) {
             $fanStatus = 'LOW';
@@ -201,7 +201,7 @@ class ApiController extends Controller
 
         // Update DeviceActuator berdasarkan keputusan fuzzy
         $fanStatus = $decision['fan_status'];
-        $buzzerStatus = $decision['buzzer_action'] === 'START' ? 'ON' : 'OFF';
+        $buzzerStatus = $decision['buzzer_action'] !== 'STOP' ? 'ON' : 'OFF';
 
         DeviceActuator::updateOrCreate(
             ['device_id' => $deviceId],
@@ -213,6 +213,7 @@ class ApiController extends Controller
         );
 
         // Only create commands when action actually changes (prevent queue flood)
+        // Check last command regardless of status — bridge may have already picked it up
         $lastFan = Command::where('device_id', $deviceId)
             ->where('target_device', 'exhaust_fan')
             ->orderBy('id', 'desc')
@@ -335,6 +336,21 @@ class ApiController extends Controller
             ]);
 
             $settings = SystemSettings::firstOrCreate(['id' => 1]);
+
+            // Auto-balik ke auto mode setelah 30 detik tanpa manual command
+            if ($settings->mode === 'manual' && $settings->last_manual_command) {
+                if (now()->diffInSeconds($settings->last_manual_command) > 30) {
+                    $settings->update(['mode' => 'auto']);
+                    ActivityLog::create([
+                        'device_id' => $request->device_id,
+                        'action_type' => 'MODE_SWITCH',
+                        'status' => 'AMAN',
+                        'description' => 'Auto-switched back to AUTO mode after 30s inactivity',
+                        'message' => 'Returned to AUTO mode'
+                    ]);
+                }
+            }
+
             $gasThresh = Cache::get('gas_threshold', $settings->gas_threshold ?? 2500);
             $smokeThresh = Cache::get('smoke_threshold', $settings->smoke_threshold ?? 2000);
             $tempThresh = Cache::get('temperature_threshold', $settings->temperature_threshold ?? 45);
@@ -548,7 +564,7 @@ class ApiController extends Controller
         if ($request->target_device === 'exhaust_fan') {
             $allowedActions = ['START', 'STOP', 'OFF', 'LOW', 'MEDIUM', 'HIGH'];
         } else {
-            $allowedActions = ['START', 'STOP'];
+            $allowedActions = ['START', 'STOP', 'MEDIUM', 'HIGH'];
         }
 
         if (!in_array($request->action, $allowedActions, true)) {
@@ -565,6 +581,16 @@ class ApiController extends Controller
         if ($request->target_device === 'exhaust_fan' && $action === 'STOP') {
             $action = 'OFF';
         }
+        if ($request->target_device === 'buzzer' && $action === 'START') {
+            $action = 'HIGH';
+        }
+
+        // Set manual mode BEFORE creating command — prevents race condition
+        // where sensor ingest sees mode=auto and creates a STOP command
+        SystemSettings::firstOrCreate(['id' => 1])->update([
+            'mode' => 'manual',
+            'last_manual_command' => now(),
+        ]);
 
         Command::create([
             'device_id' => $deviceId,
@@ -572,9 +598,6 @@ class ApiController extends Controller
             'action' => $action,
             'status' => 'pending'
         ]);
-
-        // Set manual mode — fuzzy logic tidak akan override
-        SystemSettings::firstOrCreate(['id' => 1])->update(['mode' => 'manual']);
 
         // Langsung update DeviceActuator sesuai perintah manual
         $speedMap = ['LOW' => 30, 'MEDIUM' => 60, 'HIGH' => 100];
@@ -590,7 +613,7 @@ class ApiController extends Controller
             DeviceActuator::updateOrCreate(
                 ['device_id' => $deviceId],
                 [
-                    'alarm_status' => $action === 'START' ? 'ON' : 'OFF',
+                    'alarm_status' => $action !== 'STOP' ? 'ON' : 'OFF',
                 ]
             );
         }
@@ -622,6 +645,66 @@ class ApiController extends Controller
         ]);
 
         return response()->json(['status' => 'success', 'mode' => $request->mode]);
+    }
+
+    public function emergency(Request $request)
+    {
+        $deviceId = $request->device_id ?? 1;
+        $settings = SystemSettings::firstOrCreate(['id' => 1]);
+        $actuator = DeviceActuator::where('device_id', $deviceId)->first();
+
+        // Toggle: kalau sudah aktif, matikan. Kalau mati, nyalakan.
+        $isCurrentlyActive = $actuator && $actuator->fan_status !== 'OFF' && $actuator->alarm_status === 'ON';
+
+        if ($isCurrentlyActive) {
+            // MATIKAN semua
+            SystemSettings::firstOrCreate(['id' => 1])->update([
+                'mode' => 'auto',
+                'last_manual_command' => null,
+            ]);
+
+            DeviceActuator::updateOrCreate(
+                ['device_id' => $deviceId],
+                ['fan_status' => 'OFF', 'fan_speed' => 0, 'alarm_status' => 'OFF']
+            );
+
+            Command::create(['device_id' => $deviceId, 'target_device' => 'exhaust_fan', 'action' => 'OFF', 'status' => 'pending']);
+            Command::create(['device_id' => $deviceId, 'target_device' => 'buzzer', 'action' => 'STOP', 'status' => 'pending']);
+
+            ActivityLog::create([
+                'device_id' => $deviceId,
+                'action_type' => 'EMERGENCY',
+                'status' => 'AMAN',
+                'description' => 'Emergency deactivated — all actuators OFF',
+                'message' => 'EMERGENCY OFF'
+            ]);
+
+            return response()->json(['status' => 'success', 'message' => 'Emergency deactivated', 'active' => false]);
+        }
+
+        // NYALAKAN semua ke maksimal
+        SystemSettings::firstOrCreate(['id' => 1])->update([
+            'mode' => 'manual',
+            'last_manual_command' => now(),
+        ]);
+
+        DeviceActuator::updateOrCreate(
+            ['device_id' => $deviceId],
+            ['fan_status' => 'HIGH', 'fan_speed' => 100, 'alarm_status' => 'ON']
+        );
+
+        Command::create(['device_id' => $deviceId, 'target_device' => 'exhaust_fan', 'action' => 'HIGH', 'status' => 'pending']);
+        Command::create(['device_id' => $deviceId, 'target_device' => 'buzzer', 'action' => 'HIGH', 'status' => 'pending']);
+
+        ActivityLog::create([
+            'device_id' => $deviceId,
+            'action_type' => 'EMERGENCY',
+            'status' => 'BAHAYA',
+            'description' => 'Emergency activated — all actuators set to maximum',
+            'message' => 'EMERGENCY ON: Fan HIGH + Buzzer HIGH'
+        ]);
+
+        return response()->json(['status' => 'success', 'message' => 'Emergency activated', 'active' => true]);
     }
 
     public function getPendingCommand(Request $request)
