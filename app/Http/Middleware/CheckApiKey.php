@@ -15,8 +15,15 @@ public function handle(Request $request, Closure $next)
     {
         $apiKey = $request->header('x-api-key');
 
+        if (!$apiKey) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Akses Ditolak! API Key tidak ditemukan.'
+            ], 401);
+        }
+
         $workerKey = config('app.worker_api_key', 'apa-hayo-kuncinya-99');
-        if ($apiKey && $apiKey === $workerKey) {
+        if ($apiKey === $workerKey) {
             return $next($request);
         }
 

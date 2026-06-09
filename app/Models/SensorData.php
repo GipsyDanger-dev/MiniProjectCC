@@ -24,4 +24,14 @@ class SensorData extends Model
         'fan_speed',
         'decision_profile',
     ];
+
+    protected $casts = [
+        'gas_value' => 'float',
+        'smoke_value' => 'float',
+        'temperature' => 'float',
+        'humidity' => 'float',
+        'flame_value' => 'float',
+        'fuzzy_score' => 'float',
+        'fan_speed' => 'integer',
+    ];
 }

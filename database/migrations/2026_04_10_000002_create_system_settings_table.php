@@ -10,8 +10,8 @@ return new class extends Migration
     {
         Schema::create('system_settings', function (Blueprint $table) {
             $table->id();
-            $table->float('gas_threshold')->default(300);
-            $table->float('smoke_threshold')->default(200);
+            $table->float('gas_threshold')->default(2500);
+            $table->float('smoke_threshold')->default(2000);
             $table->float('temperature_threshold')->default(45);
             $table->string('mode')->default('auto'); // auto/manual
             $table->boolean('emergency_active')->default(false);
