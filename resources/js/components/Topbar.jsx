@@ -1,16 +1,28 @@
-import React, { useState, useEffect } from "react";
-import { Menu } from "lucide-react";
+import React, { useState, useEffect, useRef } from "react";
+import { LogOut, Menu, User } from "lucide-react";
 
 export default function Topbar({
     mobileOpen,
     setMobileOpen,
     systemMode = "auto",
+    user,
+    onLogout,
 }) {
     const [time, setTime] = useState(new Date());
+    const [menuOpen, setMenuOpen] = useState(false);
+    const menuRef = useRef(null);
 
     useEffect(() => {
         const timer = setInterval(() => setTime(new Date()), 1000);
         return () => clearInterval(timer);
+    }, []);
+
+    useEffect(() => {
+        const handleClick = (e) => {
+            if (menuRef.current && !menuRef.current.contains(e.target)) setMenuOpen(false);
+        };
+        document.addEventListener("mousedown", handleClick);
+        return () => document.removeEventListener("mousedown", handleClick);
     }, []);
 
     const formatted = new Intl.DateTimeFormat("id-ID", {
@@ -20,7 +32,7 @@ export default function Topbar({
         second: "2-digit",
     }).format(time);
 
-    const initials = "OP";
+    const initials = user?.name?.split(" ").map((w) => w[0]).join("").toUpperCase().slice(0, 2) || "AD";
 
     return (
         <header className="glass-header h-9 flex items-center px-4 gap-3 shrink-0">
@@ -57,8 +69,33 @@ export default function Topbar({
                 {formatted} WIB
             </span>
 
-            <div className="w-6 h-6 bg-[#222] border border-[#333] flex items-center justify-center text-[10px] font-medium text-[#888] uppercase">
-                {initials}
+            {/* User menu */}
+            <div className="relative" ref={menuRef}>
+                <button
+                    type="button"
+                    onClick={() => setMenuOpen(!menuOpen)}
+                    className="w-6 h-6 bg-[#222] border border-[#333] flex items-center justify-center text-[10px] font-medium text-[#888] uppercase hover:border-red-500/40 transition-colors cursor-pointer"
+                >
+                    {initials}
+                </button>
+
+                {menuOpen && (
+                    <div className="absolute right-0 top-full mt-1 w-48 bg-[#111118] border border-[#1e1e2a] rounded-lg shadow-xl z-50 overflow-hidden">
+                        <div className="px-3 py-2.5 border-b border-[#1e1e2a]">
+                            <p className="text-[11px] text-gray-400">Logged in as</p>
+                            <p className="text-[13px] text-white font-medium truncate">{user?.name || "Admin"}</p>
+                            <p className="text-[11px] text-gray-500 truncate">{user?.email || ""}</p>
+                        </div>
+                        <button
+                            type="button"
+                            onClick={() => { setMenuOpen(false); onLogout?.(); }}
+                            className="w-full px-3 py-2 flex items-center gap-2 text-[12px] text-red-400 hover:bg-red-500/10 transition-colors cursor-pointer"
+                        >
+                            <LogOut className="w-3.5 h-3.5" />
+                            Logout
+                        </button>
+                    </div>
+                )}
             </div>
         </header>
     );

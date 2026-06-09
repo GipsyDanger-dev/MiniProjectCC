@@ -12,6 +12,7 @@ import DeviceStatus from "./pages/DeviceStatus";
 import Settings from "./pages/Settings";
 import PlaceholderPage from "./pages/PlaceholderPage";
 import NewDevice from "./pages/NewDevice";
+import LoginPage from "./pages/LoginPage";
 
 export default function MainApp() {
     const { theme, toggleTheme } = useTheme();
@@ -22,6 +23,10 @@ export default function MainApp() {
     const [devicesLoading, setDevicesLoading] = useState(true);
     const [activeDeviceId, setActiveDeviceId] = useState(1);
     const [pollingInterval, setPollingInterval] = useState(3000);
+    const [user, setUser] = useState(null);
+    const [authLoading, setAuthLoading] = useState(true);
+
+    // All hooks must be called before any early returns
     const rooms = useMemo(
         () =>
             devices.map((device) => ({
@@ -57,9 +62,21 @@ export default function MainApp() {
         }
     }, []);
 
+    // Check auth status on mount
     useEffect(() => {
+        fetch("/api/auth/user", { headers: { Accept: "application/json" } })
+            .then((res) => res.json())
+            .then((data) => {
+                if (data.status === "success") setUser(data.user);
+            })
+            .catch(() => {})
+            .finally(() => setAuthLoading(false));
+    }, []);
+
+    useEffect(() => {
+        if (!user) return;
         loadDevices();
-    }, [loadDevices]);
+    }, [loadDevices, user]);
 
     useEffect(() => {
         if (!devices.length) return;
@@ -68,6 +85,30 @@ export default function MainApp() {
             setActiveDeviceId(devices[0].id);
         }
     }, [devices, activeDeviceId]);
+
+    const handleLogout = async () => {
+        await fetch("/api/logout", {
+            method: "POST",
+            headers: {
+                Accept: "application/json",
+                "X-CSRF-TOKEN": document.querySelector('meta[name="csrf-token"]')?.getAttribute("content") || "",
+            },
+        });
+        setUser(null);
+    };
+
+    // Early returns AFTER all hooks
+    if (authLoading) {
+        return (
+            <div className="min-h-screen bg-[#0a0a0f] flex items-center justify-center">
+                <div className="w-6 h-6 border-2 border-red-500/30 border-t-red-500 rounded-full animate-spin" />
+            </div>
+        );
+    }
+
+    if (!user) {
+        return <LoginPage onLogin={setUser} />;
+    }
 
     const pages = {
         dashboard: (
@@ -141,8 +182,11 @@ export default function MainApp() {
                 collapsed ? "lg:ml-[56px]" : "lg:ml-[176px]"
             )}>
                 <Topbar
-                    onMenuClick={() => setMobileOpen(true)}
+                    mobileOpen={mobileOpen}
+                    setMobileOpen={setMobileOpen}
                     systemMode={iot.data?.system_mode || "auto"}
+                    user={user}
+                    onLogout={handleLogout}
                 />
                 <main className="flex-1 px-3 pb-4 md:px-5 md:pb-6">
                     <div className="relative z-10">
