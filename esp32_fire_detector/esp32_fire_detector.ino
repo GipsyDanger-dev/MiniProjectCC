@@ -1,72 +1,45 @@
 #include <ArduinoJson.h>
 #include <DHT.h>
 
-// =============================================
-// PIN SENSOR & AKTUATOR
-// =============================================
-#define MQ2_AO     34   // Analog gas
-#define KY026_AO   32   // Analog flame (makin kecil = makin banyak api)
-#define DHT_PIN    27   // DHT22 data pin
+#define MQ2_AO     34
+#define KY026_AO   32   // active-low: makin kecil = makin banyak api
+#define DHT_PIN    27
 #define DHT_TYPE   DHT22
-#define IN1        18   // Motor driver IN1 (exhaust fan)
-#define IN2        19   // Motor driver IN2
-#define ENA        21   // Motor driver ENA (PWM)
-#define BUZZER_PIN 26   // Buzzer aktif
-#define LED1_PIN   25   // LED merah 1
-#define LED2_PIN   14   // LED merah 2
+#define IN1        18
+#define IN2        19
+#define ENA        21
+#define BUZZER_PIN 26
+#define LED1_PIN   25
+#define LED2_PIN   14
 
-// =============================================
-// INTERVAL (milidetik)
-// =============================================
-#define INTERVAL_SEND     3000   // kirim data tiap 3 detik
-#define PREHEAT_MS        2000   // warm-up MQ-2
+#define INTERVAL_SEND     3000
+#define PREHEAT_MS        2000
 
-// =============================================
-// PWM SPEED LEVELS
-// =============================================
 #define FAN_OFF     0
-#define FAN_LOW     650   // 63% (10-bit: 1023 * 0.63)
-#define FAN_MEDIUM  800   // 78% (10-bit: 1023 * 0.78)
-#define FAN_HIGH    1023  // 100%
+#define FAN_LOW     650   // 1023 * 0.63
+#define FAN_MEDIUM  800   // 1023 * 0.78
+#define FAN_HIGH    1023
 
-// =============================================
-// STATE AKTUATOR
-// =============================================
 bool exhaustAktif = false;
 int  fanSpeed     = FAN_OFF;
 
-// =============================================
-// BUZZER & LED PATTERN (non-blocking)
-// =============================================
 enum BuzzerMode { BUZZ_OFF, BUZZ_MEDIUM, BUZZ_HIGH };
 BuzzerMode buzzerMode    = BUZZ_OFF;
-bool       buzzerState   = false;       // current on/off state
+bool       buzzerState   = false;
 unsigned long buzzerLast = 0;
-// MEDIUM: beep lambat (waspada)
 #define BUZZ_MED_ON   500
 #define BUZZ_MED_OFF  500
-// HIGH: beep cepat konstan (sangat bahaya)
 #define BUZZ_HIGH_ON  150
 #define BUZZ_HIGH_OFF 100
 
-// LED berkedip bergantian (hanya saat HIGH)
-bool       ledAlternate  = false;       // false=LED1 on, true=LED2 on
+bool       ledAlternate  = false;
 unsigned long ledLast    = 0;
-#define LED_BLINK_MS  150              // interval kedip LED (sinkron dengan buzzer HIGH)
+#define LED_BLINK_MS  150
 
-// =============================================
-// TIMER
-// =============================================
 unsigned long lastSend = 0;
 
-// =============================================
-// SENSOR
-// =============================================
 DHT dht(DHT_PIN, DHT_TYPE);
 
-// =============================================
-// FUNGSI AKTUATOR
-// =============================================
 void setExhaust(String action) {
   action.toUpperCase();
   if (action == "START") action = "HIGH";
@@ -82,7 +55,7 @@ void setExhaust(String action) {
 
   digitalWrite(IN1, exhaustAktif ? HIGH : LOW);
   digitalWrite(IN2, LOW);
-  ledcWrite(ENA, pwm);  // PWM ke pin ENA
+  ledcWrite(ENA, pwm);
 }
 
 void setBuzzer(String mode) {
@@ -110,7 +83,6 @@ void updateBuzzer() {
   unsigned long now = millis();
 
   if (buzzerMode == BUZZ_HIGH) {
-    // Buzzer: beep cepat
     unsigned long elapsed = now - buzzerLast;
     unsigned long period = buzzerState ? BUZZ_HIGH_ON : BUZZ_HIGH_OFF;
     if (elapsed >= period) {
@@ -118,7 +90,6 @@ void updateBuzzer() {
       digitalWrite(BUZZER_PIN, buzzerState ? HIGH : LOW);
       buzzerLast = now;
     }
-    // LED: berkedip bergantian cepat (sinkron dengan buzzer)
     unsigned long ledElapsed = now - ledLast;
     if (ledElapsed >= LED_BLINK_MS) {
       ledAlternate = !ledAlternate;
@@ -127,7 +98,6 @@ void updateBuzzer() {
       ledLast = now;
     }
   } else if (buzzerMode == BUZZ_MEDIUM) {
-    // Buzzer: beep lambat, LED mati
     digitalWrite(LED1_PIN, LOW);
     digitalWrite(LED2_PIN, LOW);
     unsigned long elapsed = now - buzzerLast;
@@ -140,9 +110,6 @@ void updateBuzzer() {
   }
 }
 
-// =============================================
-// KIRIM DATA SENSOR → Serial (JSON)
-// =============================================
 void kirimDataSensor() {
   int nilaiMQ2   = analogRead(MQ2_AO);
   int nilaiApi   = analogRead(KY026_AO);
@@ -153,7 +120,6 @@ void kirimDataSensor() {
   if (isnan(suhu))       { suhu = 0.0; Serial.println("[WARN] DHT read failed"); }
   if (isnan(kelembaban)) { kelembaban = 0.0; }
 
-  // Kirim sebagai JSON ke Serial
   StaticJsonDocument<256> doc;
   doc["type"]        = "sensor";
   doc["gas_value"]   = nilaiMQ2;
@@ -167,9 +133,6 @@ void kirimDataSensor() {
   Serial.println(output);
 }
 
-// =============================================
-// TERIMA COMMAND ← Serial (JSON)
-// =============================================
 static String serialBuffer = "";
 #define SERIAL_BUFFER_MAX 512
 
@@ -193,7 +156,6 @@ void terimaCommand() {
 }
 
 void prosesPesan(String input) {
-  // Debug: print pesan yang diterima
   Serial.print("[RECV] ");
   Serial.println(input);
 
@@ -205,7 +167,6 @@ void prosesPesan(String input) {
     return;
   }
 
-  // Command aktuator: {"target":"exhaust_fan","action":"HIGH","id":1}
   String target = doc["target"] | "";
   String action = doc["action"] | "";
   int cmdId     = doc["id"] | 0;
@@ -218,7 +179,6 @@ void prosesPesan(String input) {
     setBuzzer(action);
   }
 
-  // Kirim konfirmasi balik
   StaticJsonDocument<128> ack;
   ack["type"]    = "ack";
   ack["id"]      = cmdId;
@@ -228,9 +188,6 @@ void prosesPesan(String input) {
   Serial.println(ackOut);
 }
 
-// =============================================
-// SETUP
-// =============================================
 void setup() {
   Serial.begin(115200);
   delay(500);
@@ -241,18 +198,15 @@ void setup() {
   pinMode(LED1_PIN, OUTPUT);
   pinMode(LED2_PIN, OUTPUT);
 
-  // Setup LEDC PWM untuk ESP32 (pin, freq, resolution)
-  ledcAttach(ENA, 5000, 10);  // ENA pin, 5000Hz, 10-bit resolution
+  ledcAttach(ENA, 5000, 10);
 
   setExhaust("OFF");
   setBuzzer("STOP");
 
   dht.begin();
 
-  // Preheat MQ-2
   delay(PREHEAT_MS);
 
-  // Signal siap
   StaticJsonDocument<64> ready;
   ready["type"] = "ready";
   String readyOut;
@@ -260,21 +214,15 @@ void setup() {
   Serial.println(readyOut);
 }
 
-// =============================================
-// LOOP
-// =============================================
 void loop() {
   unsigned long now = millis();
 
-  // Kirim data sensor tiap 3 detik
   if (now - lastSend >= INTERVAL_SEND) {
     lastSend = now;
     kirimDataSensor();
   }
 
-  // Cek command dari Python
   terimaCommand();
 
-  // Update buzzer pattern (non-blocking)
   updateBuzzer();
 }

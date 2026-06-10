@@ -169,23 +169,18 @@ export default function Dashboard({ activeRoom, deviceId, iot, setCurrentPage })
 
     return (
         <div className="flex flex-col gap-2.5">
-            {/* Stat cards */}
             <div className="grid grid-cols-2 xl:grid-cols-4 gap-2">
                 {stats.map((stat) => (
                     <StatCard key={stat.title} {...stat} />
                 ))}
             </div>
 
-            {/* Main panels */}
             <div className="grid grid-cols-1 xl:grid-cols-2 gap-2.5">
-                {/* Room Monitor */}
                 <RoomModel room={activeRoom} iot={iot} />
 
                 <div className="flex flex-col gap-2.5">
-                    {/* Sensor Trend */}
                     <SensorReadings readings={feed} />
 
-                    {/* System Control */}
                     <div className="bg-surface2 border border-edge">
                         <div className="flex items-center justify-between px-3 py-2 border-b border-edge">
                             <p className="text-[10px] font-medium uppercase tracking-[0.10em] text-ink2">Kontrol Sistem</p>
@@ -214,14 +209,11 @@ export default function Dashboard({ activeRoom, deviceId, iot, setCurrentPage })
                     </div>
                 </div>
 
-                {/* Sensor Units */}
                 <ActiveSensors items={sensors} />
 
-                {/* Event Log */}
                 <ActivityLog entries={dashboardEntries} onViewAll={() => setCurrentPage?.("logs")} />
             </div>
 
-            {/* Bottom panels */}
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-2">
                 <ActuatorControl items={actuators} onToggle={(name) => {
                     const target = name === "Exhaust Fan" ? "exhaust_fan" : "buzzer";

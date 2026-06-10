@@ -189,7 +189,6 @@ export default function Sidebar({
 }) {
     return (
         <>
-            {/* Desktop sidebar */}
             <aside
                 className={cn(
                     "hidden lg:flex flex-col fixed inset-y-0 left-0 z-30 border-r-2 border-accent transition-all duration-200 glass-sidebar overflow-hidden",
@@ -206,7 +205,6 @@ export default function Sidebar({
                 </div>
             </aside>
 
-            {/* Mobile overlay */}
             {mobileOpen && (
                 <div
                     className="fixed inset-0 z-40 bg-black/60 lg:hidden"
@@ -214,7 +212,6 @@ export default function Sidebar({
                 />
             )}
 
-            {/* Mobile drawer */}
             <aside
                 className={cn(
                     "fixed inset-y-0 left-0 z-50 w-[176px] flex flex-col glass-sidebar border-r-2 border-accent transition-transform duration-200 ease-out lg:hidden overflow-y-auto thin-scroll",

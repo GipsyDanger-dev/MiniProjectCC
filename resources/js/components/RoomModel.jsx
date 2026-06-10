@@ -3,8 +3,6 @@ import { Canvas, useFrame } from "@react-three/fiber";
 import { OrbitControls, Html } from "@react-three/drei";
 import * as THREE from "three";
 
-// ─── SensorLabel (Html overlay) ───────────────────────────────────────────────
-
 function SensorLabel({ position, label, value, unit, status }) {
     const color = status === "Alert" ? "#dc2626" : "#c45a0a";
     return (
@@ -28,8 +26,6 @@ function SensorLabel({ position, label, value, unit, status }) {
         </Html>
     );
 }
-
-// ─── FanBlades ────────────────────────────────────────────────────────────────
 
 function FanBlades({ fanSpeed, fanStatus, position = [0, 0, 0] }) {
     const groupRef = useRef();
@@ -68,7 +64,6 @@ function FanBlades({ fanSpeed, fanStatus, position = [0, 0, 0] }) {
                     </mesh>
                 );
             })}
-            {/* Hub — orange industrial */}
             <mesh rotation={[Math.PI / 2, 0, 0]}>
                 <cylinderGeometry args={[0.09, 0.09, 0.06, 12]} />
                 <meshStandardMaterial color="#c45a0a" metalness={0.95} roughness={0.3} />
@@ -76,8 +71,6 @@ function FanBlades({ fanSpeed, fanStatus, position = [0, 0, 0] }) {
         </group>
     );
 }
-
-// ─── EmergencyEffects ─────────────────────────────────────────────────────────
 
 function EmergencyEffects({ emergency }) {
     const pointLightRef = useRef();
@@ -99,17 +92,12 @@ function EmergencyEffects({ emergency }) {
 
     return (
         <>
-            {/* Bright ambient so everything is visible */}
             <ambientLight intensity={emergency === "BAHAYA" ? 1.0 : 1.8} color={emergency === "BAHAYA" ? "#ff8888" : "#fffaf0"} />
 
-            {/* Main directional — warm daylight feel */}
             <directionalLight position={[5, 8, 5]} intensity={2.5} castShadow color="#fff5e6" />
-            {/* Fill light from opposite side */}
             <directionalLight position={[-4, 6, -3]} intensity={1.2} color="#e8e0d0" />
-            {/* Top-down fill */}
             <directionalLight position={[0, 10, 0]} intensity={1.0} color="#ffffff" />
 
-            {/* Ceiling center point light */}
             <pointLight ref={pointLightRef} position={[0, 2.8, 0]} distance={20} decay={1.5} />
 
             {/* Extra corner lights so no dark spots */}
@@ -117,7 +105,6 @@ function EmergencyEffects({ emergency }) {
             <pointLight position={[2.5, 2.5, 2]} intensity={1.5} distance={10} color="#fff8ee" />
             <pointLight position={[0, 2.5, -2]} intensity={1.5} distance={10} color="#fff8ee" />
 
-            {/* Emergency light fixture on ceiling */}
             <mesh position={[0, 2.92, 0]}>
                 <boxGeometry args={[0.3, 0.04, 0.1]} />
                 <meshStandardMaterial
@@ -140,35 +127,28 @@ function EmergencyEffects({ emergency }) {
     );
 }
 
-// ─── Room (floor, walls, ceiling beams, baseboards) ───────────────────────────
-
 function Room() {
     return (
         <group>
-            {/* Floor */}
             <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0, 0]} receiveShadow>
                 <planeGeometry args={[6, 5]} />
                 <meshStandardMaterial color="#4a4a42" roughness={0.85} metalness={0.1} />
             </mesh>
             <gridHelper args={[6, 12, "#666", "#555"]} position={[0, 0.005, 0]} />
 
-            {/* Back wall */}
             <mesh position={[0, 1.5, -2.5]} castShadow receiveShadow>
                 <boxGeometry args={[6, 3, 0.1]} />
                 <meshStandardMaterial color="#5a5a52" roughness={0.8} />
             </mesh>
-            {/* Left wall */}
             <mesh position={[-3, 1.5, 0]} castShadow receiveShadow>
                 <boxGeometry args={[0.1, 3, 5]} />
                 <meshStandardMaterial color="#5a5a52" roughness={0.8} />
             </mesh>
-            {/* Right wall */}
             <mesh position={[3, 1.5, 0]} castShadow receiveShadow>
                 <boxGeometry args={[0.1, 3, 5]} />
                 <meshStandardMaterial color="#5a5a52" roughness={0.8} />
             </mesh>
 
-            {/* Baseboard trim — orange accent */}
             <mesh position={[0, 0.04, -2.44]}>
                 <boxGeometry args={[5.8, 0.08, 0.02]} />
                 <meshStandardMaterial color="#c45a0a" emissive="#c45a0a" emissiveIntensity={0.3} roughness={0.5} metalness={0.3} />
@@ -182,14 +162,12 @@ function Room() {
                 <meshStandardMaterial color="#c45a0a" emissive="#c45a0a" emissiveIntensity={0.3} roughness={0.5} metalness={0.3} />
             </mesh>
 
-            {/* Ceiling beams — Z direction */}
             {[-2, 0, 2].map((x) => (
                 <mesh key={`bz-${x}`} position={[x, 2.96, 0]}>
                     <boxGeometry args={[0.08, 0.08, 5]} />
                     <meshStandardMaterial color="#6a6a62" metalness={0.5} roughness={0.4} />
                 </mesh>
             ))}
-            {/* Ceiling beams — X direction */}
             {[-1.5, 1.5].map((z) => (
                 <mesh key={`bx-${z}`} position={[0, 2.96, z]}>
                     <boxGeometry args={[6, 0.08, 0.08]} />
@@ -197,7 +175,6 @@ function Room() {
                 </mesh>
             ))}
 
-            {/* Wall edge highlights */}
             <mesh position={[0, 3, -2.44]}>
                 <boxGeometry args={[6, 0.02, 0.02]} />
                 <meshStandardMaterial color="#6a6a62" metalness={0.4} roughness={0.5} />
@@ -213,8 +190,6 @@ function Room() {
         </group>
     );
 }
-
-// ─── Workstation (desk + ESP32 + OLED) ────────────────────────────────────────
 
 function Workstation() {
     const ledRef = useRef();
@@ -234,12 +209,10 @@ function Workstation() {
 
     return (
         <group position={[-1.5, 0, 0.5]}>
-            {/* Desktop surface */}
             <mesh position={[0, 0.75, 0]} castShadow>
                 <boxGeometry args={[1.4, 0.05, 0.7]} />
                 <meshStandardMaterial color="#6a6a62" roughness={0.7} metalness={0.2} />
             </mesh>
-            {/* Legs */}
             {legOffsets.map((pos, i) => (
                 <mesh key={i} position={pos}>
                     <boxGeometry args={[0.05, 0.75, 0.05]} />
@@ -257,7 +230,6 @@ function Workstation() {
                 <boxGeometry args={[0.06, 0.008, 0.06]} />
                 <meshStandardMaterial color="#444" roughness={0.5} metalness={0.3} />
             </mesh>
-            {/* LED indicators */}
             <mesh position={[-0.26, 0.795, -0.03]}>
                 <boxGeometry args={[0.015, 0.008, 0.015]} />
                 <meshStandardMaterial ref={ledRef} color="#00ff44" emissive="#00ff44" emissiveIntensity={0.5} />
@@ -272,7 +244,6 @@ function Workstation() {
                 <boxGeometry args={[0.14, 0.1, 0.012]} />
                 <meshStandardMaterial color="#111" roughness={0.9} metalness={0.1} />
             </mesh>
-            {/* OLED screen */}
             <mesh position={[0.15, 0.82, 0.008]} rotation={[-0.15, 0, 0]}>
                 <planeGeometry args={[0.11, 0.07]} />
                 <meshStandardMaterial color="#003322" emissive="#00ff88" emissiveIntensity={0.4} />
@@ -281,17 +252,13 @@ function Workstation() {
     );
 }
 
-// ─── SensorModule (parametric wall-mounted sensor) ────────────────────────────
-
 function SensorModule({ position, rotation, bodyColor = "#2a5a2a", capColor, capRadius }) {
     return (
         <group position={position} rotation={rotation}>
-            {/* Mounting bracket */}
             <mesh position={[0, -0.045, 0]}>
                 <boxGeometry args={[0.14, 0.01, 0.05]} />
                 <meshStandardMaterial color="#6a6a62" roughness={0.7} />
             </mesh>
-            {/* PCB body */}
             <mesh castShadow>
                 <boxGeometry args={[0.12, 0.08, 0.04]} />
                 <meshStandardMaterial color={bodyColor} roughness={0.6} metalness={0.1} />
@@ -303,7 +270,6 @@ function SensorModule({ position, rotation, bodyColor = "#2a5a2a", capColor, cap
                     <meshStandardMaterial color={capColor || "#555"} roughness={0.4} metalness={0.5} />
                 </mesh>
             )}
-            {/* Pin headers */}
             <mesh position={[0, -0.04, 0.025]}>
                 <boxGeometry args={[0.08, 0.015, 0.005]} />
                 <meshStandardMaterial color="#d4a030" metalness={0.8} roughness={0.3} />
@@ -312,19 +278,15 @@ function SensorModule({ position, rotation, bodyColor = "#2a5a2a", capColor, cap
     );
 }
 
-// ─── ExhaustFan (industrial, back wall upper-left) ──────────────────────────
-
 function ExhaustFan({ fanSpeed, fanStatus }) {
     const grillePositions = [-2, -1, 0, 1, 2];
     return (
         <group position={[-2, 2.3, -2.44]}>
-            {/* Housing — dark industrial square */}
             <mesh>
                 <boxGeometry args={[1.4, 1.4, 0.25]} />
                 <meshStandardMaterial color="#1e1e1c" roughness={0.7} metalness={0.8} />
             </mesh>
 
-            {/* Orange accent frame — 4 sides */}
             {[
                 { size: [1.4, 0.06, 0.28], pos: [0, 0.67, 0] },
                 { size: [1.4, 0.06, 0.28], pos: [0, -0.67, 0] },
@@ -337,10 +299,9 @@ function ExhaustFan({ fanSpeed, fanStatus }) {
                 </mesh>
             ))}
 
-            {/* Fan blades — in front, visible */}
             <FanBlades fanSpeed={fanSpeed} fanStatus={fanStatus} position={[0, 0, 0.14]} />
 
-            {/* Wire guard — behind blades, thin ring */}
+            {/* Wire guard — behind blades */}
             {grillePositions.map((i) => (
                 <React.Fragment key={`grille-${i}`}>
                     <mesh position={[0, i * 0.22, 0.17]}>
@@ -357,8 +318,6 @@ function ExhaustFan({ fanSpeed, fanStatus }) {
     );
 }
 
-// ─── FilingCabinet ───────────────────────────────────────────────────────────
-
 function FilingCabinet({ position }) {
     return (
         <group position={position}>
@@ -366,7 +325,6 @@ function FilingCabinet({ position }) {
                 <boxGeometry args={[0.45, 1, 0.4]} />
                 <meshStandardMaterial color="#4a4a42" roughness={0.7} metalness={0.3} />
             </mesh>
-            {/* Drawer handles */}
             {[0.25, 0.55, 0.85].map((y) => (
                 <mesh key={y} position={[0, y, 0.21]}>
                     <boxGeometry args={[0.15, 0.02, 0.02]} />
@@ -377,17 +335,13 @@ function FilingCabinet({ position }) {
     );
 }
 
-// ─── Whiteboard ──────────────────────────────────────────────────────────────
-
 function Whiteboard({ position }) {
     return (
         <group position={position}>
-            {/* Board */}
             <mesh>
                 <boxGeometry args={[1.6, 1, 0.04]} />
                 <meshStandardMaterial color="#e8e8e0" roughness={0.3} metalness={0.05} />
             </mesh>
-            {/* Frame */}
             {[
                 { size: [1.64, 0.03, 0.05], pos: [0, 0.5, 0] },
                 { size: [1.64, 0.03, 0.05], pos: [0, -0.5, 0] },
@@ -399,7 +353,6 @@ function Whiteboard({ position }) {
                     <meshStandardMaterial color="#888" metalness={0.6} roughness={0.4} />
                 </mesh>
             ))}
-            {/* Tray */}
             <mesh position={[0, -0.55, 0.05]}>
                 <boxGeometry args={[0.8, 0.04, 0.08]} />
                 <meshStandardMaterial color="#777" metalness={0.7} roughness={0.3} />
@@ -408,22 +361,17 @@ function Whiteboard({ position }) {
     );
 }
 
-// ─── FireExtinguisher ────────────────────────────────────────────────────────
-
 function FireExtinguisher({ position }) {
     return (
         <group position={position}>
-            {/* Body */}
             <mesh position={[0, 0.2, 0]}>
                 <cylinderGeometry args={[0.06, 0.06, 0.4, 12]} />
                 <meshStandardMaterial color="#cc2200" roughness={0.6} metalness={0.3} />
             </mesh>
-            {/* Handle */}
             <mesh position={[0, 0.42, 0.04]}>
                 <boxGeometry args={[0.08, 0.03, 0.03]} />
                 <meshStandardMaterial color="#333" metalness={0.8} roughness={0.3} />
             </mesh>
-            {/* Nozzle */}
             <mesh position={[0.04, 0.42, 0]} rotation={[0, 0, -0.4]}>
                 <cylinderGeometry args={[0.015, 0.01, 0.1, 8]} />
                 <meshStandardMaterial color="#333" metalness={0.7} roughness={0.4} />
@@ -431,8 +379,6 @@ function FireExtinguisher({ position }) {
         </group>
     );
 }
-
-// ─── Monitor ─────────────────────────────────────────────────────────────────
 
 function Monitor({ position }) {
     const screenRef = useRef();
@@ -443,17 +389,14 @@ function Monitor({ position }) {
     });
     return (
         <group position={position}>
-            {/* Screen */}
             <mesh position={[0, 0.12, 0]} rotation={[-0.1, 0, 0]}>
                 <boxGeometry args={[0.45, 0.28, 0.015]} />
                 <meshStandardMaterial color="#111" roughness={0.9} metalness={0.1} />
             </mesh>
-            {/* Display */}
             <mesh position={[0, 0.12, 0.009]} rotation={[-0.1, 0, 0]}>
                 <planeGeometry args={[0.4, 0.24]} />
                 <meshStandardMaterial ref={screenRef} color="#002244" emissive="#0066cc" emissiveIntensity={0.3} />
             </mesh>
-            {/* Stand */}
             <mesh position={[0, -0.02, 0.02]}>
                 <boxGeometry args={[0.06, 0.04, 0.06]} />
                 <meshStandardMaterial color="#444" metalness={0.7} roughness={0.4} />
@@ -461,8 +404,6 @@ function Monitor({ position }) {
         </group>
     );
 }
-
-// ─── Buzzer ───────────────────────────────────────────────────────────────────
 
 function Buzzer({ active, position }) {
     const emissiveRef = useRef();
@@ -475,19 +416,16 @@ function Buzzer({ active, position }) {
 
     return (
         <group position={position}>
-            {/* Body */}
             <mesh rotation={[0, 0, Math.PI / 2]}>
                 <cylinderGeometry args={[0.04, 0.04, 0.06, 16]} />
                 <meshStandardMaterial color="#666" metalness={0.5} roughness={0.6} />
             </mesh>
-            {/* Sound holes */}
             {[[-0.012, 0.012], [0.012, 0.012], [0, -0.012]].map(([ox, oy], i) => (
                 <mesh key={i} position={[0.032, ox, oy]} rotation={[0, 0, Math.PI / 2]}>
                     <cylinderGeometry args={[0.005, 0.005, 0.003, 8]} />
                     <meshStandardMaterial color="#222" />
                 </mesh>
             ))}
-            {/* Active indicator LED */}
             <mesh position={[0.032, 0, 0]}>
                 <sphereGeometry args={[0.008, 8, 8]} />
                 <meshStandardMaterial
@@ -500,8 +438,6 @@ function Buzzer({ active, position }) {
         </group>
     );
 }
-
-// ─── CableRun (tube connecting two points) ────────────────────────────────────
 
 function CableRun({ points, color = "#333" }) {
     const curve = useMemo(() => {
@@ -517,38 +453,31 @@ function CableRun({ points, color = "#333" }) {
     );
 }
 
-// ─── ServerRack ───────────────────────────────────────────────────────────────
-
 function ServerRack() {
     return (
         <group position={[2, 0, -1.5]}>
-            {/* Main cabinet */}
             <mesh position={[0, 1, 0]} castShadow>
                 <boxGeometry args={[0.6, 2, 0.5]} />
                 <meshStandardMaterial color="#4a4a42" roughness={0.8} metalness={0.2} />
             </mesh>
-            {/* Shelves */}
             {[0.4, 0.9, 1.4, 1.8].map((y) => (
                 <mesh key={y} position={[0, y, 0.01]}>
                     <boxGeometry args={[0.56, 0.02, 0.46]} />
                     <meshStandardMaterial color="#5a5a52" roughness={0.7} metalness={0.3} />
                 </mesh>
             ))}
-            {/* Server units on shelves */}
             {[0.55, 1.05, 1.55].map((y) => (
                 <mesh key={y} position={[0, y, 0]}>
                     <boxGeometry args={[0.5, 0.08, 0.4]} />
                     <meshStandardMaterial color="#3a3a35" roughness={0.6} metalness={0.4} />
                 </mesh>
             ))}
-            {/* LED indicators on server units */}
             {[0.55, 1.05, 1.55].map((y) => (
                 <mesh key={`led-${y}`} position={[0.22, y + 0.02, 0.21]}>
                     <boxGeometry args={[0.008, 0.008, 0.003]} />
                     <meshStandardMaterial color="#00ff44" emissive="#00ff44" emissiveIntensity={0.6} />
                 </mesh>
             ))}
-            {/* Ventilation slots */}
             <mesh position={[0, 1, -0.255]}>
                 <boxGeometry args={[0.5, 1.6, 0.005]} />
                 <meshStandardMaterial color="#1a1a18" roughness={0.9} />
@@ -556,8 +485,6 @@ function ServerRack() {
         </group>
     );
 }
-
-// ─── OfficeScene (orchestrator) ───────────────────────────────────────────────
 
 const cablePoints = {
     mq2: [[-2.95, 1.8, -0.5], [-2.95, 0.3, -0.5], [-2.95, 0.3, 0.5], [-1.5, 0.78, 0.5]],
@@ -621,19 +548,15 @@ function OfficeScene({ iot }) {
                     bodyColor="#ffffff"
                 />
 
-                {/* Exhaust fan — back wall upper-left */}
                 <ExhaustFan fanSpeed={fanSpeed} fanStatus={fanStatus} />
 
-                {/* Buzzer — left wall, near fan */}
                 <Buzzer active={buzzerOn} position={[-2.95, 2.3, -1.5]} />
 
-                {/* Cable runs */}
                 <CableRun points={cablePoints.mq2} color="#8a7060" />
                 <CableRun points={cablePoints.ky026} color="#8a5050" />
                 <CableRun points={cablePoints.dht22} color="#506080" />
             </group>
 
-            {/* Sensor labels — spread out, no overlap */}
             <SensorLabel position={[-2.95, 2.4, -0.5]} label="MQ-2 Gas" value={gas} unit=" ppm" status={gas > gasTh ? "Alert" : "Normal"} />
             <SensorLabel position={[2, 2.0, -2.45]} label="KY-026 Flame" value={flameDetected ? "DETECTED" : "CLEAR"} unit="" status={flameDetected ? "Alert" : "Normal"} />
             <SensorLabel position={[2.95, 2.3, 0.5]} label="DHT22 Temp" value={`${temp}`} unit="°C" status={temp > tempTh ? "Alert" : "Normal"} />
@@ -651,8 +574,6 @@ function OfficeScene({ iot }) {
         </>
     );
 }
-
-// ─── RoomModel (default export) ───────────────────────────────────────────────
 
 export default function RoomModel({ room, iot }) {
     const emergency = iot?.data?.emergency_status || "AMAN";

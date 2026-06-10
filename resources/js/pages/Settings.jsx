@@ -229,14 +229,12 @@ export default function Settings({ iot, pollingInterval, setPollingInterval }) {
 
     return (
         <div className="flex flex-col gap-2.5">
-            {/* Header */}
             <div>
                 <p className="text-[10px] font-medium uppercase tracking-[0.10em] text-ink2">Settings</p>
                 <p className="text-[10px] text-ink3 mt-0.5">Thresholds, fuzzy rules, and device configuration</p>
             </div>
 
             <div className="grid gap-2.5 md:grid-cols-2">
-                {/* Threshold Configuration */}
                 <div className="bg-surface2 border border-edge">
                     <div className="px-3 py-2 border-b border-edge">
                         <p className="text-[10px] font-medium uppercase tracking-[0.10em] text-ink2">Threshold Configuration</p>
@@ -277,7 +275,6 @@ export default function Settings({ iot, pollingInterval, setPollingInterval }) {
                     </div>
                 </div>
 
-                {/* Fuzzy Logic Rules */}
                 <div className="bg-surface2 border border-edge">
                     <div className="px-3 py-2 border-b border-edge">
                         <p className="text-[10px] font-medium uppercase tracking-[0.10em] text-ink2">Fuzzy Logic Rules</p>
@@ -315,7 +312,6 @@ export default function Settings({ iot, pollingInterval, setPollingInterval }) {
             </div>
 
             <div className="grid gap-2.5 md:grid-cols-2">
-                {/* Notification Settings */}
                 <div className="bg-surface2 border border-edge">
                     <div className="px-3 py-2 border-b border-edge">
                         <p className="text-[10px] font-medium uppercase tracking-[0.10em] text-ink2">Notification Settings</p>
@@ -354,7 +350,6 @@ export default function Settings({ iot, pollingInterval, setPollingInterval }) {
                     </div>
                 </div>
 
-                {/* Device Management */}
                 <div className="bg-surface2 border border-edge">
                     <div className="px-3 py-2 border-b border-edge">
                         <p className="text-[10px] font-medium uppercase tracking-[0.10em] text-ink2">Device Management</p>

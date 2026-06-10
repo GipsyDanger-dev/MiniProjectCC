@@ -26,7 +26,6 @@ export default function MainApp() {
     const [user, setUser] = useState(null);
     const [authLoading, setAuthLoading] = useState(true);
 
-    // All hooks must be called before any early returns
     const rooms = useMemo(
         () =>
             devices.map((device) => ({
@@ -62,7 +61,6 @@ export default function MainApp() {
         }
     }, []);
 
-    // Check auth status on mount
     useEffect(() => {
         fetch("/api/auth/user", { headers: { Accept: "application/json" } })
             .then((res) => res.json())
@@ -97,7 +95,6 @@ export default function MainApp() {
         setUser(null);
     };
 
-    // Early returns AFTER all hooks
     if (authLoading) {
         return (
             <div className="min-h-screen bg-[#0a0a0f] flex items-center justify-center">

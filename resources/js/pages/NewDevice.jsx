@@ -68,7 +68,6 @@ export default function NewDevice({ onCreated, onReload }) {
 
     return (
         <div className="flex flex-col gap-2.5">
-            {/* Header */}
             <div>
                 <p className="text-[10px] font-medium uppercase tracking-[0.10em] text-ink2">New Device</p>
                 <p className="text-[10px] text-ink3 mt-0.5">Add a new device for your rooms and integrations.</p>

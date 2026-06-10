@@ -3,9 +3,6 @@ import random
 import threading
 import mysql.connector
 
-# ============================================================
-# Konfigurasi MySQL
-# ============================================================
 DB_CONFIG = {
     "host": "127.0.0.1",
     "port": 3306,
@@ -14,9 +11,9 @@ DB_CONFIG = {
     "database": "sentinel",
 }
 
-INTERVAL = 3  # detik
+INTERVAL = 3
 
-# Threshold — dibaca dari DB, fallback ke default
+# Baca dari DB, fallback ke default jika DB tidak tersedia
 _thresholds = {
     "gas": 300.0,
     "smoke": 200.0,
@@ -25,7 +22,7 @@ _thresholds = {
 }
 _threshold_lock = threading.Lock()
 _last_threshold_fetch = 0
-THRESHOLD_REFRESH = 30  # detik
+THRESHOLD_REFRESH = 30
 
 
 def refresh_thresholds(pool):
@@ -63,8 +60,7 @@ def get_thresholds():
     with _threshold_lock:
         return dict(_thresholds)
 
-# Device 1 (Main Hall) = ESP32 real, jangan simulasikan
-# Device 2, 3, 4 masih disimulasikan
+# Device 1 = ESP32 real, jangan simulasikan
 DEVICES = [
     {
         "device_id": 2,
@@ -96,9 +92,7 @@ DEVICES = [
 ]
 
 
-# ============================================================
-# Fuzzy Logic (replikasi dari ApiController.php)
-# ============================================================
+# Replikasi dari ApiController.php
 def triangular_membership(value, left, peak, right):
     if value < left or value > right:
         return 0.0
@@ -202,7 +196,6 @@ def build_activity(decision, gas, smoke, temperature, flame):
     smoke_th = th["smoke"]
     temp_th = th["temp"]
 
-    # Deteksi sensor mana yang melanggar atau mendekati threshold
     alerts = []
     warnings = []
 
@@ -212,19 +205,16 @@ def build_activity(decision, gas, smoke, temperature, flame):
     elif flame < flame_th * 1.2:
         warnings.append(f"Flame {flame:.0f}/{flame_th:.0f}")
 
-    # Gas: higher = worse
     if gas > gas_th:
         alerts.append(f"Gas {gas:.0f}/{gas_th:.0f}")
     elif gas > gas_th * 0.8:
         warnings.append(f"Gas {gas:.0f}/{gas_th:.0f}")
 
-    # Smoke: higher = worse
     if smoke > smoke_th:
         alerts.append(f"Smoke {smoke:.0f}/{smoke_th:.0f}")
     elif smoke > smoke_th * 0.8:
         warnings.append(f"Smoke {smoke:.0f}/{smoke_th:.0f}")
 
-    # Temperature: higher = worse
     if temperature > temp_th:
         alerts.append(f"Temp {temperature:.1f}C/{temp_th:.1f}C")
     elif temperature > temp_th * 0.85:
@@ -234,7 +224,6 @@ def build_activity(decision, gas, smoke, temperature, flame):
     warning_str = ", ".join(warnings)
     sensor_vals = f"Gas: {gas:.0f}/{gas_th:.0f}, Smoke: {smoke:.0f}/{smoke_th:.0f}, Temp: {temperature:.1f}C/{temp_th:.1f}C, Flame: {flame:.0f}/{flame_th:.0f}"
 
-    # Flame override
     if decision["profile"] == "FLAME_OVERRIDE":
         return {
             "status": "BAHAYA", "action_type": "SENSOR_DATA",
@@ -269,9 +258,6 @@ def build_activity(decision, gas, smoke, temperature, flame):
     }
 
 
-# ============================================================
-# Thread per device
-# ============================================================
 def simulate_device(device, db_pool):
     did = device["device_id"]
     name = device["name"]
@@ -317,11 +303,9 @@ def simulate_device(device, db_pool):
                     min(100, device["humidity_base"] + device["humidity_var"])
                 ), 2)
 
-                # Fuzzy decision
                 decision = build_fuzzy_decision(gas, smoke, temp, flame)
                 status_indikasi = "AMAN" if decision["fan_status"] == "OFF" else "BAHAYA"
 
-                # Insert sensor_data
                 cursor.execute(
                     """INSERT INTO sensor_data
                        (device_id, gas_value, smoke_value, temperature, humidity,
@@ -332,7 +316,6 @@ def simulate_device(device, db_pool):
                      decision["fan_status"], decision["fan_speed"], decision["profile"]),
                 )
 
-                # Insert activity_log
                 activity = build_activity(decision, gas, smoke, temp, flame)
                 cursor.execute(
                     """INSERT INTO activity_logs (device_id, action_type, status, description, message)
@@ -341,7 +324,6 @@ def simulate_device(device, db_pool):
                      activity["description"], activity["message"]),
                 )
 
-                # Update device_actuators (fan + buzzer)
                 alarm_status = "ON" if status_indikasi == "BAHAYA" else "OFF"
                 cursor.execute(
                     """UPDATE device_actuators
@@ -419,9 +401,6 @@ def heartbeat_worker(db_pool):
             pass
 
 
-# ============================================================
-# Main
-# ============================================================
 def main():
     print("=" * 70)
     print("  SentinelIoT — Multi-Device Simulator (MySQL Direct)")
@@ -435,18 +414,15 @@ def main():
     print("-" * 70)
     print("  Tekan Ctrl+C untuk berhenti.\n")
 
-    # Connection pool
     pool = mysql.connector.pooling.MySQLConnectionPool(
         pool_name="sentinel_pool",
-        pool_size=len(DEVICES) + 2,  # +2 for heartbeat + threshold refresh
+        pool_size=len(DEVICES) + 2,
         **DB_CONFIG,
     )
 
-    # Jalankan heartbeat worker
     hb_thread = threading.Thread(target=heartbeat_worker, args=(pool,), daemon=True)
     hb_thread.start()
 
-    # Jalankan satu thread per device
     threads = []
     for device in DEVICES:
         t = threading.Thread(target=simulate_device, args=(device, pool), daemon=True)

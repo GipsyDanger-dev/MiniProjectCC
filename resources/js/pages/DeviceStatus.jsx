@@ -53,13 +53,11 @@ export default function DeviceStatus({ activeRoom, iot }) {
 
     return (
         <div className="flex flex-col gap-2.5">
-            {/* Header */}
             <div>
                 <p className="text-[10px] font-medium uppercase tracking-[0.10em] text-ink2">Device Status</p>
                 <p className="text-[10px] text-ink3 mt-0.5">Hardware, connectivity, and server diagnostics</p>
             </div>
 
-            {/* Device cards */}
             <div className="grid grid-cols-2 xl:grid-cols-4 gap-2">
                 {cards.map((card) => (
                     <article key={card.title} className="bg-surface2 border border-edge">
@@ -94,7 +92,6 @@ export default function DeviceStatus({ activeRoom, iot }) {
                 ))}
             </div>
 
-            {/* API Health Checks */}
             <div className="bg-surface2 border border-edge">
                 <div className="px-3 py-2 border-b border-edge">
                     <p className="text-[10px] font-medium uppercase tracking-[0.10em] text-ink2">API Health Checks</p>

@@ -69,7 +69,6 @@ export default function Topbar({
                 {formatted} WIB
             </span>
 
-            {/* User menu */}
             <div className="relative" ref={menuRef}>
                 <button
                     type="button"

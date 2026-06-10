@@ -19,35 +19,31 @@ class ApiController extends Controller
 {
     private function triangularMembership(float $value, float $left, float $peak, float $right): float
     {
-        // Di luar rentang support
         if ($value < $left || $value > $right) {
             return 0.0;
         }
 
-        // Boundary kanal: turun ke 0
+        // Trapezoidal edge case: left === peak means flat top
         if ($value === $right && $right !== $peak) {
             return 0.0;
         }
 
-        // Sisi naik (termasuk trapezoidal saat left === peak)
         if ($value < $peak) {
             $denominator = $peak - $left;
             return $denominator > 0 ? ($value - $left) / $denominator : 1.0;
         }
 
-        // Sisi turun
         if ($value > $peak) {
             $denominator = $right - $peak;
             return $denominator > 0 ? ($right - $value) / $denominator : 1.0;
         }
 
-        // Di puncak
         return 1.0;
     }
 
     private function buildFuzzyDecision(float $gas, float $smoke, float $temperature, float $flame, float $flameThreshold, float $gasThreshold = 2500, float $smokeThreshold = 2000, float $tempThreshold = 45): array
     {
-        // Flame override: langsung BAHAYA jika flame di bawah threshold (KY-026 active-low)
+        // KY-026 active-low: lower value = more fire
         if ($flame < $flameThreshold) {
             return [
                 'score' => 100.0,
@@ -60,33 +56,23 @@ class ApiController extends Controller
             ];
         }
 
-        // ========== Fuzzification ==========
-        // ADC max value (ESP32 12-bit ADC = 4095)
+        // ESP32 12-bit ADC = 4095
         $adcMax = 4095;
 
-        // Gas membership functions (MQ-2)
-        // Low: 0 → peak at 0, drops at threshold
-        // Medium: starts rising at 80% threshold, peaks at threshold, drops at 120%
-        // High: starts rising at 110% threshold, peaks at 150%+
         $gasLow    = $this->triangularMembership($gas, 0, 0, $gasThreshold);
         $gasMedium = $this->triangularMembership($gas, $gasThreshold * 0.8, $gasThreshold, $gasThreshold * 1.2);
         $gasHigh   = $this->triangularMembership($gas, $gasThreshold * 1.1, $gasThreshold * 1.5, $adcMax);
 
-        // Smoke membership functions (MQ-2 smoke channel)
         $smokeLow    = $this->triangularMembership($smoke, 0, 0, $smokeThreshold);
         $smokeMedium = $this->triangularMembership($smoke, $smokeThreshold * 0.8, $smokeThreshold, $smokeThreshold * 1.2);
         $smokeHigh   = $this->triangularMembership($smoke, $smokeThreshold * 1.1, $smokeThreshold * 1.5, $adcMax);
 
-        // Temperature membership functions (DHT22)
         $tempNormal = $this->triangularMembership($temperature, 0, 0, $tempThreshold);
         $tempWarm   = $this->triangularMembership($temperature, $tempThreshold * 0.8, $tempThreshold, $tempThreshold * 1.2);
         $tempHot    = $this->triangularMembership($temperature, $tempThreshold * 1.1, $tempThreshold * 1.5, $tempThreshold * 2.5);
 
-        // ========== Rule Base (Sugeno) — 27 rules, all combinations ==========
-        // Output values: SAFE=0, LOW=30, MEDIUM=60, HIGH=100
-        // Priority: ANY HIGH input → HIGH output; ANY MEDIUM → MEDIUM/LOW; all LOW → SAFE/LOW
+        // Sugeno 27 rules: output values SAFE=0, LOW=30, MEDIUM=60, HIGH=100
         $rules = [
-            // --- Gas LOW (3 rules) ---
             ['SAFE',   min($gasLow, $smokeLow,    $tempNormal),  0],    // R1:  all low/normal
             ['LOW',    min($gasLow, $smokeLow,    $tempWarm),   30],    // R2:  low gas, low smoke, warm
             ['HIGH',   min($gasLow, $smokeLow,    $tempHot),   100],    // R3:  low gas, low smoke, HOT
@@ -97,10 +83,9 @@ class ApiController extends Controller
 
             ['HIGH',   min($gasLow, $smokeHigh,   $tempNormal),100],    // R7:  low gas, HIGH smoke
             ['HIGH',   min($gasLow, $smokeHigh,   $tempWarm),  100],    // R8:  low gas, HIGH smoke, warm
-            ['HIGH',   min($gasLow, $smokeHigh,   $tempHot),   100],    // R9:  low gas, HIGH smoke, HOT
+            ['HIGH',   min($gasLow, $smokeHigh,   $tempHot),   100],    // R9
 
-            // --- Gas MEDIUM (9 rules) ---
-            ['LOW',    min($gasMedium, $smokeLow,    $tempNormal), 30], // R10: medium gas, low smoke, normal
+            ['LOW',    min($gasMedium, $smokeLow,    $tempNormal), 30], // R10
             ['MEDIUM', min($gasMedium, $smokeLow,    $tempWarm),   60], // R11: medium gas, low smoke, warm
             ['HIGH',   min($gasMedium, $smokeLow,    $tempHot),   100], // R12: medium gas, low smoke, HOT
 
@@ -110,10 +95,9 @@ class ApiController extends Controller
 
             ['HIGH',   min($gasMedium, $smokeHigh,   $tempNormal),100], // R16: medium gas, HIGH smoke
             ['HIGH',   min($gasMedium, $smokeHigh,   $tempWarm),  100], // R17: medium gas, HIGH smoke, warm
-            ['HIGH',   min($gasMedium, $smokeHigh,   $tempHot),   100], // R18: medium gas, HIGH smoke, HOT
+            ['HIGH',   min($gasMedium, $smokeHigh,   $tempHot),   100], // R18
 
-            // --- Gas HIGH (9 rules) ---
-            ['HIGH',   min($gasHigh, $smokeLow,    $tempNormal), 100],  // R19: HIGH gas
+            ['HIGH',   min($gasHigh, $smokeLow,    $tempNormal), 100],  // R19
             ['HIGH',   min($gasHigh, $smokeLow,    $tempWarm),   100],  // R20: HIGH gas, warm
             ['HIGH',   min($gasHigh, $smokeLow,    $tempHot),    100],  // R21: HIGH gas, HOT
 
@@ -126,7 +110,6 @@ class ApiController extends Controller
             ['HIGH',   min($gasHigh, $smokeHigh,   $tempHot),    100],  // R27: HIGH gas, HIGH smoke, HOT
         ];
 
-        // ========== Defuzzification (Sugeno weighted average) ==========
         $weightedSum = 0.0;
         $weightTotal = 0.0;
         $activeRules = [];
@@ -145,7 +128,6 @@ class ApiController extends Controller
 
         $score = $weightTotal > 0 ? $weightedSum / $weightTotal : 0.0;
 
-        // ========== Defuzzification output mapping ==========
         if ($score > 70) {
             $fanStatus = 'HIGH';
             $fanSpeed = 100;
@@ -181,11 +163,9 @@ class ApiController extends Controller
 
     private function syncActuatorCommands(int $deviceId, array $decision): void
     {
-        // Manual mode: fuzzy logic sleeps, except flame emergency
         $settings = SystemSettings::firstOrCreate(['id' => 1]);
         if ($settings->mode === 'manual') {
             if ($decision['profile'] === 'FLAME_OVERRIDE') {
-                // Flame detected — execute fuzzy logic this cycle, but keep mode as manual
                 ActivityLog::create([
                     'device_id' => $deviceId,
                     'action_type' => 'EMERGENCY_OVERRIDE',
@@ -193,13 +173,11 @@ class ApiController extends Controller
                     'description' => 'Flame detected in manual mode — emergency override activated',
                     'message' => 'Emergency override: flame detected'
                 ]);
-                // Don't return — continue to fuzzy logic execution below
             } else {
-                return; // skip fuzzy logic, keep manual control
+                return;
             }
         }
 
-        // Update DeviceActuator berdasarkan keputusan fuzzy
         $fanStatus = $decision['fan_status'];
         $buzzerStatus = $decision['buzzer_action'] !== 'STOP' ? 'ON' : 'OFF';
 
@@ -212,8 +190,7 @@ class ApiController extends Controller
             ]
         );
 
-        // Only create commands when action actually changes (prevent queue flood)
-        // Check last command regardless of status — bridge may have already picked it up
+        // Only create commands when action changes to prevent queue flood
         $lastFan = Command::where('device_id', $deviceId)
             ->where('target_device', 'exhaust_fan')
             ->orderBy('id', 'desc')
@@ -245,32 +222,28 @@ class ApiController extends Controller
 
     private function buildActivityMessage(int $deviceId, array $decision, float $gas, float $smoke, float $temperature, float $flame, float $gasTh, float $smokeTh, float $tempTh, float $flameTh): array
     {
-        // Deteksi sensor mana yang melanggar atau mendekati threshold
         $alerts = [];
         $warnings = [];
 
-        // Flame: active-low, makin kecil = makin bahaya
+        // Flame: active-low, lower = more dangerous
         if ($flame < $flameTh) {
             $alerts[] = "Flame {$flame}/{$flameTh}";
         } elseif ($flame < $flameTh * 1.2) {
             $warnings[] = "Flame {$flame}/{$flameTh}";
         }
 
-        // Gas: higher = worse
         if ($gas > $gasTh) {
             $alerts[] = "Gas {$gas}/{$gasTh}";
         } elseif ($gas > $gasTh * 0.8) {
             $warnings[] = "Gas {$gas}/{$gasTh}";
         }
 
-        // Smoke: higher = worse
         if ($smoke > $smokeTh) {
             $alerts[] = "Smoke {$smoke}/{$smokeTh}";
         } elseif ($smoke > $smokeTh * 0.8) {
             $warnings[] = "Smoke {$smoke}/{$smokeTh}";
         }
 
-        // Temperature: higher = worse
         if ($temperature > $tempTh) {
             $alerts[] = "Temp {$temperature}C/{$tempTh}C";
         } elseif ($temperature > $tempTh * 0.85) {
@@ -280,7 +253,6 @@ class ApiController extends Controller
         $alertStr = implode(", ", $alerts);
         $warningStr = implode(", ", $warnings);
 
-        // Flame override
         if (($decision['profile'] ?? null) === 'FLAME_OVERRIDE') {
             return [
                 'status' => 'BAHAYA',
@@ -337,7 +309,7 @@ class ApiController extends Controller
 
             $settings = SystemSettings::firstOrCreate(['id' => 1]);
 
-            // Auto-balik ke auto mode setelah 30 detik tanpa manual command
+            // Auto-switch back to auto mode after 30s without manual command
             if ($settings->mode === 'manual' && $settings->last_manual_command) {
                 if (now()->diffInSeconds($settings->last_manual_command) > 30) {
                     $settings->update(['mode' => 'auto']);
@@ -410,7 +382,6 @@ class ApiController extends Controller
                 return $sensorData;
             });
 
-            // Broadcast real-time event ke dashboard
             broadcast(new SensorDataReceived(
                 $sensorData->toArray(),
                 $decision,
@@ -503,7 +474,6 @@ class ApiController extends Controller
                 'flame_threshold' => 'required|numeric',
             ]);
 
-            // Simpan ke database (persist)
             SystemSettings::updateOrCreate(
                 ['id' => 1],
                 [
@@ -515,7 +485,6 @@ class ApiController extends Controller
                 ]
             );
 
-            // Simpan ke cache (fast read)
             Cache::put('gas_threshold', $request->gas_threshold);
             Cache::put('smoke_threshold', $request->smoke_threshold);
             Cache::put('humidity_threshold', $request->humidity_threshold ?? 70);
@@ -585,8 +554,7 @@ class ApiController extends Controller
             $action = 'HIGH';
         }
 
-        // Set manual mode BEFORE creating command — prevents race condition
-        // where sensor ingest sees mode=auto and creates a STOP command
+        // Set manual mode BEFORE creating command to prevent race condition
         SystemSettings::firstOrCreate(['id' => 1])->update([
             'mode' => 'manual',
             'last_manual_command' => now(),
@@ -599,7 +567,6 @@ class ApiController extends Controller
             'status' => 'pending'
         ]);
 
-        // Langsung update DeviceActuator sesuai perintah manual
         $speedMap = ['LOW' => 30, 'MEDIUM' => 60, 'HIGH' => 100];
         if ($request->target_device === 'exhaust_fan') {
             DeviceActuator::updateOrCreate(
@@ -653,11 +620,9 @@ class ApiController extends Controller
         $settings = SystemSettings::firstOrCreate(['id' => 1]);
         $actuator = DeviceActuator::where('device_id', $deviceId)->first();
 
-        // Toggle: kalau sudah aktif, matikan. Kalau mati, nyalakan.
         $isCurrentlyActive = $actuator && $actuator->fan_status !== 'OFF' && $actuator->alarm_status === 'ON';
 
         if ($isCurrentlyActive) {
-            // MATIKAN semua
             SystemSettings::firstOrCreate(['id' => 1])->update([
                 'mode' => 'auto',
                 'last_manual_command' => null,
@@ -682,7 +647,6 @@ class ApiController extends Controller
             return response()->json(['status' => 'success', 'message' => 'Emergency deactivated', 'active' => false]);
         }
 
-        // NYALAKAN semua ke maksimal
         SystemSettings::firstOrCreate(['id' => 1])->update([
             'mode' => 'manual',
             'last_manual_command' => now(),
@@ -745,7 +709,6 @@ class ApiController extends Controller
         
         if ($command) {
             $command->update(['status' => $request->status]);
-            // Jangan log di activity log - sudah ditampilkan di worker status card
             return response()->json(['status' => 'success']);
         }
 

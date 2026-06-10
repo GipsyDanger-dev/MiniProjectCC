@@ -40,27 +40,21 @@ export default function LoginPage({ onLogin }) {
 
     return (
         <div className="min-h-screen bg-[#0a0a0f] flex items-center justify-center p-4 relative overflow-hidden">
-            {/* Background effects */}
             <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_rgba(255,60,60,0.08)_0%,_transparent_60%)]" />
             <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_bottom_right,_rgba(255,120,0,0.05)_0%,_transparent_50%)]" />
 
-            {/* Grid pattern */}
             <div className="absolute inset-0 opacity-[0.03]" style={{
                 backgroundImage: `linear-gradient(rgba(255,255,255,0.1) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.1) 1px, transparent 1px)`,
                 backgroundSize: '60px 60px'
             }} />
 
-            {/* Login card */}
             <div className="relative w-full max-w-md">
-                {/* Glow effect behind card */}
                 <div className="absolute -inset-1 bg-gradient-to-b from-red-500/10 via-transparent to-orange-500/5 rounded-2xl blur-xl" />
 
                 <div className="relative bg-[#111118] border border-[#1e1e2a] rounded-2xl overflow-hidden">
-                    {/* Top accent bar */}
                     <div className="h-1 bg-gradient-to-r from-red-500 via-orange-500 to-red-500" />
 
                     <div className="p-8">
-                        {/* Logo & Title */}
                         <div className="text-center mb-8">
                             <div className="inline-flex items-center justify-center w-16 h-16 rounded-xl bg-red-500/10 border border-red-500/20 mb-4">
                                 <Shield className="w-8 h-8 text-red-400" />
@@ -73,7 +67,6 @@ export default function LoginPage({ onLogin }) {
                             </p>
                         </div>
 
-                        {/* Error message */}
                         {error && (
                             <div className="mb-6 px-4 py-3 bg-red-500/10 border border-red-500/20 rounded-lg flex items-center gap-3">
                                 <Flame className="w-4 h-4 text-red-400 flex-shrink-0" />
@@ -81,9 +74,7 @@ export default function LoginPage({ onLogin }) {
                             </div>
                         )}
 
-                        {/* Form */}
                         <form onSubmit={handleSubmit} className="space-y-5">
-                            {/* Email field */}
                             <div>
                                 <label className="block text-[11px] font-medium uppercase tracking-[0.1em] text-gray-400 mb-2">
                                     Email
@@ -98,7 +89,6 @@ export default function LoginPage({ onLogin }) {
                                 />
                             </div>
 
-                            {/* Password field */}
                             <div>
                                 <label className="block text-[11px] font-medium uppercase tracking-[0.1em] text-gray-400 mb-2">
                                     Password
@@ -122,7 +112,6 @@ export default function LoginPage({ onLogin }) {
                                 </div>
                             </div>
 
-                            {/* Submit button */}
                             <button
                                 type="submit"
                                 disabled={loading}
@@ -139,7 +128,6 @@ export default function LoginPage({ onLogin }) {
                             </button>
                         </form>
 
-                        {/* Footer */}
                         <div className="mt-8 pt-6 border-t border-[#1e1e2a]">
                             <div className="flex items-center justify-center gap-2 text-[11px] text-gray-600">
                                 <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />

@@ -15,18 +15,12 @@ import time
 import serial
 import requests
 
-# =============================================
-# KONFIGURASI
-# =============================================
 SERIAL_PORT = sys.argv[1] if len(sys.argv) > 1 else "COM7"
 BAUD_RATE = 115200
 SERVER_URL = "https://sentinel.socrapper.my.id/api"
 API_KEY = "apa-hayo-kuncinya-99"
 DEVICE_ID = 1
 
-# =============================================
-# SERIAL CONNECTION
-# =============================================
 def connect_serial():
     while True:
         try:
@@ -42,9 +36,6 @@ def connect_serial():
             print(f"[BRIDGE] Gagal buka {SERIAL_PORT}, retry dalam 3 detik...")
             time.sleep(3)
 
-# =============================================
-# KIRIM SENSOR DATA KE API
-# =============================================
 def kirim_ke_api(data):
     try:
         payload = {
@@ -72,9 +63,6 @@ def kirim_ke_api(data):
         print(f"[API] Error — {e}")
     return None
 
-# =============================================
-# POLL COMMAND DARI API
-# =============================================
 def poll_command(ser):
     try:
         resp = requests.get(
@@ -104,9 +92,6 @@ def poll_command(ser):
     except requests.RequestException as e:
         print(f"[COMMAND] Poll error: {e}")
 
-# =============================================
-# LAPOR STATUS COMMAND KE API
-# =============================================
 def lapor_status(command_id, status):
     try:
         requests.post(
@@ -118,9 +103,6 @@ def lapor_status(command_id, status):
     except requests.RequestException as e:
         print(f"[STATUS] Update error: {e}")
 
-# =============================================
-# HEARTBEAT
-# =============================================
 def kirim_heartbeat(state="online"):
     try:
         requests.post(
@@ -132,9 +114,6 @@ def kirim_heartbeat(state="online"):
     except requests.RequestException as e:
         print(f"[HEARTBEAT] Error: {e}")
 
-# =============================================
-# MAIN LOOP
-# =============================================
 def main():
     print("=" * 50)
     print("  ESP32 Serial Bridge — Smart Safety")
@@ -148,14 +127,13 @@ def main():
 
     last_poll = 0
     last_heartbeat = 0
-    POLL_INTERVAL = 2      # detik
-    HEARTBEAT_INTERVAL = 30  # detik
+    POLL_INTERVAL = 2
+    HEARTBEAT_INTERVAL = 30
 
     try:
         while True:
             now = time.time()
 
-            # Baca data dari ESP32
             try:
                 if ser.in_waiting > 0:
                     line = ser.readline().decode("utf-8", errors="ignore").strip()
@@ -189,12 +167,10 @@ def main():
                 ser = connect_serial()
                 continue
 
-            # Poll command tiap 2 detik
             if now - last_poll >= POLL_INTERVAL:
                 last_poll = now
                 poll_command(ser)
 
-            # Heartbeat tiap 30 detik
             if now - last_heartbeat >= HEARTBEAT_INTERVAL:
                 last_heartbeat = now
                 kirim_heartbeat()

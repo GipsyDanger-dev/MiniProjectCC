@@ -18,7 +18,6 @@ print("Menunggu antrean perintah dari server...\n")
 
 while True:
     try:
-        # Send heartbeat
         try:
             hb_resp = requests.post(HEARTBEAT_URL, json={
                 "component_name": "Main Python Worker",
@@ -27,7 +26,6 @@ while True:
         except Exception as hb_error:
             print(f"⚠️  Heartbeat error: {hb_error}")
 
-        # Get pending command
         try:
             response = requests.get(GET_COMMAND_URL, params={"device_id": DEVICE_ID}, headers=HEADERS, timeout=15)
         except requests.Timeout:
@@ -39,7 +37,6 @@ while True:
             time.sleep(3)
             continue
 
-        # Check status code
         if response.status_code == 401:
             print("⛔ [ERROR] Akses Ditolak! Cek API Key di Worker kamu.")
             print(f"   Response: {response.text[:200]}")
@@ -51,7 +48,6 @@ while True:
             time.sleep(3)
             continue
 
-        # Parse JSON response
         try:
             data = response.json()
         except json.JSONDecodeError:
@@ -59,7 +55,6 @@ while True:
             time.sleep(3)
             continue
 
-        # Handle response
         if data.get('status') == 'success':
             command = data.get('data')
             if not command:
@@ -102,7 +97,6 @@ while True:
                     
                 time.sleep(2)
 
-                # Update command status
                 try:
                     payload = {
                         "command_id": cmd_id,

@@ -124,7 +124,6 @@ export default function SensorData({ activeRoom, iot }) {
 
     return (
         <div className="flex flex-col gap-2.5">
-            {/* Header */}
             <div className="flex flex-wrap items-center justify-between gap-2">
                 <div>
                     <p className="text-[10px] font-medium uppercase tracking-[0.10em] text-ink2">Sensor Data</p>
@@ -140,7 +139,6 @@ export default function SensorData({ activeRoom, iot }) {
                 </button>
             </div>
 
-            {/* Metric cards */}
             <div className="grid grid-cols-2 xl:grid-cols-4 gap-2">
                 {metricCards.map((card) => (
                     <div key={card.title} className="bg-surface2 border border-edge px-3 py-2.5">
@@ -157,7 +155,6 @@ export default function SensorData({ activeRoom, iot }) {
                 ))}
             </div>
 
-            {/* Sensor Trends */}
             <div className="bg-surface2 border border-edge">
                 <div className="flex items-center justify-between px-3 py-2 border-b border-edge">
                     <p className="text-[10px] font-medium uppercase tracking-[0.10em] text-ink2">Sensor Trends</p>
@@ -245,7 +242,6 @@ export default function SensorData({ activeRoom, iot }) {
                 </div>
             </div>
 
-            {/* Raw Readings */}
             <div className="bg-surface2 border border-edge">
                 <div className="flex items-center justify-between px-3 py-2 border-b border-edge">
                     <div>

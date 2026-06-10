@@ -96,7 +96,6 @@ export default function ActivityLogs({ activeRoom, iot }) {
 
     return (
         <div className="flex flex-col gap-2.5">
-            {/* Header */}
             <div className="flex flex-wrap items-center justify-between gap-2">
                 <div>
                     <p className="text-[10px] font-medium uppercase tracking-[0.10em] text-ink2">Activity Log</p>
@@ -112,7 +111,6 @@ export default function ActivityLogs({ activeRoom, iot }) {
                 </button>
             </div>
 
-            {/* Stat cards */}
             <div className="grid grid-cols-2 xl:grid-cols-4 gap-2">
                 {stats.map((stat) => (
                     <div key={stat.label} className="bg-surface2 border border-edge px-3 py-2.5">
@@ -122,7 +120,6 @@ export default function ActivityLogs({ activeRoom, iot }) {
                 ))}
             </div>
 
-            {/* Event list */}
             <div className="bg-surface2 border border-edge">
                 <div className="flex flex-wrap items-center justify-between gap-2 px-3 py-2 border-b border-edge">
                     <div className="flex flex-wrap gap-1">
@@ -178,26 +175,22 @@ export default function ActivityLogs({ activeRoom, iot }) {
                                             </span>
                                         </div>
 
-                                        {/* Triggered sensors */}
                                         {parsed?.triggered && (
                                             <p className="text-[9px] text-danger leading-snug mt-1">
                                                 Triggered: {parsed.triggered}
                                             </p>
                                         )}
 
-                                        {/* Near limit sensors */}
                                         {parsed?.nearLimit && (
                                             <p className="text-[9px] text-amber-500 leading-snug mt-0.5">
                                                 Near limit: {parsed.nearLimit}
                                             </p>
                                         )}
 
-                                        {/* Fallback description */}
                                         {!parsed?.triggered && !parsed?.nearLimit && log.description && (
                                             <p className="text-[9px] text-ink3 leading-snug mt-0.5">{log.description}</p>
                                         )}
 
-                                        {/* Sensor bars (always show for sensor events) */}
                                         {parsed?.sensors?.length > 0 && (
                                             <div className="mt-1.5 space-y-0.5 max-w-xs">
                                                 {parsed.sensors.map((s) => {

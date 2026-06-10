@@ -8,12 +8,9 @@ use Symfony\Component\HttpFoundation\Response;
 
 class CheckApiKey
 {
-    /**
-     * Menangani permintaan yang masuk.
-     */
 public function handle(Request $request, Closure $next)
     {
-        // Allow requests from frontend (same origin with session cookie)
+        // Frontend requests use session cookies, not API keys
         $hasSession = $request->hasCookie('XSRF-TOKEN') || $request->cookie('laravel_session');
         if ($hasSession) {
             return $next($request);
