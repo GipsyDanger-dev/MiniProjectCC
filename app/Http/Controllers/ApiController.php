@@ -190,9 +190,9 @@ class ApiController extends Controller
             ]
         );
 
-        // Only create commands when action changes to prevent queue flood
         $lastFan = Command::where('device_id', $deviceId)
             ->where('target_device', 'exhaust_fan')
+            ->where('status', 'pending')
             ->orderBy('id', 'desc')
             ->first();
 
@@ -207,6 +207,7 @@ class ApiController extends Controller
 
         $lastBuzzer = Command::where('device_id', $deviceId)
             ->where('target_device', 'buzzer')
+            ->where('status', 'pending')
             ->orderBy('id', 'desc')
             ->first();
 
