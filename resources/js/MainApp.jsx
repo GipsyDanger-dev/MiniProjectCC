@@ -27,27 +27,20 @@ export default function MainApp() {
     const [authLoading, setAuthLoading] = useState(true);
 
     const rooms = useMemo(
-        () =>
-            devices.map((device) => ({
-                id: device.id,
-                label: device.location || device.device_name,
-            })),
+        () => devices.map((device) => ({ id: device.id, label: device.location || device.device_name })),
         [devices],
     );
     const activeDevice = useMemo(
         () => devices.find((device) => device.id === activeDeviceId) || null,
         [devices, activeDeviceId],
     );
-    const activeRoom =
-        activeDevice?.location || activeDevice?.device_name || "Unknown";
+    const activeRoom = activeDevice?.location || activeDevice?.device_name || "Unknown";
     const iot = useRealtimeIoT(activeDeviceId, pollingInterval);
 
     const loadDevices = useCallback(async () => {
         setDevicesLoading(true);
         try {
-            const res = await fetch("/api/devices", {
-                headers: { Accept: "application/json" },
-            });
+            const res = await fetch("/api/devices", { headers: { Accept: "application/json" } });
             const payload = await res.json();
             if (payload.status === "success") {
                 setDevices(payload.data || payload.devices || []);
@@ -64,24 +57,16 @@ export default function MainApp() {
     useEffect(() => {
         fetch("/api/auth/user", { headers: { Accept: "application/json" } })
             .then((res) => res.json())
-            .then((data) => {
-                if (data.status === "success") setUser(data.user);
-            })
+            .then((data) => { if (data.status === "success") setUser(data.user); })
             .catch(() => {})
             .finally(() => setAuthLoading(false));
     }, []);
 
-    useEffect(() => {
-        if (!user) return;
-        loadDevices();
-    }, [loadDevices, user]);
+    useEffect(() => { if (user) loadDevices(); }, [loadDevices, user]);
 
     useEffect(() => {
         if (!devices.length) return;
-        const hasActive = devices.some((device) => device.id === activeDeviceId);
-        if (!hasActive) {
-            setActiveDeviceId(devices[0].id);
-        }
+        if (!devices.some((device) => device.id === activeDeviceId)) setActiveDeviceId(devices[0].id);
     }, [devices, activeDeviceId]);
 
     const handleLogout = async () => {
@@ -97,8 +82,13 @@ export default function MainApp() {
 
     if (authLoading) {
         return (
-            <div className="min-h-screen bg-surface flex items-center justify-center">
-                <div className="w-6 h-6 border-2 border-accent/30 border-t-accent rounded-full animate-spin" />
+            <div className="min-h-screen flex items-center justify-center" style={{ background: "#0a0a0a" }}>
+                {/* Ambient indigo glow */}
+                <div className="ambient-grid" />
+                <div className="relative z-10 flex flex-col items-center gap-3">
+                    <div className="w-8 h-8 border-2 border-[rgba(124,58,237,0.3)] border-t-[#c4b5fd] rounded-full animate-spin" />
+                    <span className="text-xs text-[#7d8187]" style={{ fontFamily: "'JetBrains Mono', monospace", letterSpacing: "1px" }}>LOADING</span>
+                </div>
             </div>
         );
     }
@@ -108,49 +98,17 @@ export default function MainApp() {
     }
 
     const pages = {
-        dashboard: (
-            <Dashboard
-                activeRoom={activeRoom}
-                deviceId={activeDeviceId}
-                iot={iot}
-                setCurrentPage={setCurrentPage}
-            />
-        ),
-        sensors: (
-            <SensorData
-                activeRoom={activeRoom}
-                iot={iot}
-            />
-        ),
-        devices: (
-            <DeviceStatus
-                activeRoom={activeRoom}
-                iot={iot}
-            />
-        ),
-        logs: (
-            <ActivityLogs
-                activeRoom={activeRoom}
-                iot={iot}
-            />
-        ),
-        settings: (
-            <Settings
-                iot={iot}
-                pollingInterval={pollingInterval}
-                setPollingInterval={setPollingInterval}
-            />
-        ),
+        dashboard: <Dashboard activeRoom={activeRoom} deviceId={activeDeviceId} iot={iot} setCurrentPage={setCurrentPage} />,
+        sensors: <SensorData activeRoom={activeRoom} iot={iot} />,
+        devices: <DeviceStatus activeRoom={activeRoom} iot={iot} />,
+        logs: <ActivityLogs activeRoom={activeRoom} iot={iot} />,
+        settings: <Settings iot={iot} pollingInterval={pollingInterval} setPollingInterval={setPollingInterval} />,
         "new-device": (
             <NewDevice
                 onCreated={(device) => {
                     setDevices((prev) => {
                         const exists = prev.some((item) => item.id === device.id);
-                        if (exists) {
-                            return prev.map((item) =>
-                                item.id === device.id ? device : item,
-                            );
-                        }
+                        if (exists) return prev.map((item) => (item.id === device.id ? device : item));
                         return [...prev, device];
                     });
                     setActiveDeviceId(device.id);
@@ -163,39 +121,44 @@ export default function MainApp() {
     const currentContent = pages[currentPage] || pages.dashboard;
 
     return (
-        <div className="bg-surface text-ink min-h-screen">
-            <Sidebar
-                collapsed={collapsed}
-                setCollapsed={setCollapsed}
-                currentPage={currentPage}
-                setCurrentPage={setCurrentPage}
-                theme={theme}
-                toggleTheme={toggleTheme}
-                mobileOpen={mobileOpen}
-                setMobileOpen={setMobileOpen}
-            />
-            <div className={cn(
-                "flex flex-col min-h-screen transition-all duration-200",
-                collapsed ? "lg:ml-[56px]" : "lg:ml-[176px]"
-            )}>
-                <Topbar
+        <div className="min-h-screen relative" style={{ color: "#ffffff" }}>
+            {/* Ambient indigo glow background */}
+            <div className="ambient-grid" />
+
+            <div className="flex min-h-screen relative z-10">
+                <Sidebar
+                    collapsed={collapsed}
+                    setCollapsed={setCollapsed}
+                    currentPage={currentPage}
+                    setCurrentPage={setCurrentPage}
+                    theme={theme}
+                    toggleTheme={toggleTheme}
                     mobileOpen={mobileOpen}
                     setMobileOpen={setMobileOpen}
-                    systemMode={iot.data?.system_mode || "auto"}
-                    user={user}
-                    onLogout={handleLogout}
                 />
-                <main className="flex-1 px-3 pb-4 md:px-5 md:pb-6">
-                    <div className="relative z-10">
-                        <RoomSelectionBanner
-                            rooms={rooms}
-                            activeRoomId={activeDeviceId}
-                            loading={devicesLoading}
-                            onChange={setActiveDeviceId}
-                        />
-                        {currentContent}
-                    </div>
-                </main>
+                <div className={cn(
+                    "flex-1 flex flex-col min-h-screen transition-all duration-200",
+                    collapsed ? "lg:ml-[56px]" : "lg:ml-[176px]"
+                )}>
+                    <Topbar
+                        mobileOpen={mobileOpen}
+                        setMobileOpen={setMobileOpen}
+                        systemMode={iot.data?.system_mode || "auto"}
+                        user={user}
+                        onLogout={handleLogout}
+                    />
+                    <main className="flex-1 px-3 pb-4 md:px-5 md:pb-6">
+                        <div className="relative z-10">
+                            <RoomSelectionBanner
+                                rooms={rooms}
+                                activeRoomId={activeDeviceId}
+                                loading={devicesLoading}
+                                onChange={setActiveDeviceId}
+                            />
+                            {currentContent}
+                        </div>
+                    </main>
+                </div>
             </div>
         </div>
     );
