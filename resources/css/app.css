@@ -19,7 +19,11 @@
         --body: #dadbdf;
         --body-mid: #7d8187;
 
-        /* Compat tokens (friend's naming) */
+        /* Background & foreground (Tailwind compat) */
+        --background: 0 0% 4%;
+        --foreground: 0 0% 100%;
+
+        /* Compat tokens */
         --ink2: 215 12% 55%;
         --ink3: 215 10% 38%;
         --surface: 0 0% 4%;
