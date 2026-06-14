@@ -65,7 +65,7 @@ export default function Dashboard({ activeRoom, deviceId, iot }) {
             </MagicBentoGrid>
 
             {/* 3D Room Model — full width, large, prominent */}
-            <RoomModel room={activeRoom} />
+            <RoomModel room={activeRoom} iot={iot} />
 
             {/* Status + Quick Actions row */}
             <div className="grid gap-3 sm:gap-4 grid-cols-1 md:grid-cols-[1fr_1.5fr]">
