@@ -123,4 +123,6 @@ return [
         'store' => env('APP_MAINTENANCE_STORE', 'database'),
     ],
 
+    'worker_api_key' => env('WORKER_API_KEY', 'apa-hayo-kuncinya-99'),
+
 ];

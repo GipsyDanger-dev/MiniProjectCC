@@ -1,101 +1,62 @@
 import React from "react";
-import { Bell, List, Play, Square } from "lucide-react";
+import { Bell, List, Play, Square, ShieldCheck, AlertTriangle } from "lucide-react";
+import GlassSurface from "./GlassSurface";
+import Toggle from "./ui/Toggle";
 
-export function StatusCard({
-    status = "AMAN",
-    systemActive = true,
-    deviceLabel = "IOT-SEC-0A42F",
-    updatedLabel = "Updated 2s ago",
-}) {
+export function StatusCard({ status = "AMAN", systemActive = true, deviceLabel = "IOT-SEC-0A42F", updatedLabel = "Updated 2s ago" }) {
+    const isDanger = status === "BAHAYA";
     return (
-        <div className="card-surface p-6 h-full bg-[radial-gradient(120%_120%_at_100%_0%,rgba(204,255,0,0.12),transparent_62%)] border border-white/5">
+        <GlassSurface className={`p-3 sm:p-5 h-full ${isDanger ? "animate-danger-border border-[#ef4444]/50" : ""}`}>
             <div className="flex items-center justify-between">
-                <p className="text-xs uppercase tracking-widest text-muted-foreground">
-                    System Status
-                </p>
-                <button
-                    type="button"
-                    className={`w-12 h-7 rounded-full p-1 transition-all ${systemActive ? "bg-lime" : "bg-muted"}`}
-                >
-                    <span
-                        className={`block w-5 h-5 rounded-full bg-background transition-transform ${systemActive ? "translate-x-5" : "translate-x-0"}`}
-                    />
-                </button>
+                <p className="text-[10px] sm:text-[11px] uppercase tracking-[1.2px] sm:tracking-[1.4px] font-normal text-[#7d8187]" style={{ fontFamily: "'Geist Mono', monospace" }}>System Status</p>
+                <Toggle checked={systemActive} />
             </div>
-            <p className="inline-flex mt-3 items-center px-3 py-1 rounded-full text-xs bg-muted/40 text-muted-foreground">
+            <p className="inline-flex mt-2 items-center px-2 py-0.5 rounded-[9999px] text-[10px] sm:text-[11px] font-normal bg-[#1a1c20] text-[#dadbdf] border border-[#212327]" style={{ fontFamily: "'Geist Mono', monospace", letterSpacing: '0.5px' }}>
                 {updatedLabel}
             </p>
-            <p className="mt-5 text-6xl leading-none font-extrabold text-lime drop-shadow-[0_0_22px_rgba(204,255,0,0.32)]">
-                {status}.
-            </p>
-            <div className="mt-5 flex items-end justify-between">
-                <div>
-                    <p className="text-xs uppercase tracking-widest text-muted-foreground">
-                        Device ID
-                    </p>
-                    <p className="text-3xl font-semibold mt-1">{deviceLabel}</p>
-                </div>
+            <div className="mt-3 sm:mt-4 flex items-center gap-3" role={isDanger ? "alert" : "status"} aria-live={isDanger ? "assertive" : "polite"}>
+                {isDanger ? (
+                    <AlertTriangle className="w-6 h-6 sm:w-7 sm:h-7 text-[#ef4444] animate-danger-shake" strokeWidth={1.5} />
+                ) : (
+                    <ShieldCheck className="w-6 h-6 sm:w-7 sm:h-7 text-[#22c55e]" strokeWidth={1.5} />
+                )}
+                <p className={`text-xl sm:text-2xl font-normal tracking-tight ${isDanger ? "text-[#ef4444] animate-danger-text" : "text-[#22c55e]"}`}
+                   style={{ fontFamily: "'Geist Mono', monospace", letterSpacing: '-0.5px' }}>
+                    SISTEM {status}
+                </p>
             </div>
-        </div>
+            <div className="mt-2 sm:mt-3">
+                <p className="text-[10px] sm:text-[11px] uppercase tracking-[1.2px] sm:tracking-[1.4px] font-normal text-[#7d8187]" style={{ fontFamily: "'Geist Mono', monospace" }}>Device ID</p>
+                <p className="text-base sm:text-lg font-normal mt-0.5 text-white" style={{ fontFamily: "'Geist Mono', monospace", letterSpacing: '0.5px' }}>{deviceLabel}</p>
+            </div>
+        </GlassSurface>
     );
 }
 
 export function QuickActions({ actuatorState = {}, onAction }) {
     const actions = [
-        {
-            label: "Activate Fan",
-            icon: Play,
-            active: actuatorState.exhaust_fan === "START",
-            action: { target_device: "exhaust_fan", action: "START" },
-        },
-        {
-            label: "Stop Fan",
-            icon: Square,
-            active: actuatorState.exhaust_fan === "STOP",
-            action: { target_device: "exhaust_fan", action: "STOP" },
-        },
-        {
-            label: "Test Buzzer",
-            icon: Bell,
-            active: actuatorState.buzzer === "START",
-            action: { target_device: "buzzer", action: "START" },
-        },
-        { label: "View Logs", icon: List, active: false },
+        { label: "Aktifkan Fan", icon: Play, active: actuatorState.exhaust_fan === "START", action: { target_device: "exhaust_fan", action: "START" } },
+        { label: "Hentikan Fan", icon: Square, active: actuatorState.exhaust_fan === "STOP", action: { target_device: "exhaust_fan", action: "STOP" } },
+        { label: "Test Buzzer", icon: Bell, active: actuatorState.buzzer === "START", action: { target_device: "buzzer", action: "START" } },
+        { label: "Lihat Log", icon: List, active: false },
     ];
 
     return (
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 h-full">
-            {actions.map((action) => (
-                <button
-                    key={action.label}
-                    type="button"
-                    onClick={() => action.action && onAction?.(action.action)}
-                    className={`relative isolate overflow-hidden p-6 text-left flex flex-col justify-between min-h-[122px] rounded-[20px] border backdrop-blur-xl transition-smooth ${
-                        action.active
-                            ? "text-[#10130a] border-lime/70 shadow-[0_14px_36px_rgba(204,255,0,0.38)] bg-[linear-gradient(135deg,rgba(214,255,94,0.92),rgba(170,232,0,0.86))]"
-                            : "text-foreground border-white/10 bg-[linear-gradient(140deg,rgba(255,255,255,0.10),rgba(255,255,255,0.03)_58%,rgba(102,126,234,0.12))]"
-                    }`}
-                >
-                    <span
-                        className={`absolute inset-0 pointer-events-none ${
-                            action.active
-                                ? "bg-[radial-gradient(130%_100%_at_0%_0%,rgba(255,255,255,0.36),transparent_62%)]"
-                                : "bg-[radial-gradient(120%_110%_at_100%_0%,rgba(204,255,0,0.10),transparent_64%)]"
-                        }`}
-                    />
-                    <span
-                        className={`relative w-10 h-10 rounded-full flex items-center justify-center ${
-                            action.active
-                                ? "bg-black/15"
-                                : "bg-black/25 border border-white/10"
-                        }`}
-                    >
-                        <action.icon className="w-5 h-5" />
-                    </span>
-                    <span className="relative text-2xl font-semibold">
-                        {action.label}
-                    </span>
-                </button>
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3">
+            {actions.map(a => (
+                <GlassSurface key={a.label} className={`p-3 sm:p-4 bento-card bento-card--border-glow group ${a.active ? "!bg-[#1a1c20] !border-[rgba(124,58,237,0.3)]" : ""}`}>
+                    <button onClick={() => a.action && onAction?.(a.action)}
+                        className="flex flex-col justify-between h-full text-left min-h-[70px] sm:min-h-[80px]">
+                        <span className={`w-8 h-8 sm:w-9 sm:h-9 rounded-lg flex items-center justify-center transition-all duration-200 ${
+                            a.active ? "bg-[rgba(124,58,237,0.15)] border border-[rgba(124,58,237,0.3)] text-[#c4b5fd]" : "bg-[#1a1c20] border border-[#212327] text-white group-hover:border-[rgba(124,58,237,0.2)]"
+                        }`}>
+                            <a.icon className="w-3.5 h-3.5 sm:w-4 sm:h-4" strokeWidth={1.5} />
+                        </span>
+                        <span className={`text-xs sm:text-sm font-normal ${a.active ? "text-[#c4b5fd]" : "text-white"}`}>
+                            {a.label}
+                        </span>
+                    </button>
+                </GlassSurface>
             ))}
         </div>
     );

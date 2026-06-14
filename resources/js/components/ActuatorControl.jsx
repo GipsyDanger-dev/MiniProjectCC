@@ -1,60 +1,30 @@
 import React from "react";
-import { cn } from "../lib/utils";
+import GlassSurface from "./GlassSurface";
+import Toggle from "./ui/Toggle";
 
-export default function ActuatorControl({ items }) {
+export default function ActuatorControl({ items, onToggle }) {
     return (
-        <div className="relative isolate overflow-hidden rounded-[20px] border border-white/10 bg-[linear-gradient(145deg,rgba(255,255,255,0.10),rgba(255,255,255,0.03)_62%,rgba(168,85,247,0.10))] backdrop-blur-xl p-6">
-            <span className="absolute inset-0 pointer-events-none bg-[radial-gradient(120%_110%_at_100%_0%,rgba(204,255,0,0.08),transparent_66%)]" />
-            <h3 className="text-sm font-semibold text-foreground relative">
-                Actuator Control
-            </h3>
-            <div className="mt-4 space-y-3 relative">
-                {items.map((item) => (
-                    <div
-                        key={item.name}
-                        className="flex items-center justify-between rounded-2xl border border-white/8 bg-black/20 px-3 py-2"
-                    >
-                        <div className="flex items-center gap-3">
-                            <div className="w-9 h-9 rounded-full bg-black/30 border border-white/10 flex items-center justify-center">
-                                <item.icon className="w-4 h-4 text-foreground" />
+        <GlassSurface className="p-3 sm:p-5">
+            <h3 className="text-xs sm:text-sm font-normal mb-3 sm:mb-4 text-white tracking-tight">Actuator Control</h3>
+            <div className="space-y-1.5 sm:space-y-2">
+                {items.map(item => (
+                    <div key={item.name} className="flex items-center justify-between rounded-lg border border-[#212327] bg-[#0a0a0a] px-2.5 sm:px-3 py-2 sm:py-2.5">
+                        <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
+                            <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg flex items-center justify-center shrink-0" style={{ background: 'linear-gradient(135deg, rgba(124,58,237,0.1) 0%, rgba(196,181,253,0.05) 100%)', border: '1px solid rgba(124,58,237,0.2)' }}>
+                                <item.icon className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#c4b5fd]" strokeWidth={1.5} />
                             </div>
-                            <div>
-                                <p className="text-sm font-medium text-foreground">
-                                    {item.name}
-                                </p>
-                                <p className="text-xs text-muted-foreground">
-                                    {item.subtitle}
-                                </p>
+                            <div className="min-w-0">
+                                <p className="text-xs sm:text-sm font-normal text-white truncate">{item.name}</p>
+                                <p className="text-[10px] sm:text-[12px] text-[#7d8187] truncate">{item.subtitle}</p>
                             </div>
                         </div>
                         <div className="flex items-center gap-3">
-                            {item.value && (
-                                <span className="text-sm font-semibold text-foreground">
-                                    {item.value}
-                                </span>
-                            )}
-                            <button
-                                type="button"
-                                className={cn(
-                                    "w-12 h-6 rounded-full p-1 transition-all border",
-                                    item.enabled
-                                        ? "bg-lime border-lime shadow-[0_0_18px_rgba(204,255,0,0.36)]"
-                                        : "bg-muted border-white/10",
-                                )}
-                            >
-                                <span
-                                    className={cn(
-                                        "block w-4 h-4 rounded-full bg-background transition-transform",
-                                        item.enabled
-                                            ? "translate-x-6"
-                                            : "translate-x-0",
-                                    )}
-                                />
-                            </button>
+                            {item.value && <span className="text-sm font-normal text-white" style={{ fontFamily: "'Geist Mono', monospace", letterSpacing: '1px' }}>{item.value}</span>}
+                            <Toggle checked={item.enabled} onCheckedChange={(checked) => onToggle?.(item.name, checked)} />
                         </div>
                     </div>
                 ))}
             </div>
-        </div>
+        </GlassSurface>
     );
 }

@@ -1,10 +1,7 @@
 /** @type {import('tailwindcss').Config} */
 module.exports = {
     darkMode: ["class"],
-    content: [
-        "./resources/views/**/*.blade.php",
-        "./resources/js/**/*.{js,jsx,ts,tsx}",
-    ],
+    content: ["./resources/views/**/*.blade.php", "./resources/js/**/*.{js,jsx,ts,tsx}"],
     theme: {
         extend: {
             fontFamily: {
@@ -92,13 +89,13 @@ module.exports = {
                 },
 
                 sidebar: {
-                    DEFAULT: "hsl(var(--sidebar-background))",
-                    foreground: "hsl(var(--sidebar-foreground))",
+                    DEFAULT: "hsl(var(--sidebar-bg))",
+                    foreground: "hsl(var(--sidebar-fg))",
                     muted: "hsl(var(--sidebar-muted))",
                     active: "hsl(var(--sidebar-active))",
-                    "active-foreground":
-                        "hsl(var(--sidebar-active-foreground))",
+                    "active-foreground": "hsl(var(--sidebar-active-fg))",
                     border: "hsl(var(--sidebar-border))",
+                    hover: "hsl(var(--sidebar-hover))",
                 },
             },
             borderRadius: {
@@ -123,6 +120,8 @@ module.exports = {
                     "100%": { opacity: "1", transform: "translateY(0)" },
                 },
             },
+            animation: { "fade-in-up": "fade-in-up 0.3s ease-out both" },
+            keyframes: { "fade-in-up": { "0%": { opacity: "0", transform: "translateY(8px)" }, "100%": { opacity: "1", transform: "translateY(0)" } } },
         },
     },
     plugins: [require("tailwindcss-animate")],
