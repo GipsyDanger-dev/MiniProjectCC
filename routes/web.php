@@ -19,10 +19,10 @@ Route::get('/dashboard', function () {
     return view('app');
 });
 
-// Menyimpan pengaturan batas sensor (Threshold)
+// Threshold settings
 Route::post('/api/settings', [ApiController::class, 'saveSettings']);
 
-// Tombol manual START/STOP di web
+// Actuator control
 Route::post('/api/actuator', [ApiController::class, 'controlActuator']);
 
 // Clear worker status

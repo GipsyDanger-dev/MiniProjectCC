@@ -1,6 +1,7 @@
-import requests
 import time
 import random
+import threading
+import mysql.connector
 
 API_URL = "http://127.0.0.1:8000/api/ingest"
 DEVICES_URL = "http://127.0.0.1:8000/api/devices"
@@ -55,12 +56,36 @@ while True:
             "flame_value": round(simulated_flame, 2) 
         }
 
+def refresh_thresholds(pool):
+    """Baca threshold dari tabel system_settings."""
+    global _last_threshold_fetch
+    now = time.time()
+    if now - _last_threshold_fetch < THRESHOLD_REFRESH:
+        return
+    conn = None
+    cursor = None
+    try:
+        conn = pool.get_connection()
+        cursor = conn.cursor(dictionary=True)
+        cursor.execute("SELECT gas_threshold, smoke_threshold, humidity_threshold, temperature_threshold, flame_threshold FROM system_settings WHERE id=1")
+        row = cursor.fetchone()
+        if row:
+            with _threshold_lock:
+                _thresholds["gas"] = float(row["gas_threshold"])
+                _thresholds["smoke"] = float(row["smoke_threshold"])
+                _thresholds["humidity"] = float(row["humidity_threshold"])
+                _thresholds["temp"] = float(row["temperature_threshold"])
+                _thresholds["flame"] = float(row["flame_threshold"])
+            _last_threshold_fetch = now
+    except Exception as e:
+        print(f"  [!] Gagal baca threshold: {e}")
+    finally:
         try:
-            response = requests.post(API_URL, json=payload, headers=HEADERS)
+            if cursor: cursor.close()
+            if conn: conn.close()
+        except:
+            pass
 
-            if response.status_code == 401:
-                print(f"⛔ Akses Ditolak untuk Device {dev_id}! Cek API Key kamu.")
-                continue 
 
             data_response = response.json()
             status_indikasi = data_response.get('data', {}).get('status_indikasi', 'UNKNOWN')
@@ -84,7 +109,9 @@ while True:
                 print(f"✅  [AMAN]   Dev {dev_id} -> {log_text}")
                 
         except Exception as e:
-            print(f"❌ Gagal mengirim data dari device {dev_id}: {e}")
+            print(f"  [{name}] Reconnect: {e}")
+            conn = db_pool.get_connection()
+            cursor = conn.cursor()
 
     print("-" * 80)
     # Refresh list device tiap siklus
