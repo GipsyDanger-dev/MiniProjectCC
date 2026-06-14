@@ -25,19 +25,6 @@ module.exports = {
                 popover: { DEFAULT: "hsl(var(--popover))", foreground: "hsl(var(--popover-foreground))" },
                 destructive: { DEFAULT: "hsl(var(--destructive))", foreground: "hsl(var(--destructive-foreground))" },
 
-                /* xAI canvas tokens — semi-transparent */
-                canvas: { DEFAULT: "#0a0a0a", soft: "rgba(26,28,32,0.7)", card: "rgba(25,25,25,0.7)", mid: "#363a3f" },
-                hairline: "rgba(33,35,39,0.8)",
-                ink: { DEFAULT: "#ffffff", hover: "#fafaf7" },
-                body: { DEFAULT: "#dadbdf", mid: "#7d8187" },
-
-                /* xAI accent palette */
-                sunset: { DEFAULT: "#ff7a17", soft: "#ffc285" },
-                dusk: { DEFAULT: "#7c3aed" },
-                twilight: "#c4b5fd",
-                breeze: "#a0c3ec",
-                midnight: "#0d1726",
-
                 /* Semantic */
                 danger: { DEFAULT: "hsl(var(--danger))", foreground: "hsl(var(--danger-foreground))" },
                 success: { DEFAULT: "hsl(var(--success))", foreground: "hsl(var(--success-foreground))" },
@@ -52,10 +39,16 @@ module.exports = {
                     border: "hsl(var(--sidebar-border))",
                 },
 
-                /* Compat tokens */
-                ink: { DEFAULT: "#ffffff", 2: "hsl(var(--ink2))", 3: "hsl(var(--ink3))" },
-                surface: { DEFAULT: "#0a0a0a", 2: "rgba(25,25,25,0.7)", 3: "rgba(33,35,39,0.6)" },
-                edge: { DEFAULT: "rgba(33,35,39,0.8)", 2: "rgba(54,58,63,0.5)" },
+                /* Canvas & surface tokens */
+                canvas: { DEFAULT: "hsl(var(--canvas))", soft: "hsl(var(--canvas-soft))", card: "hsl(var(--canvas-card))", mid: "hsl(var(--canvas-mid))" },
+                hairline: "hsl(var(--hairline))",
+                ink: { DEFAULT: "hsl(var(--ink))", 2: "hsl(var(--ink2))", 3: "hsl(var(--ink3))" },
+                surface: "hsl(var(--surface))",
+                "surface2": "hsl(var(--surface2))",
+                "surface3": "hsl(var(--surface3))",
+                edge: "hsl(var(--edge))",
+                "edge2": "hsl(var(--edge2))",
+                body: { DEFAULT: "hsl(var(--body))", mid: "hsl(var(--body-mid))" },
             },
             borderRadius: {
                 none: "0px",
