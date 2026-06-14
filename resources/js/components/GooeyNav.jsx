@@ -96,7 +96,7 @@ const GooeyNav = ({
                     {items.map((item, i) => (
                         <li key={i} className={activeIndex === i ? 'active' : ''}>
                             <a href="#" onClick={e => { e.preventDefault(); handleClick(e, i); }}>
-                                {item.icon && <item.icon className="w-[18px] h-[18px] shrink-0" strokeWidth={2} />}
+                                {item.icon && <item.icon className="w-[18px] h-[18px] shrink-0" strokeWidth={1.5} />}
                                 <span>{item.label}</span>
                             </a>
                         </li>

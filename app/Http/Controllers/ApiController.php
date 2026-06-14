@@ -466,6 +466,27 @@ class ApiController extends Controller
         }
     }
 
+    public function flameSensor(Request $request)
+    {
+        try {
+            $deviceId = $request->query('device_id', 1);
+            $latest = SensorData::where('device_id', $deviceId)
+                ->orderBy('id', 'desc')
+                ->first();
+
+            return response()->json([
+                'status' => 'success',
+                'data' => $latest ? [
+                    'flame_value' => $latest->flame_value,
+                    'status' => $latest->status_indikasi,
+                    'timestamp' => $latest->created_at,
+                ] : null,
+            ]);
+        } catch (\Exception $e) {
+            Log::error("flameSensor error: " . $e->getMessage());
+            return response()->json(['status' => 'error', 'message' => $e->getMessage()], 500);
+        }
+    }
 
     public function saveSettings(Request $request)
     {

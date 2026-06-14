@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Search, LogOut } from "lucide-react";
+import { LogOut, Bell } from "lucide-react";
 
 export default function Topbar() {
     const [now, setNow] = useState(new Date());
@@ -14,23 +14,36 @@ export default function Topbar() {
 
     return (
         <header className="navbar-glass">
-            <div className="flex items-center gap-4 px-6 py-3">
-                <div className="relative flex-1 max-w-md">
-                    <Search className="w-4 h-4 text-muted-foreground absolute left-3 top-1/2 -translate-y-1/2" />
-                    <input type="text" placeholder="Search..." className="w-full h-9 rounded-lg bg-white/[0.05] border border-white/[0.08] pl-9 pr-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-violet/40 transition-smooth" />
+            <div className="flex items-center justify-between px-3 sm:px-6 py-2.5 sm:py-3">
+                {/* Left — live + time */}
+                <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-2 px-3 py-1.5 rounded-[9999px] border border-[#212327] bg-[#0a0a0a]">
+                        <span className="live-dot" />
+                        <span className="text-[11px] font-normal uppercase tracking-[1.2px] text-[#22c55e]" style={{ fontFamily: "'Geist Mono', monospace" }}>Live</span>
+                    </div>
+                    <span className="hidden md:inline text-xs text-[#7d8187]">{fmt} WIB</span>
                 </div>
-                <span className="hidden md:inline text-xs text-muted-foreground">{fmt} WIB</span>
-                <div className="relative">
-                    <button onClick={() => setShowMenu(!showMenu)} className="w-8 h-8 rounded-lg bg-white/[0.05] border border-white/[0.08] flex items-center justify-center text-white/50 hover:text-white transition-smooth">
-                        <LogOut className="w-3.5 h-3.5" />
+
+                {/* Right — notifications + logout */}
+                <div className="flex items-center gap-2">
+                    <button className="w-8 h-8 sm:w-9 sm:h-9 rounded-lg border border-[#212327] flex items-center justify-center text-[#7d8187] hover:text-white hover:border-[#363a3f] transition-all duration-150 relative">
+                        <Bell className="w-3.5 h-3.5 sm:w-4 sm:h-4" strokeWidth={1.5} />
+                        <span className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-[#c4b5fd]" />
                     </button>
-                    {showMenu && (
-                        <div className="absolute right-0 mt-2 w-40 rounded-lg bg-card border border-white/[0.08] shadow-lg overflow-hidden z-50">
-                            <button onClick={handleLogout} className="w-full flex items-center gap-2 px-3 py-2.5 text-sm text-foreground hover:bg-white/[0.06] transition-smooth">
-                                <LogOut className="w-3.5 h-3.5" /> Logout
-                            </button>
-                        </div>
-                    )}
+
+                    <div className="relative">
+                        <button onClick={() => setShowMenu(!showMenu)}
+                            className="w-8 h-8 sm:w-9 sm:h-9 rounded-lg border border-[#212327] flex items-center justify-center text-[#7d8187] hover:text-white hover:border-[#363a3f] transition-all duration-150">
+                            <LogOut className="w-4 h-4" strokeWidth={1.5} />
+                        </button>
+                        {showMenu && (
+                            <div className="absolute right-0 mt-2 w-40 rounded-lg border border-[#212327] overflow-hidden z-50 bg-[#191919]">
+                                <button onClick={handleLogout} className="w-full flex items-center gap-2 px-3 py-2.5 text-sm text-white hover:bg-[#1a1c20] transition-all duration-150 font-normal">
+                                    <LogOut className="w-3.5 h-3.5" strokeWidth={1.5} /> Logout
+                                </button>
+                            </div>
+                        )}
+                    </div>
                 </div>
             </div>
         </header>

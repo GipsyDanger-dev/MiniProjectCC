@@ -1,21 +1,36 @@
 import React from "react";
 import GlassSurface from "./GlassSurface";
 
+function cn(...classes) { return classes.filter(Boolean).join(' '); }
+
 export default function ActiveSensors({ items }) {
     return (
-        <GlassSurface className="p-5">
-            <div className="flex items-center justify-between mb-4">
-                <h3 className="text-sm font-semibold text-foreground">Active Sensors</h3>
-                <span className="text-[10px] text-muted-foreground bg-white/[0.05] border border-white/[0.08] px-2 py-0.5 rounded-full font-semibold">{items.length} online</span>
+        <GlassSurface className="p-3 sm:p-5">
+            <div className="flex items-center justify-between mb-3 sm:mb-4">
+                <h3 className="text-xs sm:text-sm font-normal text-white tracking-tight">Active Sensors</h3>
+                <span className="text-[10px] sm:text-[11px] bg-[#1a1c20] text-[#dadbdf] px-2 sm:px-3 py-0.5 sm:py-1 rounded-[9999px] font-normal border border-[#212327]" style={{ fontFamily: "'Geist Mono', monospace", letterSpacing: '1px' }}>
+                    {items.length} online
+                </span>
             </div>
-            <div className="space-y-2">
+            <div className="space-y-1.5 sm:space-y-2">
                 {items.map(item => (
-                    <div key={item.name} className="flex items-center justify-between rounded-xl border border-white/[0.06] bg-white/[0.02] px-3 py-2">
+                    <div key={item.name} className="flex items-center justify-between rounded-lg border border-[#212327] bg-[#0a0a0a] px-2.5 sm:px-3 py-2 sm:py-2.5">
                         <div className="flex items-center gap-3">
-                            <div className="w-8 h-8 rounded-lg bg-violet/10 border border-violet/20 flex items-center justify-center"><item.icon className="w-4 h-4 text-violet" /></div>
-                            <div><p className="text-sm font-medium text-foreground">{item.name}</p><p className="text-[11px] text-muted-foreground">{item.type}</p></div>
+                            <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg flex items-center justify-center shrink-0" style={{ background: 'linear-gradient(135deg, rgba(124,58,237,0.1) 0%, rgba(196,181,253,0.05) 100%)', border: '1px solid rgba(124,58,237,0.2)' }}>
+                                <item.icon className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#c4b5fd]" strokeWidth={1.5} />
+                            </div>
+                            <div className="min-w-0">
+                                <p className="text-xs sm:text-sm font-normal text-white truncate">{item.name}</p>
+                                <p className="text-[10px] sm:text-[12px] text-[#7d8187]">{item.type}</p>
+                            </div>
                         </div>
-                        <div className="text-right"><p className="text-sm font-semibold text-foreground">{item.value}</p><span className="text-[10px] uppercase tracking-wider text-success font-semibold">{item.status}</span></div>
+                        <div className="text-right">
+                            <p className="text-sm font-normal text-white" style={{ fontFamily: "'Geist Mono', monospace", letterSpacing: '1px' }}>{item.value}</p>
+                            <span className={cn(
+                                "inline-flex items-center px-2 py-0.5 rounded-[9999px] text-[10px] font-normal uppercase tracking-[1px]",
+                                item.status === "Normal" ? "bg-[#22c55e]/10 text-[#22c55e] border border-[#22c55e]/30" : "bg-[#ef4444]/10 text-[#ef4444] border border-[#ef4444]/30"
+                            )} style={{ fontFamily: "'Geist Mono', monospace" }}>{item.status}</span>
+                        </div>
                     </div>
                 ))}
             </div>

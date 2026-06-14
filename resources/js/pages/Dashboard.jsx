@@ -1,5 +1,5 @@
 import React from "react";
-import { Bell, Fan, ShieldCheck, Zap, Flame, Wind, Thermometer } from "lucide-react";
+import { Bell, Fan, ShieldCheck, Zap, Flame, Wind, Thermometer, AlertTriangle, Activity } from "lucide-react";
 import StatCard from "../components/StatCard";
 import ActiveSensors from "../components/ActiveSensors";
 import ActuatorControl from "../components/ActuatorControl";
@@ -14,17 +14,19 @@ function rt(d) { if (!d) return "Updated just now"; const s = Math.max(0, Math.f
 
 export default function Dashboard({ activeRoom, deviceId, iot }) {
     const latest = iot.latestReading, feed = iot.data?.sensor_data || [], logs = iot.data?.activity_logs || [], workerOnline = Boolean(iot.data?.worker_online), latestCmd = iot.data?.latest_command, emergency = iot.data?.emergency_status || "AMAN";
+    const isDanger = emergency === "BAHAYA";
+    const dangerCount = logs.filter(l => l.status === "BAHAYA").length;
 
     const stats = [
-        { title: "System Status", value: emergency, sub: workerOnline ? "Worker online" : "Worker offline", icon: ShieldCheck, badge: emergency === "BAHAYA" ? "Alert" : "Secure" },
-        { title: "Active Sensors", value: "3 / 3", sub: "Gas, smoke, flame live", icon: Zap },
-        { title: "Events Today", value: `${logs.length}`, sub: "Latest activity", icon: Bell },
-        { title: "Fan Speed", value: latestCmd?.target_device === "exhaust_fan" && latestCmd?.action === "START" ? "ON" : "OFF", sub: "Worker command", icon: Fan },
+        { title: "System Status", value: emergency, sub: workerOnline ? "Worker online" : "Worker offline", icon: isDanger ? AlertTriangle : ShieldCheck, badge: isDanger ? "Alert" : "Secure", danger: isDanger },
+        { title: "Active Sensors", value: "3 / 3", sub: "All sensors online", icon: Zap },
+        { title: "Events Today", value: `${logs.length}`, sub: `${dangerCount} danger events`, icon: Bell },
+        { title: "Fan Speed", value: latestCmd?.target_device === "exhaust_fan" && latestCmd?.action === "START" ? "ON" : "OFF", sub: "Exhaust Fan Status", icon: Fan },
     ];
     const sensors = [
-        { name: "MQ-2", type: "Gas / Smoke", value: `${Math.round(Number(latest?.gas_value || 0))} ppm`, status: emergency === "BAHAYA" ? "Alert" : "Normal", icon: Wind },
-        { name: "KY-026", type: "Flame detector", value: `${Math.round(Number(latest?.flame_value || 0))}`, status: Number(latest?.flame_value || 9999) < 500 ? "Alert" : "Normal", icon: Flame },
-        { name: "DHT22", type: "Temperature", value: `${Math.round(Number(latest?.temperature || 0))}°C`, status: Number(latest?.temperature || 0) > 40 ? "Alert" : "Normal", icon: Thermometer },
+        { name: "MQ-2 Gas Sensor", type: "Gas / Smoke", value: `${Math.round(Number(latest?.gas_value || 0))} ppm`, status: emergency === "BAHAYA" ? "Alert" : "Normal", icon: Wind },
+        { name: "KY-026 Flame Sensor", type: "Flame detector", value: `${Math.round(Number(latest?.flame_value || 0))}`, status: Number(latest?.flame_value || 9999) < 500 ? "Alert" : "Normal", icon: Flame },
+        { name: "DHT22 Temp & Humidity", type: "Temperature", value: `${Math.round(Number(latest?.temperature || 0))}°C`, status: Number(latest?.temperature || 0) > 40 ? "Alert" : "Normal", icon: Thermometer },
     ];
     const actuators = [
         { name: "Exhaust Fan", subtitle: latestCmd?.target_device === "exhaust_fan" ? `${latestCmd.action} (${latestCmd.status})` : "No recent command", value: latestCmd?.target_device === "exhaust_fan" && latestCmd.action === "START" ? "ON" : "", enabled: latestCmd?.target_device === "exhaust_fan" && latestCmd.action === "START", icon: Fan },
@@ -37,28 +39,49 @@ export default function Dashboard({ activeRoom, deviceId, iot }) {
     const saveThresholds = async (p) => { try { await fetch("/api/settings", { method: "POST", headers: { "Content-Type": "application/json", Accept: "application/json", "X-CSRF-TOKEN": document.querySelector('meta[name="csrf-token"]')?.getAttribute("content") || "" }, body: JSON.stringify(p) }); } catch {} };
 
     return (
-        <div className="py-5 space-y-5">
-            <div>
-                <h1 className="text-2xl font-bold text-foreground">Hello Admin</h1>
-                <p className="text-sm text-muted-foreground">Monitoring {activeRoom} in real-time.</p>
-                {iot.error && <p className="text-xs text-danger mt-1">API disconnected: {iot.error}</p>}
+        <div className="py-3 sm:py-5 space-y-3 sm:space-y-4">
+            {/* Header */}
+            <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                    <h1 className="text-xl sm:text-2xl font-normal text-white tracking-tight">Halo, Admin</h1>
+                    <p className="text-xs sm:text-sm text-[#7d8187] truncate">Monitoring {activeRoom} secara real-time</p>
+                    {iot.error && <p className="text-xs text-[#ef4444] mt-1">API disconnected: {iot.error}</p>}
+                </div>
+                <div className="hidden sm:flex items-center gap-2 shrink-0">
+                    <div className="flex items-center gap-2 px-3 py-1.5 rounded-[9999px] border border-[#212327] bg-[#0a0a0a]">
+                        <span className="live-dot" />
+                        <span className="text-[11px] font-normal uppercase tracking-[1.2px] text-[#22c55e]" style={{ fontFamily: "'Geist Mono', monospace" }}>Live</span>
+                    </div>
+                    <div className="hidden lg:flex items-center gap-1.5 px-3 py-1.5 rounded-[9999px] border border-[#212327] bg-[#1a1c20]">
+                        <Activity className="w-3 h-3 text-[#c4b5fd]" strokeWidth={1.5} />
+                        <span className="text-[11px] font-normal text-[#c4b5fd]" style={{ fontFamily: "'Geist Mono', monospace", letterSpacing: '0.5px' }}>{logs.length} events</span>
+                    </div>
+                </div>
             </div>
 
-            <MagicBentoGrid enableSpotlight enableBorderGlow enableTilt enableMagnetism clickEffect glowColor="124, 58, 237" spotlightRadius={300} className="grid gap-4 grid-cols-2 xl:grid-cols-4">
+            {/* Stat cards — compact, 2 cols mobile / 4 cols desktop */}
+            <MagicBentoGrid enableSpotlight enableBorderGlow enableTilt enableMagnetism clickEffect glowColor="255, 255, 255" spotlightRadius={350} className="grid gap-2 sm:gap-3 grid-cols-2 lg:grid-cols-4">
                 {stats.map(s => <StatCard key={s.title} {...s} />)}
             </MagicBentoGrid>
 
-            <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_320px]">
-                <div className="space-y-5">
-                    <RoomModel room={activeRoom} />
-                    <div className="grid gap-4 md:grid-cols-5">
-                        <div className="md:col-span-2"><StatusCard status={emergency} systemActive={workerOnline} deviceLabel={`Device-${deviceId}`} updatedLabel={rt(latest?.created_at)} /></div>
-                        <div className="md:col-span-3"><QuickActions actuatorState={actuatorState} onAction={sendActuator} /></div>
-                    </div>
-                    <SensorReadings readings={feed} />
+            {/* 3D Room Model — full width, large, prominent */}
+            <RoomModel room={activeRoom} />
+
+            {/* Status + Quick Actions row */}
+            <div className="grid gap-3 sm:gap-4 grid-cols-1 md:grid-cols-[1fr_1.5fr]">
+                <StatusCard status={emergency} systemActive={workerOnline} deviceLabel={`Device-${deviceId}`} updatedLabel={rt(latest?.created_at)} />
+                <QuickActions actuatorState={actuatorState} onAction={sendActuator} />
+            </div>
+
+            {/* Sensor readings — full width */}
+            <SensorReadings readings={feed} />
+
+            {/* Bottom section: sidebar panels + threshold */}
+            <div className="grid gap-3 sm:gap-4 grid-cols-1 xl:grid-cols-[1fr_340px]">
+                <div className="space-y-3 sm:space-y-4">
                     <ThresholdSettings settings={iot.data?.settings} onSave={saveThresholds} />
                 </div>
-                <div className="space-y-5">
+                <div className="space-y-3 sm:space-y-4">
                     <ActiveSensors items={sensors} />
                     <ActuatorControl items={actuators} />
                     <ActivityLog entries={dashboardEntries} />
