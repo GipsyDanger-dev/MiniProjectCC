@@ -17,7 +17,6 @@ const GlobalSpotlight = ({ gridRef, disabled, radius = 300, color = DEFAULT_GLOW
         if (disabled || !gridRef?.current) return;
         const el = document.createElement('div');
         el.className = 'bento-global-spotlight';
-        // White core + indigo halo
         el.style.cssText = `position:fixed;width:900px;height:900px;border-radius:50%;pointer-events:none;background:radial-gradient(circle,rgba(255,255,255,0.06) 0%,rgba(124,58,237,0.04) 20%,rgba(124,58,237,0.02) 35%,transparent 55%);z-index:200;opacity:0;transform:translate(-50%,-50%);mix-blend-mode:screen;`;
         document.body.appendChild(el);
         ref.current = el;
@@ -68,7 +67,6 @@ const MagicBentoGrid = ({ enableSpotlight = true, enableTilt = true, enableMagne
                 const r = card.getBoundingClientRect(), x = e.clientX - r.left, y = e.clientY - r.top;
                 const max = Math.max(Math.hypot(x, y), Math.hypot(x - r.width, y), Math.hypot(x, y - r.height), Math.hypot(x - r.width, y - r.height));
                 const ripple = document.createElement('div');
-                // White core + indigo outer ring
                 ripple.style.cssText = `position:absolute;width:${max * 2}px;height:${max * 2}px;border-radius:50%;background:radial-gradient(circle,rgba(255,255,255,0.2) 0%,rgba(124,58,237,0.12) 25%,rgba(124,58,237,0.04) 50%,transparent 70%);left:${x - max}px;top:${y - max}px;pointer-events:none;z-index:1000;`;
                 card.appendChild(ripple);
                 gsap.fromTo(ripple, { scale: 0, opacity: 1 }, { scale: 1, opacity: 0, duration: 0.9, ease: 'power2.out', onComplete: () => ripple.remove() });

@@ -1,0 +1,607 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SentinelIoT — System Flowchart</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #f8f9fa;
+    --surface: #ffffff;
+    --surface2: #f3f4f6;
+    --border: #d1d5db;
+    --border2: #e5e7eb;
+    --ink: #111827;
+    --ink2: #374151;
+    --ink3: #6b7280;
+    --ink4: #9ca3af;
+    --accent: #b45309;
+    --accent-bg: #fffbeb;
+    --accent-border: #f59e0b;
+    --danger: #dc2626;
+    --danger-bg: #fef2f2;
+    --danger-border: #f87171;
+    --success: #15803d;
+    --success-bg: #f0fdf4;
+    --success-border: #4ade80;
+    --info: #1d4ed8;
+    --info-bg: #eff6ff;
+    --info-border: #60a5fa;
+    --purple: #7c3aed;
+    --purple-bg: #f5f3ff;
+    --purple-border: #a78bfa;
+    --cyan: #0e7490;
+    --cyan-bg: #ecfeff;
+    --cyan-border: #22d3ee;
+    --gray-bg: #f9fafb;
+    --gray-border: #d1d5db;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Inter', system-ui, sans-serif; background: var(--bg); color: var(--ink); height: 100vh; overflow: hidden; user-select: none; }
+
+  .header {
+    background: var(--surface); border-bottom: 1px solid var(--border);
+    padding: 12px 24px; display: flex; align-items: center;
+    justify-content: space-between; height: 52px; position: relative; z-index: 100;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+  }
+  .header h1 { font-size: 15px; font-weight: 600; color: var(--ink); }
+  .header h1 span { color: var(--accent); }
+  .header-stats { display: flex; gap: 16px; font-size: 11px; color: var(--ink3); }
+  .header-stats strong { color: var(--ink2); font-weight: 500; }
+  .header-right { display: flex; align-items: center; gap: 8px; }
+  .btn {
+    background: var(--surface); border: 1px solid var(--border);
+    color: var(--ink2); font-size: 11px; font-weight: 500;
+    padding: 6px 12px; border-radius: 6px; cursor: pointer;
+    transition: all 0.15s; font-family: inherit;
+  }
+  .btn:hover { background: var(--surface2); color: var(--ink); border-color: var(--ink3); }
+  .btn-accent { background: var(--accent-bg); color: var(--accent); border-color: var(--accent-border); }
+  .btn-accent:hover { background: #fef3c7; }
+
+  .toolbar {
+    background: var(--surface); border-bottom: 1px solid var(--border);
+    padding: 8px 24px; display: flex; align-items: center; gap: 12px;
+    height: 40px; font-size: 11px; color: var(--ink3);
+    box-shadow: 0 1px 2px rgba(0,0,0,0.03);
+  }
+  .toolbar .sep { width: 1px; height: 16px; background: var(--border); }
+  .zoom-display { font-family: 'JetBrains Mono', monospace; color: var(--ink2); min-width: 40px; text-align: center; }
+
+  .canvas-wrapper {
+    position: absolute; top: 92px; left: 0; right: 0; bottom: 0;
+    overflow: hidden; cursor: grab; background: var(--bg);
+  }
+  .canvas-wrapper.dragging-canvas { cursor: grabbing; }
+  .canvas-wrapper.dragging-node { cursor: default; }
+  .canvas { position: absolute; top: 0; left: 0; width: 6000px; height: 4000px; transform-origin: 0 0; background: var(--surface); }
+  .grid-bg {
+    position: absolute; inset: 0;
+    background-image: radial-gradient(circle, #d1d5db 1px, transparent 1px);
+    background-size: 24px 24px; opacity: 0.5; pointer-events: none;
+  }
+
+  .lines-svg { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 5; }
+  .flow-line { fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; transition: opacity 0.2s, stroke-width 0.2s; }
+  .flow-line.normal { stroke: #6b7280; }
+  .flow-line.success { stroke: var(--success); }
+  .flow-line.danger { stroke: var(--danger); }
+  .flow-line.info { stroke: var(--info); }
+  .flow-line.accent { stroke: var(--accent); }
+  .flow-line.purple { stroke: var(--purple); }
+  .flow-line.dimmed { opacity: 0.12; }
+  .flow-line.highlighted { opacity: 1; stroke-width: 3; }
+
+  /* ── Flowchart Node ── */
+  .flow-node {
+    position: absolute; z-index: 10; cursor: default;
+    transition: box-shadow 0.2s, border-color 0.2s, opacity 0.2s;
+  }
+  .flow-node:hover { z-index: 20; }
+  .flow-node.highlight { z-index: 25; }
+  .flow-node.related { z-index: 22; }
+  .flow-node.unrelated { opacity: 0.25; }
+  .flow-node.dragging { opacity: 0.9; z-index: 50; cursor: grabbing; }
+
+  .node-body {
+    background: var(--surface); border: 2px solid var(--border);
+    border-radius: 10px; overflow: hidden;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+    transition: box-shadow 0.2s, border-color 0.2s;
+  }
+  .flow-node:hover .node-body { box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+  .flow-node.highlight .node-body { box-shadow: 0 0 0 2px var(--accent), 0 6px 20px rgba(180,83,9,0.15); }
+
+  .node-head {
+    padding: 8px 14px; display: flex; align-items: center; justify-content: space-between;
+    border-bottom: 1px solid var(--border2); cursor: grab; min-height: 36px;
+  }
+  .node-head:active { cursor: grabbing; }
+  .node-title { font-size: 12px; font-weight: 600; color: var(--ink); display: flex; align-items: center; gap: 6px; }
+  .node-icon { width: 18px; height: 18px; display: flex; align-items: center; justify-content: center; font-size: 11px; }
+  .node-badge {
+    font-size: 9px; font-weight: 600; letter-spacing: 0.06em;
+    text-transform: uppercase; padding: 2px 7px; border-radius: 4px;
+  }
+  .node-desc {
+    padding: 8px 14px; font-size: 11px; color: var(--ink3); line-height: 1.5;
+    border-bottom: 1px solid var(--border2);
+  }
+  .node-detail { padding: 6px 14px; font-size: 10px; color: var(--ink4); font-family: 'JetBrains Mono', monospace; }
+
+  /* Node shapes via border */
+  .node-process .node-body { border-radius: 10px; }
+  .node-decision .node-body { border-radius: 10px; border-color: var(--accent-border); }
+  .node-start .node-body { border-radius: 20px; }
+  .node-end .node-body { border-radius: 20px; }
+  .node-data .node-body { border-style: dashed; }
+  .node-api .node-body { border-color: var(--info-border); }
+  .node-db .node-body { border-color: var(--success-border); }
+
+  /* ── Decision diamond label ── */
+  .decision-label {
+    position: absolute; z-index: 6; pointer-events: none;
+    font-size: 11px; font-weight: 600; padding: 3px 10px; border-radius: 5px;
+    white-space: nowrap; font-family: 'Inter', system-ui, sans-serif;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+  }
+  .decision-yes { background: var(--success-bg); color: var(--success); border: 1px solid var(--success-border); }
+  .decision-no { background: var(--danger-bg); color: var(--danger); border: 1px solid var(--danger-border); }
+
+  /* ── Arrow labels ── */
+  .arrow-label {
+    position: absolute; z-index: 6; pointer-events: none;
+    font-size: 10px; font-weight: 500; color: var(--ink3);
+    background: var(--surface); padding: 2px 8px; border-radius: 4px;
+    border: 1px solid var(--border2); white-space: nowrap;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+  }
+
+  /* ── Legend ── */
+  .legend {
+    position: fixed; bottom: 16px; left: 16px;
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 8px; padding: 14px 18px; z-index: 50; font-size: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+  }
+  .legend h4 { font-size: 10px; color: var(--ink3); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 10px; }
+  .legend-items { display: flex; flex-direction: column; gap: 7px; }
+  .legend-item { display: flex; align-items: center; gap: 10px; color: var(--ink2); font-size: 12px; }
+  .legend-shape {
+    width: 28px; height: 18px; border: 2px solid; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center; font-size: 8px; font-weight: 700;
+  }
+  .legend-line { width: 28px; height: 0; border-top: 2px solid; flex-shrink: 0; }
+
+  /* ── Minimap ── */
+  .minimap { position: fixed; bottom: 16px; right: 16px; width: 180px; height: 120px; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; z-index: 50; overflow: hidden; cursor: pointer; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+  .minimap-viewport { position: absolute; border: 1.5px solid var(--accent); background: rgba(180,83,9,0.06); pointer-events: none; }
+  .minimap-dot { position: absolute; border-radius: 2px; opacity: 0.6; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-left">
+    <h1>Sentinel<span>IoT</span> — System Flowchart</h1>
+    <div class="header-stats">
+      <span><strong>16</strong> nodes</span>
+      <span><strong>3</strong> flows</span>
+    </div>
+  </div>
+  <div class="header-right">
+    <button class="btn" onclick="resetView()">Reset View</button>
+    <button class="btn btn-accent" onclick="autoLayout()">Auto Layout</button>
+  </div>
+</div>
+
+<div class="toolbar">
+  <span>Hover node untuk highlight alur</span>
+  <div class="sep"></div>
+  <span>Geser header node untuk pindah posisi</span>
+  <div class="sep"></div>
+  <span>Scroll untuk zoom · Klik canvas untuk geser</span>
+  <div class="sep"></div>
+  <span class="zoom-display" id="zoomDisplay">100%</span>
+</div>
+
+<div class="canvas-wrapper" id="canvasWrapper">
+  <div class="canvas" id="canvas">
+    <div class="grid-bg"></div>
+    <svg class="lines-svg" id="linesSvg"></svg>
+    <div id="labelMarkers"></div>
+  </div>
+</div>
+
+<div class="legend">
+  <h4>Node Types</h4>
+  <div class="legend-items">
+    <div class="legend-item"><div class="legend-shape" style="border-radius:14px;border-color:var(--ink3)">●</div><span>Start / End</span></div>
+    <div class="legend-item"><div class="legend-shape" style="border-radius:6px;border-color:var(--info-border)">⚙</div><span>Process</span></div>
+    <div class="legend-item"><div class="legend-shape" style="border-radius:6px;border-color:var(--accent-border)">◆</div><span>Decision</span></div>
+    <div class="legend-item"><div class="legend-shape" style="border-radius:6px;border-style:dashed;border-color:var(--success-border)">☐</div><span>Data / Storage</span></div>
+  </div>
+  <h4 style="margin-top:12px">Alur</h4>
+  <div class="legend-items">
+    <div class="legend-item"><div class="legend-line" style="border-color:var(--info)"></div><span>Data Ingestion</span></div>
+    <div class="legend-item"><div class="legend-line" style="border-color:var(--accent)"></div><span>Manual Control</span></div>
+    <div class="legend-item"><div class="legend-line" style="border-color:var(--danger)"></div><span>Emergency</span></div>
+  </div>
+</div>
+
+<div class="minimap" id="minimap">
+  <div class="minimap-viewport" id="minimapViewport"></div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════════
+// FLOWCHART DATA
+// ═══════════════════════════════════════════════════════
+
+const nodes = [
+  // ── Data Ingestion Flow ──
+  { id: 'esp32_start', group: 'ingest', shape: 'start', x: 60, y: 40, w: 200,
+    title: 'ESP32 Worker', badge: 'HARDWARE', badgeColor: 'background:var(--cyan-bg);color:var(--cyan);border:1px solid var(--cyan-border)',
+    desc: 'Membaca sensor MQ-2, KY-026, DHT22 setiap 3 detik',
+    detail: 'Arduino firmware loop()' },
+  { id: 'api_ingest', group: 'ingest', shape: 'api', x: 60, y: 170, w: 200,
+    title: 'POST /api/ingest', badge: 'API', badgeColor: 'background:var(--info-bg);color:var(--info);border:1px solid var(--info-border)',
+    desc: 'Validasi device_id, gas_value, smoke_value, temperature, flame_value',
+    detail: 'ApiController::ingestData()' },
+  { id: 'check_mode', group: 'ingest', shape: 'decision', x: 60, y: 310, w: 200,
+    title: 'Mode?', badge: 'DECISION', badgeColor: 'background:var(--accent-bg);color:var(--accent);border:1px solid var(--accent-border)',
+    desc: 'Cek apakah sistem dalam mode manual atau auto',
+    detail: 'SystemSettings::mode' },
+  { id: 'fuzzy', group: 'ingest', shape: 'process', x: 60, y: 460, w: 200,
+    title: 'Fuzzy Logic', badge: 'PROCESS', badgeColor: 'background:var(--purple-bg);color:var(--purple);border:1px solid var(--purple-border)',
+    desc: 'Sugeno 27 rules — fuzzifikasi triangular, weighted average',
+    detail: 'buildFuzzyDecision()' },
+  { id: 'check_flame', group: 'ingest', shape: 'decision', x: 60, y: 600, w: 200,
+    title: 'Flame < Threshold?', badge: 'DECISION', badgeColor: 'background:var(--accent-bg);color:var(--accent);border:1px solid var(--accent-border)',
+    desc: 'KY-026 active-low: nilai rendah = api terdeteksi',
+    detail: 'flame < flameThreshold' },
+  { id: 'sync_actuator', group: 'ingest', shape: 'process', x: 60, y: 750, w: 200,
+    title: 'Sync Aktuator', badge: 'PROCESS', badgeColor: 'background:var(--purple-bg);color:var(--purple);border:1px solid var(--purple-border)',
+    desc: 'Update DeviceActuator + buat Command baru jika state berubah',
+    detail: 'syncActuatorCommands()' },
+  { id: 'save_sensor', group: 'ingest', shape: 'data', x: 60, y: 890, w: 200,
+    title: 'Simpan sensor_data', badge: 'DATABASE', badgeColor: 'background:var(--success-bg);color:var(--success);border:1px solid var(--success-border)',
+    desc: 'Insert ke tabel sensor_data dengan hasil fuzzy decision',
+    detail: 'SensorData::create()' },
+  { id: 'save_log', group: 'ingest', shape: 'data', x: 60, y: 1020, w: 200,
+    title: 'Simpan activity_log', badge: 'DATABASE', badgeColor: 'background:var(--success-bg);color:var(--success);border:1px solid var(--success-border)',
+    desc: 'Catat status AMAN/BAHAYA dengan detail trigger & warning',
+    detail: 'ActivityLog::create()' },
+  { id: 'broadcast', group: 'ingest', shape: 'process', x: 60, y: 1150, w: 200,
+    title: 'Broadcast WebSocket', badge: 'PROCESS', badgeColor: 'background:var(--purple-bg);color:var(--purple);border:1px solid var(--purple-border)',
+    desc: 'Kirim data real-time ke semua client yang terhubung',
+    detail: 'broadcast(SensorDataReceived)' },
+
+  // ── Dashboard Flow ──
+  { id: 'react_app', group: 'dashboard', shape: 'start', x: 380, y: 40, w: 200,
+    title: 'React Frontend', badge: 'CLIENT', badgeColor: 'background:var(--info-bg);color:var(--info);border:1px solid var(--info-border)',
+    desc: 'SPA dengan polling 3 detik ke /api/dashboard/data',
+    detail: 'useRealtimeIoT() hook' },
+  { id: 'api_dashboard', group: 'dashboard', shape: 'api', x: 380, y: 170, w: 200,
+    title: 'GET /api/dashboard/data', badge: 'API', badgeColor: 'background:var(--info-bg);color:var(--info);border:1px solid var(--info-border)',
+    desc: 'Ambil sensor terbaru, logs, worker status, actuator, settings',
+    detail: 'ApiController::dashboard()' },
+  { id: 'display', group: 'dashboard', shape: 'process', x: 380, y: 310, w: 200,
+    title: 'Render Dashboard', badge: 'UI', badgeColor: 'background:var(--info-bg);color:var(--info);border:1px solid var(--info-border)',
+    desc: 'Tampilkan 3D room, sensor readings, actuator control, event log',
+    detail: 'Dashboard.jsx → 8 komponen' },
+
+  // ── Manual Control Flow ──
+  { id: 'user_action', group: 'manual', shape: 'start', x: 700, y: 40, w: 200,
+    title: 'User Action', badge: 'USER', badgeColor: 'background:var(--accent-bg);color:var(--accent);border:1px solid var(--accent-border)',
+    desc: 'Admin klik tombol di dashboard: Start Fan, Stop Buzzer, Emergency',
+    detail: 'QuickActions / ActuatorControl' },
+  { id: 'api_actuator', group: 'manual', shape: 'api', x: 700, y: 170, w: 200,
+    title: 'POST /api/actuator', badge: 'API', badgeColor: 'background:var(--info-bg);color:var(--info);border:1px solid var(--info-border)',
+    desc: 'Validasi target_device + action, set mode ke manual',
+    detail: 'ApiController::controlActuator()' },
+  { id: 'create_command', group: 'manual', shape: 'data', x: 700, y: 310, w: 200,
+    title: 'Buat Command', badge: 'DATABASE', badgeColor: 'background:var(--success-bg);color:var(--success);border:1px solid var(--success-border)',
+    desc: 'Insert ke commands dengan status pending',
+    detail: 'Command::create()' },
+  { id: 'esp32_poll', group: 'manual', shape: 'process', x: 700, y: 450, w: 200,
+    title: 'ESP32 Poll Command', badge: 'HARDWARE', badgeColor: 'background:var(--cyan-bg);color:var(--cyan);border:1px solid var(--cyan-border)',
+    desc: 'GET /api/command/get → ambil command pending → eksekusi di hardware',
+    detail: 'getPendingCommand() → lockForUpdate' },
+];
+
+const edges = [
+  // Data Ingestion Flow
+  { from: 'esp32_start', to: 'api_ingest', color: 'info', label: 'POST sensor data' },
+  { from: 'api_ingest', to: 'check_mode', color: 'info', label: '' },
+  { from: 'check_mode', to: 'fuzzy', color: 'info', label: 'auto', side: 'right' },
+  { from: 'check_mode', to: 'sync_actuator', color: 'accent', label: 'manual → skip', side: 'left' },
+  { from: 'fuzzy', to: 'check_flame', color: 'info', label: '' },
+  { from: 'check_flame', to: 'sync_actuator', color: 'danger', label: 'Ya — FLAME_OVERRIDE', side: 'right' },
+  { from: 'check_flame', to: 'sync_actuator', color: 'info', label: 'Tidak', side: 'left' },
+  { from: 'sync_actuator', to: 'save_sensor', color: 'info', label: '' },
+  { from: 'save_sensor', to: 'save_log', color: 'info', label: '' },
+  { from: 'save_log', to: 'broadcast', color: 'info', label: '' },
+
+  // Dashboard Flow
+  { from: 'react_app', to: 'api_dashboard', color: 'info', label: 'polling 3s' },
+  { from: 'api_dashboard', to: 'display', color: 'info', label: 'JSON response' },
+
+  // Manual Control Flow
+  { from: 'user_action', to: 'api_actuator', color: 'accent', label: 'click button' },
+  { from: 'api_actuator', to: 'create_command', color: 'accent', label: '' },
+  { from: 'create_command', to: 'esp32_poll', color: 'accent', label: 'pending → processing' },
+
+  // Cross-flow: ESP32 poll connects back
+  { from: 'esp32_poll', to: 'esp32_start', color: 'purple', label: 'execute → next reading', style: 'dashed' },
+
+  // Broadcast connects to frontend
+  { from: 'broadcast', to: 'react_app', color: 'purple', label: 'WebSocket push', style: 'dashed' },
+];
+
+// ═══════════════════════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════════════════════
+
+let zoom = 1, panX = 0, panY = 0;
+let draggingNode = null, dragOffsetX = 0, dragOffsetY = 0;
+let panning = false, panStartX = 0, panStartY = 0;
+let hoveredNode = null;
+
+// ═══════════════════════════════════════════════════════
+// RENDER NODES
+// ═══════════════════════════════════════════════════════
+
+const canvas = document.getElementById('canvas');
+const canvasWrapper = document.getElementById('canvasWrapper');
+
+nodes.forEach(n => {
+  const card = document.createElement('div');
+  card.className = `flow-node node-${n.shape}`;
+  card.id = `node-${n.id}`;
+  card.style.left = n.x + 'px';
+  card.style.top = n.y + 'px';
+  card.style.width = n.w + 'px';
+  card.dataset.id = n.id;
+
+  card.innerHTML = `
+    <div class="node-body">
+      <div class="node-head" data-node="${n.id}">
+        <div class="node-title"><span class="node-icon">${n.shape==='start'||n.shape==='end'?'●':n.shape==='decision'?'◆':n.shape==='data'?'☐':'⚙'}</span>${n.title}</div>
+        <span class="node-badge" style="${n.badgeColor}">${n.badge}</span>
+      </div>
+      <div class="node-desc">${n.desc}</div>
+      <div class="node-detail">${n.detail}</div>
+    </div>
+  `;
+
+  card.addEventListener('mouseenter', () => { hoveredNode = n.id; applyHighlight(n.id); });
+  card.addEventListener('mouseleave', () => { hoveredNode = null; clearHighlight(); });
+
+  canvas.appendChild(card);
+});
+
+// ═══════════════════════════════════════════════════════
+// HIGHLIGHT
+// ═══════════════════════════════════════════════════════
+
+function applyHighlight(nodeId) {
+  const connected = new Set([nodeId]);
+  edges.forEach(e => { if (e.from === nodeId || e.to === nodeId) { connected.add(e.from); connected.add(e.to); } });
+
+  document.querySelectorAll('.flow-node').forEach(n => {
+    n.classList.remove('highlight', 'related', 'unrelated');
+    if (n.dataset.id === nodeId) n.classList.add('highlight');
+    else if (connected.has(n.dataset.id)) n.classList.add('related');
+    else n.classList.add('unrelated');
+  });
+
+  document.querySelectorAll('.flow-line').forEach(l => {
+    l.classList.remove('dimmed', 'highlighted');
+    if (connected.has(l.dataset.from) && connected.has(l.dataset.to)) l.classList.add('highlighted');
+    else l.classList.add('dimmed');
+  });
+}
+
+function clearHighlight() {
+  document.querySelectorAll('.flow-node').forEach(n => n.classList.remove('highlight', 'related', 'unrelated'));
+  document.querySelectorAll('.flow-line').forEach(l => l.classList.remove('dimmed', 'highlighted'));
+}
+
+// ═══════════════════════════════════════════════════════
+// DRAGGING
+// ═══════════════════════════════════════════════════════
+
+document.querySelectorAll('.node-head').forEach(head => {
+  head.addEventListener('mousedown', (e) => {
+    if (e.button !== 0) return;
+    e.preventDefault();
+    const id = head.dataset.node;
+    const card = document.getElementById(`node-${id}`);
+    const rect = card.getBoundingClientRect();
+    draggingNode = id;
+    dragOffsetX = (e.clientX - rect.left) / zoom;
+    dragOffsetY = (e.clientY - rect.top) / zoom;
+    card.classList.add('dragging');
+    canvasWrapper.classList.add('dragging-node');
+  });
+});
+
+canvasWrapper.addEventListener('mousedown', (e) => {
+  if (draggingNode) return;
+  if (e.button === 1 || e.button === 2 || (e.button === 0 && (e.target === canvasWrapper || e.target.classList.contains('grid-bg')))) {
+    panning = true; panStartX = e.clientX - panX; panStartY = e.clientY - panY;
+    canvasWrapper.classList.add('dragging-canvas'); e.preventDefault();
+  }
+});
+
+document.addEventListener('mousemove', (e) => {
+  if (draggingNode) {
+    const card = document.getElementById(`node-${draggingNode}`);
+    const cr = canvas.getBoundingClientRect();
+    const x = (e.clientX - cr.left) / zoom - dragOffsetX;
+    const y = (e.clientY - cr.top) / zoom - dragOffsetY;
+    card.style.left = Math.max(0, x) + 'px'; card.style.top = Math.max(0, y) + 'px';
+    const n = nodes.find(n => n.id === draggingNode);
+    if (n) { n.x = Math.max(0, x); n.y = Math.max(0, y); }
+    drawLines(); updateMinimap();
+  }
+  if (panning) { panX = e.clientX - panStartX; panY = e.clientY - panStartY; applyTransform(); updateMinimap(); }
+});
+
+document.addEventListener('mouseup', () => {
+  if (draggingNode) { document.getElementById(`node-${draggingNode}`)?.classList.remove('dragging'); draggingNode = null; canvasWrapper.classList.remove('dragging-node'); }
+  if (panning) { panning = false; canvasWrapper.classList.remove('dragging-canvas'); }
+});
+
+canvasWrapper.addEventListener('contextmenu', e => e.preventDefault());
+
+canvasWrapper.addEventListener('wheel', (e) => {
+  e.preventDefault();
+  const delta = e.deltaY > 0 ? -0.08 : 0.08;
+  const newZoom = Math.min(2, Math.max(0.3, zoom + delta));
+  const rect = canvasWrapper.getBoundingClientRect();
+  panX = (e.clientX - rect.left) - ((e.clientX - rect.left) - panX) * (newZoom / zoom);
+  panY = (e.clientY - rect.top) - ((e.clientY - rect.top) - panY) * (newZoom / zoom);
+  zoom = newZoom; applyTransform(); updateMinimap();
+}, { passive: false });
+
+function applyTransform() {
+  canvas.style.transform = `translate(${panX}px, ${panY}px) scale(${zoom})`;
+  document.getElementById('zoomDisplay').textContent = Math.round(zoom * 100) + '%';
+}
+
+// ═══════════════════════════════════════════════════════
+// DRAW LINES
+// ═══════════════════════════════════════════════════════
+
+function drawLines() {
+  const svg = document.getElementById('linesSvg');
+  const markers = document.getElementById('labelMarkers');
+  svg.innerHTML = ''; markers.innerHTML = '';
+  svg.setAttribute('width', 6000); svg.setAttribute('height', 4000);
+
+  // Arrowhead marker
+  const defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
+  ['normal','success','danger','info','accent','purple'].forEach(c => {
+    const m = document.createElementNS('http://www.w3.org/2000/svg', 'marker');
+    m.setAttribute('id', `arrow-${c}`);
+    m.setAttribute('viewBox', '0 0 10 10');
+    m.setAttribute('refX', '8'); m.setAttribute('refY', '5');
+    m.setAttribute('markerWidth', '8'); m.setAttribute('markerHeight', '8');
+    m.setAttribute('orient', 'auto-start-reverse');
+    const p = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    p.setAttribute('d', 'M 0 0 L 10 5 L 0 10 z');
+    const colors = { normal:'#6b7280', success:'var(--success)', danger:'var(--danger)', info:'var(--info)', accent:'var(--accent)', purple:'var(--purple)' };
+    p.setAttribute('fill', colors[c] || '#6b7280');
+    m.appendChild(p); defs.appendChild(m);
+  });
+  svg.appendChild(defs);
+
+  edges.forEach(edge => {
+    const fromNode = document.getElementById(`node-${edge.from}`);
+    const toNode = document.getElementById(`node-${edge.to}`);
+    if (!fromNode || !toNode) return;
+
+    const fromW = fromNode.offsetWidth, fromH = fromNode.offsetHeight;
+    const toW = toNode.offsetWidth, toH = toNode.offsetHeight;
+    const fromX = parseFloat(fromNode.style.left), fromY = parseFloat(fromNode.style.top);
+    const toX = parseFloat(toNode.style.left), toY = parseFloat(toNode.style.top);
+
+    const fromCx = fromX + fromW/2, fromCy = fromY + fromH/2;
+    const toCx = toX + toW/2, toCy = toY + toH/2;
+
+    let x1, y1, x2, y2;
+    const dx = toCx - fromCx, dy = toCy - fromCy;
+
+    if (Math.abs(dx) > Math.abs(dy)) {
+      if (dx > 0) { x1 = fromX+fromW; y1 = fromCy; x2 = toX; y2 = toCy; }
+      else { x1 = fromX; y1 = fromCy; x2 = toX+toW; y2 = toCy; }
+    } else {
+      if (dy > 0) { x1 = fromCx; y1 = fromY+fromH; x2 = toCx; y2 = toY; }
+      else { x1 = fromCx; y1 = fromY; x2 = toCx; y2 = toY+toH; }
+    }
+
+    const dist = Math.sqrt((x2-x1)**2 + (y2-y1)**2);
+    const curve = Math.min(dist * 0.3, 100);
+    let cx1, cy1, cx2, cy2;
+    if (Math.abs(dx) > Math.abs(dy)) {
+      cx1 = x1+(dx>0?curve:-curve); cy1 = y1; cx2 = x2-(dx>0?curve:-curve); cy2 = y2;
+    } else {
+      cx1 = x1; cy1 = y1+(dy>0?curve:-curve); cx2 = x2; cy2 = y2-(dy>0?curve:-curve);
+    }
+
+    const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    path.setAttribute('d', `M ${x1} ${y1} C ${cx1} ${cy1}, ${cx2} ${cy2}, ${x2} ${y2}`);
+    path.setAttribute('class', `flow-line ${edge.color}`);
+    path.setAttribute('marker-end', `url(#arrow-${edge.color})`);
+    if (edge.style === 'dashed') path.setAttribute('stroke-dasharray', '8 4');
+    path.dataset.from = edge.from; path.dataset.to = edge.to;
+    svg.appendChild(path);
+
+    // Label
+    if (edge.label) {
+      const midX = (x1+x2)/2, midY = (y1+y2)/2;
+      const label = document.createElement('div');
+      label.className = 'arrow-label';
+      label.textContent = edge.label;
+      label.style.left = (midX - 40) + 'px';
+      label.style.top = (midY - 10) + 'px';
+      label.dataset.from = edge.from; label.dataset.to = edge.to;
+      markers.appendChild(label);
+    }
+  });
+
+  if (hoveredNode) applyHighlight(hoveredNode);
+}
+
+// ═══════════════════════════════════════════════════════
+// MINIMAP
+// ═══════════════════════════════════════════════════════
+
+function updateMinimap() {
+  const minimap = document.getElementById('minimap');
+  const viewport = document.getElementById('minimapViewport');
+  const mw = minimap.offsetWidth, mh = minimap.offsetHeight;
+  let minX=Infinity, minY=Infinity, maxX=-Infinity, maxY=-Infinity;
+  nodes.forEach(n => { minX=Math.min(minX,n.x); minY=Math.min(minY,n.y); maxX=Math.max(maxX,n.x+n.w); maxY=Math.max(maxY,n.y+150); });
+  const pad = 60; minX-=pad; minY-=pad; maxX+=pad; maxY+=pad;
+  const scale = Math.min(mw/(maxX-minX), mh/(maxY-minY));
+  minimap.querySelectorAll('.minimap-dot').forEach(d=>d.remove());
+  const groupColors = { ingest:'var(--info)', dashboard:'var(--success)', manual:'var(--accent)' };
+  nodes.forEach(n => {
+    const dot = document.createElement('div'); dot.className='minimap-dot';
+    dot.style.left=((n.x-minX)*scale)+'px'; dot.style.top=((n.y-minY)*scale)+'px';
+    dot.style.width=(n.w*scale)+'px'; dot.style.height=(60*scale)+'px';
+    dot.style.background=groupColors[n.group]||'var(--ink3)'; minimap.appendChild(dot);
+  });
+  const wr = canvasWrapper.getBoundingClientRect();
+  viewport.style.left=Math.max(0,(-panX/zoom-minX)*scale)+'px';
+  viewport.style.top=Math.max(0,(-panY/zoom-minY)*scale)+'px';
+  viewport.style.width=Math.min(mw,(wr.width/zoom)*scale)+'px';
+  viewport.style.height=Math.min(mh,(wr.height/zoom)*scale)+'px';
+}
+
+function resetView() { zoom=1; panX=0; panY=0; applyTransform(); updateMinimap(); }
+
+function autoLayout() {
+  const ingestNodes = nodes.filter(n=>n.group==='ingest');
+  ingestNodes.forEach((n,i) => { n.x = 60; n.y = 40 + i * 135; });
+  const dashNodes = nodes.filter(n=>n.group==='dashboard');
+  dashNodes.forEach((n,i) => { n.x = 380; n.y = 40 + i * 140; });
+  const manualNodes = nodes.filter(n=>n.group==='manual');
+  manualNodes.forEach((n,i) => { n.x = 700; n.y = 40 + i * 140; });
+  nodes.forEach(n => {
+    const card = document.getElementById(`node-${n.id}`);
+    if(card){card.style.left=n.x+'px';card.style.top=n.y+'px';}
+  });
+  drawLines(); updateMinimap();
+}
+
+// INIT
+drawLines(); updateMinimap();
+</script>
+</body>
+</html>

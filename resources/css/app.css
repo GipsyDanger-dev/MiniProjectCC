@@ -2,24 +2,19 @@
 @tailwind components;
 @tailwind utilities;
 
-/* === xAI Design System — Near-Black Canvas, Semi-Transparent Cards, Indigo Glow === */
-
 @layer base {
     :root {
-        /* Canvas */
         --canvas: 0 0% 4%;
         --canvas-soft: 220 8% 11%;
         --canvas-card: 0 0% 10%;
         --canvas-mid: 220 5% 23%;
         --hairline: 210 6% 14%;
 
-        /* Text */
         --ink: 0 0% 100%;
         --ink-hover: 40 40% 97%;
         --body: 220 7% 86%;
         --body-mid: 220 5% 51%;
 
-        /* Compat tokens */
         --ink2: 215 12% 55%;
         --ink3: 215 10% 38%;
         --surface: 0 0% 4%;
@@ -28,17 +23,14 @@
         --edge: 210 6% 14%;
         --edge2: 210 6% 20%;
 
-        /* Accent — indigo family */
         --accent-dusk: 263 85% 58%;
         --accent-twilight: 263 75% 85%;
         --accent-breeze: 213 60% 78%;
 
-        /* Semantic */
         --danger: 0 84% 60%;
         --success: 142 71% 45%;
         --warning: 38 92% 50%;
 
-        /* Tailwind HSL tokens */
         --background: 0 0% 4%;
         --foreground: 0 0% 100%;
         --card: 0 0% 10%;
@@ -66,7 +58,6 @@
         --ring: 0 0% 100%;
         --radius: 8px;
 
-        /* Sidebar */
         --sidebar-background: 0 0% 4%;
         --sidebar-foreground: 0 0% 100%;
         --sidebar-muted: 220 3% 53%;
@@ -78,7 +69,6 @@
     }
 }
 
-/* === Body — near-black === */
 body {
     background-color: hsl(0 0% 4%);
     min-height: 100vh;
@@ -90,13 +80,11 @@ body::after {
     display: none;
 }
 
-/* === Typography === */
 .font-mono, .mono-value {
     font-family: 'Geist Mono', 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, monospace !important;
     letter-spacing: 1.2px;
 }
 
-/* === Card system — semi-transparent === */
 .card-surface {
     background: rgba(25, 25, 25, 0.7);
     backdrop-filter: blur(12px);
@@ -120,7 +108,6 @@ body::after {
     transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
-/* === Header — semi-transparent === */
 .navbar-glass,
 .glass-header {
     background: rgba(10, 10, 10, 0.8) !important;
@@ -132,7 +119,6 @@ body::after {
     z-index: 30;
 }
 
-/* === Sidebar — semi-transparent === */
 .sidebar-glass,
 .glass-sidebar {
     background: rgba(10, 10, 10, 0.85) !important;
@@ -147,7 +133,6 @@ body::after {
     z-index: 40;
 }
 
-/* === Bento glow — white + indigo === */
 .bento-card {
     position: relative;
     overflow: hidden;
@@ -194,7 +179,6 @@ body::after {
     pointer-events: none;
 }
 
-/* === Pill buttons === */
 .glass-pill {
     background: rgba(26, 28, 32, 0.6);
     border: 1px solid rgba(33, 35, 39, 0.8);
@@ -203,7 +187,6 @@ body::after {
     border-radius: 9999px;
 }
 
-/* === Inputs — semi-transparent === */
 .device-select option {
     background-color: #0a0a0a;
     color: #fff;
@@ -235,7 +218,6 @@ select:focus {
     box-shadow: 0 0 0 2px rgba(124, 58, 237, 0.1);
 }
 
-/* === Range sliders === */
 input[type="range"] {
     -webkit-appearance: none;
     appearance: none;
@@ -264,13 +246,11 @@ input[type="range"]::-moz-range-thumb {
     cursor: pointer;
 }
 
-/* === Layout === */
 main {
     z-index: 1;
     position: relative;
 }
 
-/* === Ambient indigo glow — VISIBLE === */
 .ambient-grid {
     position: fixed;
     inset: 0;
@@ -283,7 +263,6 @@ main {
         radial-gradient(ellipse 40% 35% at 75% 25%, rgba(160, 195, 236, 0.07) 0%, transparent 45%);
 }
 
-/* Grid lines on top */
 .ambient-grid::before {
     content: '';
     position: absolute;
@@ -296,7 +275,6 @@ main {
     -webkit-mask-image: radial-gradient(ellipse 80% 70% at 50% 30%, black 10%, transparent 60%);
 }
 
-/* Vignette at edges */
 .ambient-grid::after {
     content: '';
     position: absolute;
@@ -304,7 +282,6 @@ main {
     background: radial-gradient(ellipse 100% 100% at 50% 50%, transparent 35%, rgba(10, 10, 10, 0.5) 100%);
 }
 
-/* === Live indicator === */
 @keyframes live-blink {
     0%, 100% { opacity: 1; }
     50% { opacity: 0.3; }
@@ -317,7 +294,6 @@ main {
     animation: live-blink 1.5s ease-in-out infinite;
 }
 
-/* === Danger animations === */
 @keyframes danger-border-pulse {
     0%, 100% { border-color: rgba(239, 68, 68, 0.6); }
     50% { border-color: rgba(239, 68, 68, 0.15); }
@@ -361,7 +337,6 @@ main {
     animation: soft-pulse 1.8s ease-in-out infinite;
 }
 
-/* === Scrollbar === */
 .thin-scroll::-webkit-scrollbar {
     width: 6px;
     height: 6px;
@@ -374,13 +349,11 @@ main {
     background: transparent;
 }
 
-/* === Focus visible === */
 *:focus-visible {
     outline: 2px solid rgba(124, 58, 237, 0.6);
     outline-offset: 2px;
 }
 
-/* === Reduced motion === */
 @media (prefers-reduced-motion: reduce) {
     *, *::before, *::after {
         animation-duration: 0.01ms !important;
@@ -392,7 +365,6 @@ main {
     .card-surface:hover { box-shadow: none; }
 }
 
-/* === Base layer === */
 @layer base {
     * {
         @apply border-border;
@@ -414,7 +386,6 @@ main {
     }
 }
 
-/* === Utilities === */
 @layer utilities {
     .transition-smooth {
         transition: var(--transition-smooth);

@@ -23,7 +23,6 @@ function SidebarContent({ collapsed, setCollapsed, currentPage, setCurrentPage, 
 
     return (
         <>
-            {/* Logo */}
             <div className={cn("flex items-center gap-3 py-5 border-b border-[rgba(33,35,39,0.8)]", collapsed ? "justify-center px-2" : "px-4")}>
                 <div className="w-8 h-8 rounded-full flex items-center justify-center shrink-0" style={{ background: 'linear-gradient(135deg, #ffffff 0%, #c4b5fd 100%)', color: '#0a0a0a' }}>
                     <span className="text-[11px] font-normal" style={{ fontFamily: "'Geist Mono', monospace", letterSpacing: '1px' }}>SI</span>
@@ -36,7 +35,6 @@ function SidebarContent({ collapsed, setCollapsed, currentPage, setCurrentPage, 
                 )}
             </div>
 
-            {/* Navigation */}
             <div className="flex-1 py-4 overflow-y-auto thin-scroll">
                 <p className={cn("text-[10px] uppercase tracking-[1.2px] text-[#7d8187] pb-2", collapsed ? "text-center px-2" : "px-4")} style={{ fontFamily: "'Geist Mono', monospace" }}>Main</p>
                 <nav className="flex flex-col gap-0.5 px-2">
@@ -75,7 +73,6 @@ function SidebarContent({ collapsed, setCollapsed, currentPage, setCurrentPage, 
                 </nav>
             </div>
 
-            {/* Bottom actions */}
             <div className="px-2 pb-4 space-y-1 border-t border-[rgba(33,35,39,0.8)] pt-3">
                 {!collapsed ? (
                     <button onClick={() => handleClick("new-device")}
@@ -104,7 +101,6 @@ function SidebarContent({ collapsed, setCollapsed, currentPage, setCurrentPage, 
 export default function Sidebar({ collapsed, setCollapsed, currentPage, setCurrentPage, theme, toggleTheme, mobileOpen, setMobileOpen }) {
     return (
         <>
-            {/* Desktop sidebar — hidden on mobile */}
             <aside className={cn(
                 "hidden lg:flex flex-col fixed inset-y-0 left-0 z-30 border-r border-[rgba(33,35,39,0.8)] transition-all duration-200 overflow-hidden",
                 collapsed ? "w-[60px]" : "w-[200px]"
@@ -112,12 +108,10 @@ export default function Sidebar({ collapsed, setCollapsed, currentPage, setCurre
                 <SidebarContent collapsed={collapsed} setCollapsed={setCollapsed} currentPage={currentPage} setCurrentPage={setCurrentPage} />
             </aside>
 
-            {/* Mobile overlay */}
             {mobileOpen && (
                 <div className="fixed inset-0 z-40 bg-black/60 lg:hidden" onClick={() => setMobileOpen(false)} />
             )}
 
-            {/* Mobile sidebar */}
             <aside className={cn(
                 "fixed inset-y-0 left-0 z-50 w-[200px] flex flex-col border-r border-[rgba(33,35,39,0.8)] transition-transform duration-200 ease-out lg:hidden overflow-y-auto thin-scroll",
                 mobileOpen ? "translate-x-0" : "-translate-x-full"

@@ -62,9 +62,7 @@ export default function ThresholdSettings({ settings, onSave }) {
                                 flame_threshold: flame,
                             });
                             setDirty(false);
-                        } catch (_e) {
-                            // keep dirty state so user can retry
-                        } finally {
+                        } catch (_e) {} finally {
                             setSaving(false);
                         }
                     }}

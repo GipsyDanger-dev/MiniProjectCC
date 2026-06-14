@@ -39,7 +39,6 @@ export default function SensorData({ activeRoom, iot }) {
         <div className="pb-4 sm:pb-5 space-y-3 sm:space-y-4">
             <div><h1 className="text-xl sm:text-2xl font-normal tracking-tight">Sensor Data</h1><p className="text-xs sm:text-sm text-[#7d8187] mt-0.5">Readings for <span className="text-white">{activeRoom}</span></p></div>
 
-            {/* Metric cards */}
             <div className="grid gap-2 sm:gap-3 grid-cols-2 lg:grid-cols-4">
                 {cards.map(c => (
                     <GlassSurface key={c.title} className="p-3 sm:p-4 group">
@@ -55,7 +54,6 @@ export default function SensorData({ activeRoom, iot }) {
                 ))}
             </div>
 
-            {/* Sensor Trends */}
             <GlassSurface className="p-3 sm:p-5">
                 <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2 sm:gap-3 mb-3 sm:mb-4">
                     <div><h2 className="text-xs sm:text-sm font-normal tracking-tight">Sensor Trends</h2><p className="text-[10px] sm:text-[11px] text-[#7d8187] mt-0.5">Multi-sensor with threshold</p></div>
@@ -83,7 +81,6 @@ export default function SensorData({ activeRoom, iot }) {
                 </div>
             </GlassSurface>
 
-            {/* Raw Readings */}
             <GlassSurface className="p-3 sm:p-5">
                 <div className="flex flex-wrap items-center justify-between gap-2 sm:gap-3 mb-3 sm:mb-4">
                     <div><h2 className="text-xs sm:text-sm font-normal tracking-tight">Raw Readings</h2><p className="text-[10px] sm:text-[11px] text-[#7d8187]">{rows.length} entries</p></div>

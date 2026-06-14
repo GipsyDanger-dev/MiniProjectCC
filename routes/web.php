@@ -19,16 +19,12 @@ Route::get('/dashboard', function () {
     return view('app');
 });
 
-// Threshold settings
 Route::post('/api/settings', [ApiController::class, 'saveSettings']);
 
-// Actuator control
 Route::post('/api/actuator', [ApiController::class, 'controlActuator']);
 
-// Clear worker status
 Route::post('/api/worker/clear', [ApiController::class, 'clearWorkerStatus']);
 
-// Auth routes
 Route::post('/api/login', [ApiController::class, 'login']);
 Route::post('/api/logout', [ApiController::class, 'logout']);
 Route::get('/api/user', [ApiController::class, 'getUser']);

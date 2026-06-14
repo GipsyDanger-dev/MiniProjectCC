@@ -30,8 +30,6 @@ class FuzzyLogicTest extends TestCase
         return $this->membershipMethod->invoke($this->controller, $value, $left, $peak, $right);
     }
 
-    // ── Triangular Membership ───────────────────────────────────
-
     public function test_membership_at_peak_returns_1(): void
     {
         $this->assertEquals(1.0, $this->membership(50, 0, 50, 100));
@@ -62,8 +60,6 @@ class FuzzyLogicTest extends TestCase
         $this->assertEqualsWithDelta(0.5, $this->membership(25, 0, 50, 100), 0.01);
         $this->assertEqualsWithDelta(0.5, $this->membership(75, 0, 50, 100), 0.01);
     }
-
-    // ── Flame Override ──────────────────────────────────────────
 
     public function test_flame_below_threshold_returns_override(): void
     {
@@ -98,8 +94,6 @@ class FuzzyLogicTest extends TestCase
         $this->assertEquals('FLAME_OVERRIDE', $result['profile']);
     }
 
-    // ── Safe Zone ───────────────────────────────────────────────
-
     public function test_all_low_values_returns_safe(): void
     {
         $result = $this->fuzzy(0, 0, 15, 800);
@@ -109,8 +103,6 @@ class FuzzyLogicTest extends TestCase
         $this->assertEquals(0, $result['fan_speed']);
         $this->assertEquals('STOP', $result['buzzer_action']);
     }
-
-    // ── HIGH Zone ───────────────────────────────────────────────
 
     public function test_high_gas_returns_high(): void
     {
@@ -135,8 +127,6 @@ class FuzzyLogicTest extends TestCase
         $this->assertEquals('HIGH', $result['fan_status']);
     }
 
-    // ── MEDIUM Zone ─────────────────────────────────────────────
-
     public function test_moderate_gas_smoke_returns_medium(): void
     {
         // gas=350 (gasMedium) + temp=60 (tempWarm) → score ≈ 59 → MEDIUM
@@ -147,8 +137,6 @@ class FuzzyLogicTest extends TestCase
         $this->assertEquals('MEDIUM', $result['buzzer_action']);
     }
 
-    // ── LOW Zone ────────────────────────────────────────────────
-
     public function test_slightly_elevated_returns_low(): void
     {
         $result = $this->fuzzy(200, 100, 25, 800);
@@ -157,8 +145,6 @@ class FuzzyLogicTest extends TestCase
         $this->assertEquals(30, $result['fan_speed']);
         $this->assertEquals('STOP', $result['buzzer_action']);
     }
-
-    // ── Score Range ─────────────────────────────────────────────
 
     public function test_score_between_0_and_100(): void
     {
@@ -177,8 +163,6 @@ class FuzzyLogicTest extends TestCase
         }
     }
 
-    // ── Decision Structure ──────────────────────────────────────
-
     public function test_decision_has_all_required_fields(): void
     {
         $result = $this->fuzzy(100, 50, 25, 800);
@@ -192,8 +176,6 @@ class FuzzyLogicTest extends TestCase
         $this->assertArrayHasKey('reason', $result);
     }
 
-    // ── Buzzer Behavior ─────────────────────────────────────────
-
     public function test_buzzer_starts_on_high_danger(): void
     {
         $result = $this->fuzzy(500, 300, 50, 800);
@@ -205,8 +187,6 @@ class FuzzyLogicTest extends TestCase
         $result = $this->fuzzy(0, 0, 15, 800);
         $this->assertEquals('STOP', $result['buzzer_action']);
     }
-
-    // ── Custom Thresholds ───────────────────────────────────────
 
     public function test_custom_gas_threshold_changes_sensitivity(): void
     {

@@ -76,7 +76,6 @@ export default function SensorReadings({ readings = [] }) {
                 <div className="h-20 flex items-end gap-1 px-1 relative">
                     {series.map((value, idx) => {
                         const pct = Math.max(4, (value / Math.max(max, threshold * 1.2)) * 100);
-                        // Flame (Api) is active-low: lower value = more dangerous
                         const isFlame = active === "Api";
                         const isDanger = isFlame ? value < threshold : value > threshold;
                         const isLow = isFlame ? value > threshold * 1.5 : value < threshold * 0.2;

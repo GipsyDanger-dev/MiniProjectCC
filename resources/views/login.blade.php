@@ -13,7 +13,6 @@
 <body class="min-h-screen bg-background text-foreground">
     <main class="min-h-screen p-3 md:p-5">
         <div class="relative isolate overflow-hidden rounded-lg border border-[#212327] min-h-[calc(100vh-24px)] md:min-h-[calc(100vh-40px)]" style="background:#0a0a0a;">
-            <!-- Ambient indigo grid -->
             <div class="absolute inset-0 pointer-events-none" style="background-image:linear-gradient(rgba(124,58,237,0.03) 1px, transparent 1px),linear-gradient(90deg,rgba(124,58,237,0.03) 1px, transparent 1px);background-size:60px 60px;mask-image:radial-gradient(ellipse 70% 60% at 50% 30%,black 20%,transparent 70%);-webkit-mask-image:radial-gradient(ellipse 70% 60% at 50% 30%,black 20%,transparent 70%);"></div>
             <div class="relative z-10 grid min-h-[calc(100vh-24px)] md:min-h-[calc(100vh-40px)] lg:grid-cols-[1.25fr_0.95fr]">
                 <section class="px-7 py-8 md:px-10 md:py-10 flex flex-col">

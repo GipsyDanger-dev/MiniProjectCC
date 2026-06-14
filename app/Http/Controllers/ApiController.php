@@ -617,7 +617,6 @@ class ApiController extends Controller
         $device->status = 'offline';
         $device->save();
 
-        // Clear related data
         SensorData::where('device_id', $device->id)->delete();
         Command::where('device_id', $device->id)->delete();
         DeviceActuator::where('device_id', $device->id)->delete();
@@ -682,7 +681,6 @@ class ApiController extends Controller
             $action = 'OFF';
         }
 
-        // Set manual mode BEFORE creating command to prevent race condition
         SystemSettings::firstOrCreate(['id' => 1])->update([
             'mode' => 'manual',
             'last_manual_command' => now(),

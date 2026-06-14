@@ -34,7 +34,6 @@ class FlameEmergencyTest extends TestCase
         $this->seedDevice();
         $this->seedSettings('manual');
 
-        // Flame detected while in manual mode
         $this->withHeader('x-api-key', 'test-key-123')
             ->postJson('/api/ingest', [
                 'device_id' => 1,
@@ -44,7 +43,6 @@ class FlameEmergencyTest extends TestCase
                 'flame_value' => 100,
             ]);
 
-        // Mode should be switched to auto
         $this->assertDatabaseHas('system_settings', [
             'id' => 1, 'mode' => 'auto',
         ]);
@@ -55,7 +53,6 @@ class FlameEmergencyTest extends TestCase
         $this->seedDevice();
         $this->seedSettings('manual');
 
-        // Flame detected
         $response = $this->withHeader('x-api-key', 'test-key-123')
             ->postJson('/api/ingest', [
                 'device_id' => 1,
@@ -65,11 +62,9 @@ class FlameEmergencyTest extends TestCase
                 'flame_value' => 100,
             ]);
 
-        // Should return FLAME_OVERRIDE decision immediately
         $response->assertCreated();
         $response->assertJsonPath('decision.profile', 'FLAME_OVERRIDE');
 
-        // Actuator should be updated IMMEDIATELY (same cycle)
         $this->assertDatabaseHas('device_actuators', [
             'device_id' => 1,
             'fan_status' => 'HIGH',
@@ -103,12 +98,10 @@ class FlameEmergencyTest extends TestCase
         $this->seedDevice();
         $this->seedSettings('manual');
 
-        // User manually stops fan
         $this->postJson('/api/actuator', [
             'target_device' => 'exhaust_fan', 'action' => 'STOP',
         ]);
 
-        // Flame detected — should override the stopped fan
         $this->withHeader('x-api-key', 'test-key-123')
             ->postJson('/api/ingest', [
                 'device_id' => 1,
@@ -129,7 +122,6 @@ class FlameEmergencyTest extends TestCase
         $this->seedDevice();
         $this->seedSettings('manual');
 
-        // Normal data, no flame
         $this->withHeader('x-api-key', 'test-key-123')
             ->postJson('/api/ingest', [
                 'device_id' => 1,
@@ -139,7 +131,6 @@ class FlameEmergencyTest extends TestCase
                 'flame_value' => 800,
             ]);
 
-        // Mode should stay manual
         $this->assertDatabaseHas('system_settings', [
             'id' => 1, 'mode' => 'manual',
         ]);

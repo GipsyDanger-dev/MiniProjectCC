@@ -8,7 +8,6 @@ class DashboardController extends Controller
 {
     public function index(Request $request)
     {
-        // SPA handles auth check via /api/auth/user
         return view('app');
     }
 }

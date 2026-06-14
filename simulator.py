@@ -114,7 +114,5 @@ def refresh_thresholds(pool):
             cursor = conn.cursor()
 
     print("-" * 80)
-    # Refresh list device tiap siklus
     DEVICE_CREDENTIALS = load_devices()
-    # Jeda 5 detik
     time.sleep(5)

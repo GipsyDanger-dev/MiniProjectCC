@@ -35,9 +35,6 @@ class SensorData extends Model
         'fan_speed' => 'integer',
     ];
 
-    // ── Relasi ──────────────────────────────────────────────
-
-    /** Data sensor ini milik satu device */
     public function device()
     {
         return $this->belongsTo(Device::class);

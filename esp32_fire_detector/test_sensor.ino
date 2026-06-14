@@ -1,9 +1,6 @@
 #include <DHT.h>
 
-// =============================================
-// PIN SENSOR
-// =============================================
-#define MQ2_AO     34   // Analog gas
+#define MQ2_AO     34
 #define DHT_PIN    27   // DHT22 data pin
 #define DHT_TYPE   DHT22
 
@@ -17,12 +14,10 @@ void setup() {
   Serial.println("  TEST SENSOR - DHT22 & MQ-2");
   Serial.println("================================");
 
-  // Test DHT22
   Serial.println("\n[1] Inisialisasi DHT22...");
   dht.begin();
   delay(2000);
 
-  // Test MQ-2
   Serial.println("[2] Inisialisasi MQ-2...");
   pinMode(MQ2_AO, INPUT);
   Serial.println("[2] MQ-2 perlu warm-up 20 detik...");
@@ -33,7 +28,6 @@ void setup() {
 void loop() {
   Serial.println("========== Pembacaan Sensor ==========");
 
-  // === MQ-2 ===
   int mq2_raw = analogRead(MQ2_AO);
   float mq2_volt = mq2_raw * (3.3 / 4095.0);
   Serial.printf("[MQ-2]  Raw ADC : %d\n", mq2_raw);
@@ -52,7 +46,6 @@ void loop() {
     Serial.println("[MQ-2]  Nilai tinggi - gas/asap tinggi!");
   }
 
-  // === DHT22 ===
   float suhu = dht.readTemperature();
   float kelembaban = dht.readHumidity();
 

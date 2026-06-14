@@ -14,12 +14,10 @@ export default function Topbar({ mobileOpen, setMobileOpen, systemMode = "auto",
 
     return (
         <header className="sticky top-0 z-20 h-11 flex items-center px-3 sm:px-4 gap-2 sm:gap-3 shrink-0 border-b border-[rgba(33,35,39,0.6)]" style={{ background: "rgba(10,10,10,0.8)", backdropFilter: "blur(16px)", WebkitBackdropFilter: "blur(16px)" }}>
-            {/* Mobile menu button */}
             <button onClick={() => setMobileOpen(!mobileOpen)} className="lg:hidden w-7 h-7 flex items-center justify-center text-[#7d8187] hover:text-white transition-colors">
                 <Menu className="w-4 h-4" strokeWidth={1.5} />
             </button>
 
-            {/* Info chips — desktop only */}
             <div className="hidden md:flex items-center gap-2 text-[11px] text-[#7d8187]">
                 <span>Node:</span><span className="text-white font-normal">ESP32-A1</span>
             </div>
@@ -30,16 +28,13 @@ export default function Topbar({ mobileOpen, setMobileOpen, systemMode = "auto",
 
             <div className="flex-1" />
 
-            {/* Live indicator */}
             <div className="hidden sm:flex items-center gap-2 px-2.5 py-1 rounded-[9999px] border border-[rgba(33,35,39,0.8)] text-[10px] sm:text-[11px]">
                 <span className="w-1.5 h-1.5 rounded-full bg-[#22c55e] animate-pulse" />
                 <span className="text-[#22c55e] font-normal uppercase" style={{ fontFamily: "'Geist Mono', monospace", letterSpacing: '0.8px' }}>Live</span>
             </div>
 
-            {/* Time */}
             <span className="text-[11px] sm:text-[12px] font-normal text-[#7d8187] tabular-nums" style={{ fontFamily: "'Geist Mono', monospace", letterSpacing: '0.5px' }}>{fmt}</span>
 
-            {/* User menu */}
             <div className="relative" ref={menuRef}>
                 <button onClick={() => setMenuOpen(!menuOpen)}
                     className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-[rgba(26,28,32,0.6)] border border-[rgba(33,35,39,0.8)] flex items-center justify-center text-[10px] sm:text-[11px] font-normal text-white uppercase hover:border-[rgba(124,58,237,0.3)] transition-colors cursor-pointer"

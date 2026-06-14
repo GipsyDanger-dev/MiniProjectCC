@@ -1,4 +1,3 @@
-/* GlassSurface — semi-transparent with indigo edge glow */
 .glass-surface {
     background: rgba(25, 25, 25, 0.7);
     backdrop-filter: blur(12px);

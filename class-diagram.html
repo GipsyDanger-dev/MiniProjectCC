@@ -1,0 +1,902 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SentinelIoT — Class Diagram</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0f1117;
+    --surface: #161820;
+    --surface2: #1c1e28;
+    --surface3: #232530;
+    --border: #2a2d3a;
+    --ink: #e2e4ed;
+    --ink2: #9ca0b0;
+    --ink3: #6b6f82;
+    --accent: #d97706;
+    --accent-dim: rgba(217,119,6,0.12);
+    --accent-glow: rgba(217,119,6,0.3);
+    --danger: #dc2626;
+    --danger-dim: rgba(220,38,38,0.10);
+    --success: #16a34a;
+    --success-dim: rgba(22,163,74,0.10);
+    --info: #2563eb;
+    --info-dim: rgba(37,99,235,0.10);
+    --purple: #7c3aed;
+    --purple-dim: rgba(124,58,237,0.10);
+    --cyan: #0891b2;
+    --cyan-dim: rgba(8,145,178,0.10);
+    --pink: #db2777;
+    --pink-dim: rgba(219,39,119,0.10);
+
+    --canvas-bg: #ffffff;
+    --card-bg: #ffffff;
+    --card-border: #d1d5db;
+    --card-head-bg: #f9fafb;
+    --card-text: #1f2937;
+    --card-text2: #4b5563;
+    --card-text3: #9ca3af;
+    --card-hover-bg: #f3f4f6;
+    --card-section-border: #e5e7eb;
+    --grid-dot: #d1d5db;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Inter', system-ui, sans-serif;
+    background: var(--bg); color: var(--ink);
+    height: 100vh; overflow: hidden; user-select: none;
+  }
+
+  /* ── Header ── */
+  .header {
+    background: var(--surface); border-bottom: 1px solid var(--border);
+    padding: 12px 24px; display: flex; align-items: center;
+    justify-content: space-between; height: 52px; position: relative; z-index: 100;
+  }
+  .header h1 { font-size: 15px; font-weight: 600; }
+  .header h1 span { color: var(--accent); }
+  .header-stats { display: flex; gap: 16px; font-size: 11px; color: var(--ink3); }
+  .header-stats strong { color: var(--ink2); font-weight: 500; }
+  .header-right { display: flex; align-items: center; gap: 8px; }
+  .btn {
+    background: var(--surface2); border: 1px solid var(--border);
+    color: var(--ink2); font-size: 11px; font-weight: 500;
+    padding: 6px 12px; border-radius: 6px; cursor: pointer;
+    transition: all 0.15s; font-family: inherit;
+  }
+  .btn:hover { background: var(--surface3); color: var(--ink); border-color: var(--ink3); }
+  .btn-accent { background: var(--accent-dim); color: var(--accent); border-color: rgba(232,155,42,0.2); }
+  .btn-accent:hover { background: rgba(232,155,42,0.2); }
+
+  /* ── Toolbar ── */
+  .toolbar {
+    background: var(--surface); border-bottom: 1px solid var(--border);
+    padding: 8px 24px; display: flex; align-items: center; gap: 12px;
+    height: 40px; font-size: 11px; color: var(--ink3);
+  }
+  .toolbar .sep { width: 1px; height: 16px; background: var(--border); }
+  .zoom-display { font-family: 'JetBrains Mono', monospace; color: var(--ink2); min-width: 40px; text-align: center; }
+
+  /* ── Canvas ── */
+  .canvas-wrapper {
+    position: absolute; top: 92px; left: 0; right: 0; bottom: 0;
+    overflow: hidden; cursor: grab;
+  }
+  .canvas-wrapper.dragging-canvas { cursor: grabbing; }
+  .canvas-wrapper.dragging-class { cursor: default; }
+  .canvas { position: absolute; top: 0; left: 0; width: 6000px; height: 4000px; transform-origin: 0 0; background: var(--canvas-bg); }
+  .grid-bg {
+    position: absolute; inset: 0;
+    background-image: radial-gradient(circle, var(--grid-dot) 1px, transparent 1px);
+    background-size: 24px 24px; opacity: 0.5; pointer-events: none;
+  }
+
+  /* ── SVG ── */
+  .lines-svg { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 5; }
+  .rel-line { fill: none; stroke-width: 1.5; stroke-linecap: round; transition: opacity 0.2s, stroke-width 0.2s; }
+  .rel-line.inherit { stroke: #b45309; stroke-dasharray: 8 4; }
+  .rel-line.uses { stroke: #1d4ed8; stroke-dasharray: 4 3; }
+  .rel-line.has-one { stroke: #15803d; }
+  .rel-line.has-many { stroke: #15803d; stroke-dasharray: 6 3; }
+  .rel-line.belongs { stroke: #0e7490; }
+  .rel-line.dimmed { opacity: 0.12; }
+  .rel-line.highlighted { opacity: 1; stroke-width: 2.5; }
+  .rel-line.highlighted.inherit { filter: drop-shadow(0 0 4px rgba(180,83,9,0.3)); }
+
+  /* ── Class Card ── */
+  .class-card {
+    position: absolute; width: 300px;
+    background: var(--card-bg); border: 1.5px solid var(--card-border);
+    border-radius: 10px; overflow: hidden; z-index: 10;
+    transition: box-shadow 0.25s, border-color 0.25s; cursor: default;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.06);
+  }
+  .class-card:hover { border-color: var(--accent); box-shadow: 0 4px 16px rgba(0,0,0,0.12); z-index: 20; }
+  .class-card.highlight { border-color: var(--accent); box-shadow: 0 0 0 1.5px var(--accent), 0 6px 24px rgba(217,119,6,0.15); z-index: 25; }
+  .class-card.related { border-color: rgba(217,119,6,0.3); box-shadow: 0 2px 12px rgba(0,0,0,0.1); z-index: 22; }
+  .class-card.unrelated { opacity: 0.3; }
+  .class-card.dragging { opacity: 0.9; box-shadow: 0 12px 40px rgba(0,0,0,0.2); z-index: 50; cursor: grabbing; }
+
+  .class-head {
+    padding: 10px 14px; display: flex; align-items: center; justify-content: space-between;
+    border-bottom: 1px solid var(--card-section-border); cursor: grab;
+    background: var(--card-head-bg);
+  }
+  .class-head:active { cursor: grabbing; }
+  .class-stereotype { font-size: 9px; color: var(--card-text3); letter-spacing: 0.06em; text-transform: uppercase; }
+  .class-name { font-size: 13px; font-weight: 600; font-family: 'JetBrains Mono', monospace; color: var(--card-text); }
+  .class-badge {
+    font-size: 9px; font-weight: 600; letter-spacing: 0.06em;
+    text-transform: uppercase; padding: 2px 7px; border-radius: 4px;
+  }
+
+  .class-section { border-bottom: 1px solid var(--card-section-border); }
+  .class-section:last-child { border-bottom: none; }
+  .section-label {
+    font-size: 9px; color: var(--card-text3); text-transform: uppercase;
+    letter-spacing: 0.1em; padding: 6px 14px 2px;
+  }
+  .member-row {
+    display: flex; align-items: center; padding: 3px 14px; gap: 6px;
+    font-size: 11px; transition: background 0.1s;
+  }
+  .member-row:hover { background: var(--card-hover-bg); }
+  .member-vis { font-family: 'JetBrains Mono', monospace; font-size: 10px; width: 12px; flex-shrink: 0; }
+  .member-vis.public { color: var(--success); }
+  .member-vis.private { color: var(--danger); }
+  .member-vis.protected { color: var(--purple); }
+  .member-name { font-family: 'JetBrains Mono', monospace; font-size: 11px; flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--card-text); }
+  .member-type { font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--card-text3); flex-shrink: 0; }
+  .member-tag {
+    font-size: 8px; font-weight: 600; padding: 1px 5px;
+    border-radius: 2px; flex-shrink: 0; font-family: 'JetBrains Mono', monospace;
+  }
+  .tag-static { background: var(--purple-dim); color: var(--purple); }
+  .tag-abstract { background: var(--pink-dim); color: var(--pink); }
+  .tag-final { background: var(--accent-dim); color: var(--accent); }
+  .tag-override { background: var(--cyan-dim); color: var(--cyan); }
+
+  /* ── Legend ── */
+  .legend {
+    position: fixed; bottom: 16px; left: 16px;
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 8px; padding: 14px 18px; z-index: 50; font-size: 12px;
+  }
+  .legend h4 { font-size: 10px; color: var(--ink3); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 10px; }
+  .legend-items { display: flex; flex-direction: column; gap: 7px; }
+  .legend-item { display: flex; align-items: center; gap: 10px; color: var(--ink2); font-size: 12px; }
+  .legend-line { width: 28px; height: 0; border-top: 2.5px solid; flex-shrink: 0; }
+  .legend-line.dashed { border-style: dashed; }
+  .legend-line.dotted { border-style: dotted; }
+
+  /* ── Detail Panel ── */
+  .detail-panel {
+    position: fixed; right: 16px; top: 108px; bottom: 16px; width: 340px;
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 8px; z-index: 50; display: none; flex-direction: column; overflow: hidden;
+  }
+  .detail-panel.open { display: flex; }
+  .detail-head { padding: 14px 18px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
+  .detail-head h3 { font-size: 14px; font-family: 'JetBrains Mono', monospace; font-weight: 600; }
+  .detail-close { width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; background: none; border: none; color: var(--ink3); cursor: pointer; border-radius: 4px; font-size: 16px; }
+  .detail-close:hover { background: var(--surface2); color: var(--ink); }
+  .detail-body { flex: 1; overflow-y: auto; padding: 14px 18px; }
+  .detail-section { margin-bottom: 18px; }
+  .detail-section h4 { font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--ink3); margin-bottom: 10px; }
+  .detail-desc { font-size: 13px; color: var(--ink2); line-height: 1.7; padding: 12px 14px; background: var(--surface2); border-radius: 6px; }
+  .detail-rel { display: flex; align-items: center; gap: 8px; padding: 10px 12px; background: var(--surface2); border-radius: 6px; margin-bottom: 6px; font-size: 13px; }
+  .detail-rel .arrow { color: var(--accent); font-weight: 700; font-size: 16px; }
+  .detail-rel .target { font-family: 'JetBrains Mono', monospace; color: var(--ink); font-weight: 500; }
+  .detail-rel .rel-type { font-size: 11px; color: var(--ink3); margin-left: auto; }
+
+  /* ── Minimap ── */
+  .minimap { position: fixed; bottom: 16px; right: 16px; width: 180px; height: 120px; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; z-index: 50; overflow: hidden; cursor: pointer; }
+  .minimap-viewport { position: absolute; border: 1.5px solid var(--accent); background: rgba(232,155,42,0.06); pointer-events: none; }
+  .minimap-dot { position: absolute; border-radius: 2px; opacity: 0.7; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-left">
+    <h1>Sentinel<span>IoT</span> — Class Diagram</h1>
+    <div class="header-stats">
+      <span><strong>8</strong> Models</span>
+      <span><strong>2</strong> Controllers</span>
+      <span><strong>1</strong> Middleware</span>
+      <span><strong>11</strong> Classes</span>
+    </div>
+  </div>
+  <div class="header-right">
+    <button class="btn" onclick="resetView()">Reset View</button>
+    <button class="btn btn-accent" onclick="autoLayout()">Auto Layout</button>
+  </div>
+</div>
+
+<div class="toolbar">
+  <span>Hover class untuk highlight relasi</span>
+  <div class="sep"></div>
+  <span>Geser header class untuk pindah posisi</span>
+  <div class="sep"></div>
+  <span>Scroll untuk zoom · Klik canvas untuk geser</span>
+  <div class="sep"></div>
+  <span class="zoom-display" id="zoomDisplay">100%</span>
+</div>
+
+<div class="canvas-wrapper" id="canvasWrapper">
+  <div class="canvas" id="canvas">
+    <div class="grid-bg"></div>
+    <svg class="lines-svg" id="linesSvg"></svg>
+    <div id="labelMarkers"></div>
+  </div>
+</div>
+
+<div class="legend">
+  <h4>Relasi</h4>
+  <div class="legend-items">
+    <div class="legend-item"><div class="legend-line" style="border-color:var(--accent)"></div><span>Inheritance (extends)</span></div>
+    <div class="legend-item"><div class="legend-line" style="border-color:var(--success)"></div><span>hasOne / hasMany</span></div>
+    <div class="legend-item"><div class="legend-line dashed" style="border-color:var(--success)"></div><span>hasMany (collection)</span></div>
+    <div class="legend-item"><div class="legend-line" style="border-color:var(--cyan)"></div><span>belongsTo</span></div>
+    <div class="legend-item"><div class="legend-line dotted" style="border-color:var(--info)"></div><span>Uses / Depends</span></div>
+  </div>
+  <h4 style="margin-top:12px">Visibility</h4>
+  <div class="legend-items">
+    <div class="legend-item"><span style="color:var(--success);font-family:'JetBrains Mono',monospace;font-weight:700;width:16px;text-align:center">+</span><span>Public</span></div>
+    <div class="legend-item"><span style="color:var(--danger);font-family:'JetBrains Mono',monospace;font-weight:700;width:16px;text-align:center">-</span><span>Private</span></div>
+    <div class="legend-item"><span style="color:var(--purple);font-family:'JetBrains Mono',monospace;font-weight:700;width:16px;text-align:center">#</span><span>Protected</span></div>
+  </div>
+</div>
+
+<div class="detail-panel" id="detailPanel">
+  <div class="detail-head">
+    <h3 id="detailName">—</h3>
+    <button class="detail-close" onclick="closeDetail()">✕</button>
+  </div>
+  <div class="detail-body" id="detailBody"></div>
+</div>
+
+<div class="minimap" id="minimap">
+  <div class="minimap-viewport" id="minimapViewport"></div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════════
+// CLASS DATA
+// ═══════════════════════════════════════════════════════
+
+const classes = [
+  {
+    name: 'Model', stereotype: 'Eloquent Base', group: 'framework', x: 560, y: 20,
+    desc: 'Base Eloquent Model dari Laravel. Semua model bisnis extends class ini.',
+    isAbstract: true,
+    properties: [
+      { vis: 'protected', name: '$table', type: 'string' },
+      { vis: 'protected', name: '$fillable', type: 'array' },
+      { vis: 'protected', name: '$casts', type: 'array' },
+      { vis: 'protected', name: '$hidden', type: 'array' },
+    ],
+    methods: [
+      { vis: 'public', name: 'create()', type: 'static' },
+      { vis: 'public', name: 'find()', type: 'static' },
+      { vis: 'public', name: 'where()', type: 'Builder' },
+      { vis: 'public', name: 'save()', type: 'bool' },
+      { vis: 'public', name: 'delete()', type: 'bool' },
+      { vis: 'public', name: 'update()', type: 'bool' },
+      { vis: 'public', name: 'firstOrCreate()', type: 'static' },
+      { vis: 'public', name: 'updateOrCreate()', type: 'static' },
+    ]
+  },
+  {
+    name: 'Authenticatable', stereotype: 'Auth Base', group: 'framework', x: 560, y: 380,
+    desc: 'Base class untuk model yang bisa di-authenticate. Menambahkan fitur password hashing, remember token, dsb.',
+    isAbstract: true,
+    properties: [
+      { vis: 'protected', name: '$hidden', type: 'array', note: 'password, remember_token' },
+    ],
+    methods: [
+      { vis: 'public', name: 'getAuthIdentifier()', type: 'mixed' },
+      { vis: 'public', name: 'getAuthPassword()', type: 'string' },
+    ]
+  },
+  {
+    name: 'User', stereotype: 'Model', group: 'model', x: 160, y: 20,
+    desc: 'Admin/operator yang login ke dashboard SentinelIoT. Menggunakan session-based auth.',
+    properties: [
+      { vis: 'protected', name: '$fillable', type: 'array', note: "['name', 'email', 'password']" },
+      { vis: 'protected', name: '$casts', type: 'array', note: "email_verified_at→datetime, password→hashed" },
+    ],
+    methods: [
+      { vis: 'public', name: 'casts()', type: 'array', tags: ['override'] },
+    ]
+  },
+  {
+    name: 'Device', stereotype: 'Model', group: 'model', x: 560, y: 180,
+    desc: 'Perangkat IoT (ESP32) yang terdaftar. Central entity — semua data sensor, aktuator, command, dan log terkait device.',
+    properties: [
+      { vis: 'protected', name: '$table', type: 'string', note: "'devices'" },
+      { vis: 'protected', name: '$fillable', type: 'array', note: "['device_name', 'location', 'api_key', 'status']" },
+    ],
+    methods: [
+      { vis: 'public', name: 'actuator()', type: 'hasOne<DeviceActuator>' },
+      { vis: 'public', name: 'sensorData()', type: 'hasMany<SensorData>' },
+      { vis: 'public', name: 'commands()', type: 'hasMany<Command>' },
+      { vis: 'public', name: 'activityLogs()', type: 'hasMany<ActivityLog>' },
+    ]
+  },
+  {
+    name: 'SensorData', stereotype: 'Model', group: 'model', x: 160, y: 220,
+    desc: 'Data time-series dari sensor MQ-2, KY-026, DHT22. Setiap baris = satu pembacaan. Menyimpan hasil fuzzy decision.',
+    properties: [
+      { vis: 'protected', name: '$table', type: 'string', note: "'sensor_data'" },
+      { vis: 'protected', name: '$fillable', type: 'array', note: '11 fields' },
+      { vis: 'protected', name: '$casts', type: 'array', note: '7 fields → float/int' },
+    ],
+    methods: [
+      { vis: 'public', name: 'device()', type: 'belongsTo<Device>' },
+    ]
+  },
+  {
+    name: 'DeviceActuator', stereotype: 'Model', group: 'model', x: 960, y: 180,
+    desc: 'Status aktuator (fan & buzzer) per device. One-to-one dengan Device. Diupdate oleh fuzzy logic atau manual control.',
+    properties: [
+      { vis: 'protected', name: '$fillable', type: 'array', note: "['device_id', 'fan_status', 'alarm_status', 'fan_speed']" },
+    ],
+    methods: [
+      { vis: 'public', name: 'device()', type: 'belongsTo<Device>' },
+    ]
+  },
+  {
+    name: 'Command', stereotype: 'Model', group: 'model', x: 960, y: 370,
+    desc: 'Perintah dari server ke ESP32. Worker poll tabel ini via API, lalu eksekusi di hardware. Status: pending → processing → completed/failed.',
+    properties: [
+      { vis: 'protected', name: '$table', type: 'string', note: "'commands'" },
+      { vis: 'protected', name: '$fillable', type: 'array', note: "['device_id', 'target_device', 'action', 'status']" },
+    ],
+    methods: [
+      { vis: 'public', name: 'device()', type: 'belongsTo<Device>' },
+    ]
+  },
+  {
+    name: 'ActivityLog', stereotype: 'Model', group: 'model', x: 160, y: 430,
+    desc: 'Log semua event sistem: alert bahaya, perintah manual, update mode, emergency, dll.',
+    properties: [
+      { vis: 'protected', name: '$table', type: 'string', note: "'activity_logs'" },
+      { vis: 'protected', name: '$fillable', type: 'array', note: "['device_id', 'action_type', 'status', 'description', 'message']" },
+    ],
+    methods: [
+      { vis: 'public', name: 'device()', type: 'belongsTo<Device>' },
+    ]
+  },
+  {
+    name: 'SystemSettings', stereotype: 'Model', group: 'model', x: 560, y: 560,
+    desc: 'Konfigurasi global: threshold sensor, mode operasi, status emergency. Singleton — hanya 1 baris (id=1).',
+    properties: [
+      { vis: 'protected', name: '$fillable', type: 'array', note: '8 fields: thresholds, mode, emergency_active' },
+      { vis: 'protected', name: '$casts', type: 'array', note: "last_manual_command → datetime" },
+    ],
+    methods: []
+  },
+  {
+    name: 'WorkerStatus', stereotype: 'Model', group: 'model', x: 960, y: 560,
+    desc: 'Heartbeat dari ESP32 worker. Jika last_heartbeat > 60 detik, worker dianggap offline.',
+    properties: [
+      { vis: 'protected', name: '$table', type: 'string', note: "'worker_status'" },
+      { vis: 'protected', name: '$fillable', type: 'array', note: "['component_name', 'current_state', 'last_heartbeat']" },
+      { vis: 'protected', name: '$casts', type: 'array', note: "last_heartbeat → datetime" },
+    ],
+    methods: []
+  },
+  {
+    name: 'ApiController', stereotype: 'Controller', group: 'controller', x: 1300, y: 20,
+    desc: 'Controller utama yang menangani semua API: ingest sensor, dashboard, actuator control, fuzzy logic, device management, auth.',
+    properties: [],
+    methods: [
+      { vis: 'public', name: 'ingestData()', type: ' JsonResponse', note: 'POST /api/ingest' },
+      { vis: 'public', name: 'dashboard()', type: 'JsonResponse', note: 'GET /api/dashboard/data' },
+      { vis: 'public', name: 'flameSensor()', type: 'JsonResponse', note: 'GET /api/sensor/flame' },
+      { vis: 'public', name: 'saveSettings()', type: 'JsonResponse', note: 'POST /api/settings' },
+      { vis: 'public', name: 'getSettings()', type: 'JsonResponse', note: 'GET /api/settings' },
+      { vis: 'public', name: 'controlActuator()', type: 'JsonResponse', note: 'POST /api/actuator' },
+      { vis: 'public', name: 'setMode()', type: 'JsonResponse', note: 'POST /api/mode' },
+      { vis: 'public', name: 'emergency()', type: 'JsonResponse', note: 'POST /api/emergency' },
+      { vis: 'public', name: 'devices()', type: 'JsonResponse', note: 'GET /api/devices' },
+      { vis: 'public', name: 'createDevice()', type: 'JsonResponse', note: 'POST /api/devices' },
+      { vis: 'public', name: 'updateDevice()', type: 'JsonResponse', note: 'PUT /api/devices/{id}' },
+      { vis: 'public', name: 'resetDevice()', type: 'JsonResponse', note: 'POST /api/devices/{id}/reset' },
+      { vis: 'public', name: 'getPendingCommand()', type: 'JsonResponse', note: 'GET /api/command/get' },
+      { vis: 'public', name: 'updateWorkerStatus()', type: 'JsonResponse', note: 'POST /api/status/update' },
+      { vis: 'public', name: 'workerHeartbeat()', type: 'JsonResponse', note: 'POST /api/worker/heartbeat' },
+      { vis: 'public', name: 'clearWorkerStatus()', type: 'JsonResponse', note: 'POST /api/worker/clear' },
+      { vis: 'public', name: 'login()', type: 'JsonResponse', note: 'POST /api/login' },
+      { vis: 'public', name: 'logout()', type: 'JsonResponse', note: 'POST /api/logout' },
+      { vis: 'public', name: 'getUser()', type: 'JsonResponse', note: 'GET /api/user' },
+      { vis: 'private', name: 'triangularMembership()', type: 'float', note: 'Fuzzifikasi segitiga' },
+      { vis: 'private', name: 'buildFuzzyDecision()', type: 'array', note: 'Sugeno 27 rules' },
+      { vis: 'private', name: 'syncActuatorCommands()', type: 'void', note: 'Sinkronisasi aktuator' },
+      { vis: 'private', name: 'buildActivityMessage()', type: 'array', note: 'Bangun pesan log' },
+    ]
+  },
+  {
+    name: 'AuthController', stereotype: 'Controller', group: 'controller', x: 1300, y: 620,
+    desc: 'Controller autentikasi. Menggunakan Laravel Auth facade dengan session-based login.',
+    properties: [],
+    methods: [
+      { vis: 'public', name: 'login()', type: 'JsonResponse', note: 'POST /api/login' },
+      { vis: 'public', name: 'logout()', type: 'JsonResponse', note: 'POST /api/logout' },
+      { vis: 'public', name: 'user()', type: 'JsonResponse', note: 'GET /api/user' },
+    ]
+  },
+  {
+    name: 'CheckApiKey', stereotype: 'Middleware', group: 'middleware', x: 1300, y: 800,
+    desc: 'Middleware autentikasi API key untuk ESP32 worker. Cek header x-api-key atau session cookie.',
+    properties: [],
+    methods: [
+      { vis: 'public', name: 'handle()', type: 'Response', note: 'Cek session atau API key' },
+    ]
+  },
+];
+
+// ── Relationships ──
+const relationships = [
+  // Inheritance
+  { from: 'User', to: 'Authenticatable', type: 'inheritance' },
+  { from: 'Authenticatable', to: 'Model', type: 'inheritance' },
+  { from: 'Device', to: 'Model', type: 'inheritance' },
+  { from: 'SensorData', to: 'Model', type: 'inheritance' },
+  { from: 'DeviceActuator', to: 'Model', type: 'inheritance' },
+  { from: 'Command', to: 'Model', type: 'inheritance' },
+  { from: 'ActivityLog', to: 'Model', type: 'inheritance' },
+  { from: 'SystemSettings', to: 'Model', type: 'inheritance' },
+  { from: 'WorkerStatus', to: 'Model', type: 'inheritance' },
+
+  // Eloquent Relationships (hasOne)
+  { from: 'Device', to: 'DeviceActuator', type: 'has-one', label: 'hasOne' },
+
+  // Eloquent Relationships (hasMany)
+  { from: 'Device', to: 'SensorData', type: 'has-many', label: 'hasMany' },
+  { from: 'Device', to: 'Command', type: 'has-many', label: 'hasMany' },
+  { from: 'Device', to: 'ActivityLog', type: 'has-many', label: 'hasMany' },
+
+  // belongsTo
+  { from: 'SensorData', to: 'Device', type: 'belongs', label: 'belongsTo' },
+  { from: 'DeviceActuator', to: 'Device', type: 'belongs', label: 'belongsTo' },
+  { from: 'Command', to: 'Device', type: 'belongs', label: 'belongsTo' },
+  { from: 'ActivityLog', to: 'Device', type: 'belongs', label: 'belongsTo' },
+
+  // Controller dependencies
+  { from: 'ApiController', to: 'SensorData', type: 'uses', label: 'uses' },
+  { from: 'ApiController', to: 'Command', type: 'uses', label: 'uses' },
+  { from: 'ApiController', to: 'ActivityLog', type: 'uses', label: 'uses' },
+  { from: 'ApiController', to: 'DeviceActuator', type: 'uses', label: 'uses' },
+  { from: 'ApiController', to: 'WorkerStatus', type: 'uses', label: 'uses' },
+  { from: 'ApiController', to: 'Device', type: 'uses', label: 'uses' },
+  { from: 'ApiController', to: 'User', type: 'uses', label: 'uses' },
+  { from: 'ApiController', to: 'SystemSettings', type: 'uses', label: 'uses' },
+  { from: 'AuthController', to: 'User', type: 'uses', label: 'uses' },
+  { from: 'CheckApiKey', to: 'Device', type: 'uses', label: 'uses (DB)' },
+];
+
+// ═══════════════════════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════════════════════
+
+let zoom = 1;
+let panX = 0, panY = 0;
+let draggingClass = null;
+let dragOffsetX = 0, dragOffsetY = 0;
+let panning = false;
+let panStartX = 0, panStartY = 0;
+let hoveredClass = null;
+
+// ═══════════════════════════════════════════════════════
+// RENDER
+// ═══════════════════════════════════════════════════════
+
+const canvas = document.getElementById('canvas');
+const canvasWrapper = document.getElementById('canvasWrapper');
+
+const groupColors = {
+  framework: { bg: 'var(--accent-dim)', color: 'var(--accent)', badge: 'FRAMEWORK', badgeCls: 'background:var(--accent-dim);color:var(--accent)' },
+  model: { bg: 'var(--success-dim)', color: 'var(--success)', badge: 'MODEL', badgeCls: 'background:var(--success-dim);color:var(--success)' },
+  controller: { bg: 'var(--info-dim)', color: 'var(--info)', badge: 'CONTROLLER', badgeCls: 'background:var(--info-dim);color:var(--info)' },
+  middleware: { bg: 'var(--purple-dim)', color: 'var(--purple)', badge: 'MIDDLEWARE', badgeCls: 'background:var(--purple-dim);color:var(--purple)' },
+};
+
+classes.forEach(cls => {
+  const card = document.createElement('div');
+  card.className = 'class-card';
+  card.id = `class-${cls.name}`;
+  card.style.left = cls.x + 'px';
+  card.style.top = cls.y + 'px';
+  card.dataset.name = cls.name;
+
+  const gc = groupColors[cls.group] || groupColors.model;
+  const stereotype = cls.stereotype ? `<div class="class-stereotype">«${cls.stereotype}»</div>` : '';
+  const abstractStyle = cls.isAbstract ? 'font-style:italic;' : '';
+
+  let sectionsHtml = '';
+
+  // Properties section
+  if (cls.properties.length) {
+    sectionsHtml += `<div class="class-section"><div class="section-label">Attributes</div>`;
+    cls.properties.forEach(p => {
+      const visSymbol = p.vis === 'public' ? '+' : p.vis === 'private' ? '-' : '#';
+      const visCls = p.vis === 'public' ? 'public' : p.vis === 'private' ? 'private' : 'protected';
+      const note = p.note ? `<span style="font-size:9px;color:var(--ink3);margin-left:4px">${p.note}</span>` : '';
+      sectionsHtml += `<div class="member-row">
+        <span class="member-vis ${visCls}">${visSymbol}</span>
+        <span class="member-name" style="${abstractStyle}">${p.name}</span>
+        <span class="member-type">${p.type}</span>
+      </div>`;
+      if (p.note) {
+        sectionsHtml += `<div style="padding:0 14px 2px 32px;font-size:9px;color:var(--card-text3);line-height:1.3">${p.note}</div>`;
+      }
+    });
+    sectionsHtml += '</div>';
+  }
+
+  // Methods section
+  if (cls.methods.length) {
+    sectionsHtml += `<div class="class-section"><div class="section-label">Methods</div>`;
+    cls.methods.forEach(m => {
+      const visSymbol = m.vis === 'public' ? '+' : m.vis === 'private' ? '-' : '#';
+      const visCls = m.vis === 'public' ? 'public' : m.vis === 'private' ? 'private' : 'protected';
+      let tags = '';
+      if (m.tags) tags = m.tags.map(t => `<span class="member-tag tag-${t}">${t}</span>`).join('');
+      const note = m.note ? `<span style="font-size:9px;color:var(--ink3);margin-left:4px">${m.note}</span>` : '';
+      sectionsHtml += `<div class="member-row">
+        <span class="member-vis ${visCls}">${visSymbol}</span>
+        <span class="member-name" style="${abstractStyle}">${m.name}</span>
+        <span class="member-type">${m.type}</span>
+        ${tags}
+      </div>`;
+    });
+    sectionsHtml += '</div>';
+  }
+
+  card.innerHTML = `
+    <div class="class-head" data-class="${cls.name}">
+      <div>${stereotype}<div class="class-name" style="${abstractStyle}">${cls.name}</div></div>
+      <span class="class-badge" style="${gc.badgeCls}">${gc.badge}</span>
+    </div>
+    ${sectionsHtml}
+  `;
+
+  // Hover
+  card.addEventListener('mouseenter', () => { hoveredClass = cls.name; applyHighlight(cls.name); });
+  card.addEventListener('mouseleave', () => { hoveredClass = null; clearHighlight(); });
+  card.addEventListener('dblclick', () => openDetail(cls.name));
+
+  canvas.appendChild(card);
+});
+
+// ═══════════════════════════════════════════════════════
+// HIGHLIGHT
+// ═══════════════════════════════════════════════════════
+
+function applyHighlight(className) {
+  const related = new Set([className]);
+  relationships.forEach(r => {
+    if (r.from === className || r.to === className) {
+      related.add(r.from); related.add(r.to);
+    }
+  });
+
+  document.querySelectorAll('.class-card').forEach(c => {
+    const n = c.dataset.name;
+    c.classList.remove('highlight', 'related', 'unrelated');
+    if (n === className) c.classList.add('highlight');
+    else if (related.has(n)) c.classList.add('related');
+    else c.classList.add('unrelated');
+  });
+
+  document.querySelectorAll('.rel-line').forEach(l => {
+    l.classList.remove('dimmed', 'highlighted');
+    if (related.has(l.dataset.from) && related.has(l.dataset.to)) l.classList.add('highlighted');
+    else l.classList.add('dimmed');
+  });
+}
+
+function clearHighlight() {
+  document.querySelectorAll('.class-card').forEach(c => c.classList.remove('highlight', 'related', 'unrelated'));
+  document.querySelectorAll('.rel-line').forEach(l => l.classList.remove('dimmed', 'highlighted'));
+}
+
+// ═══════════════════════════════════════════════════════
+// DRAGGING
+// ═══════════════════════════════════════════════════════
+
+document.querySelectorAll('.class-head').forEach(head => {
+  head.addEventListener('mousedown', (e) => {
+    if (e.button !== 0) return;
+    e.preventDefault();
+    const name = head.dataset.class;
+    const card = document.getElementById(`class-${name}`);
+    const rect = card.getBoundingClientRect();
+    draggingClass = name;
+    dragOffsetX = (e.clientX - rect.left) / zoom;
+    dragOffsetY = (e.clientY - rect.top) / zoom;
+    card.classList.add('dragging');
+    canvasWrapper.classList.add('dragging-class');
+  });
+});
+
+canvasWrapper.addEventListener('mousedown', (e) => {
+  if (draggingClass) return;
+  if (e.button === 1 || e.button === 2 || (e.button === 0 && (e.target === canvasWrapper || e.target.classList.contains('grid-bg')))) {
+    panning = true; panStartX = e.clientX - panX; panStartY = e.clientY - panY;
+    canvasWrapper.classList.add('dragging-canvas'); e.preventDefault();
+  }
+});
+
+document.addEventListener('mousemove', (e) => {
+  if (draggingClass) {
+    const card = document.getElementById(`class-${draggingClass}`);
+    const canvasRect = canvas.getBoundingClientRect();
+    const x = (e.clientX - canvasRect.left) / zoom - dragOffsetX;
+    const y = (e.clientY - canvasRect.top) / zoom - dragOffsetY;
+    card.style.left = Math.max(0, x) + 'px'; card.style.top = Math.max(0, y) + 'px';
+    const cls = classes.find(c => c.name === draggingClass);
+    if (cls) { cls.x = Math.max(0, x); cls.y = Math.max(0, y); }
+    drawLines(); updateMinimap();
+  }
+  if (panning) { panX = e.clientX - panStartX; panY = e.clientY - panStartY; applyTransform(); updateMinimap(); }
+});
+
+document.addEventListener('mouseup', () => {
+  if (draggingClass) { document.getElementById(`class-${draggingClass}`)?.classList.remove('dragging'); draggingClass = null; canvasWrapper.classList.remove('dragging-class'); }
+  if (panning) { panning = false; canvasWrapper.classList.remove('dragging-canvas'); }
+});
+
+canvasWrapper.addEventListener('contextmenu', e => e.preventDefault());
+
+canvasWrapper.addEventListener('wheel', (e) => {
+  e.preventDefault();
+  const delta = e.deltaY > 0 ? -0.08 : 0.08;
+  const newZoom = Math.min(2, Math.max(0.3, zoom + delta));
+  const rect = canvasWrapper.getBoundingClientRect();
+  panX = (e.clientX - rect.left) - ((e.clientX - rect.left) - panX) * (newZoom / zoom);
+  panY = (e.clientY - rect.top) - ((e.clientY - rect.top) - panY) * (newZoom / zoom);
+  zoom = newZoom; applyTransform(); updateMinimap();
+}, { passive: false });
+
+function applyTransform() {
+  canvas.style.transform = `translate(${panX}px, ${panY}px) scale(${zoom})`;
+  document.getElementById('zoomDisplay').textContent = Math.round(zoom * 100) + '%';
+}
+
+// ═══════════════════════════════════════════════════════
+// DRAW LINES
+// ═══════════════════════════════════════════════════════
+
+function drawLines() {
+  const svg = document.getElementById('linesSvg');
+  const markersDiv = document.getElementById('labelMarkers');
+  svg.innerHTML = ''; markersDiv.innerHTML = '';
+  svg.setAttribute('width', 6000); svg.setAttribute('height', 4000);
+
+  // Glow filter
+  const defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
+  defs.innerHTML = `<filter id="glow" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="3" result="blur"/><feFlood flood-color="rgba(232,155,42,0.4)" result="color"/><feComposite in="color" in2="blur" operator="in" result="glow"/><feMerge><feMergeNode in="glow"/><feMergeNode in="SourceGraphic"/></feMerge></filter>`;
+  svg.appendChild(defs);
+
+  relationships.forEach((rel, idx) => {
+    const fromCard = document.getElementById(`class-${rel.from}`);
+    const toCard = document.getElementById(`class-${rel.to}`);
+    if (!fromCard || !toCard) return;
+
+    const fromW = fromCard.offsetWidth, fromH = fromCard.offsetHeight;
+    const toW = toCard.offsetWidth, toH = toCard.offsetHeight;
+    const fromX = parseFloat(fromCard.style.left), fromY = parseFloat(fromCard.style.top);
+    const toX = parseFloat(toCard.style.left), toY = parseFloat(toCard.style.top);
+    const fromCx = fromX + fromW/2, fromCy = fromY + fromH/2;
+    const toCx = toX + toW/2, toCy = toY + toH/2;
+
+    let x1, y1, x2, y2;
+    const dx = toCx - fromCx, dy = toCy - fromCy;
+
+    if (Math.abs(dx) > Math.abs(dy)) {
+      if (dx > 0) { x1 = fromX+fromW; y1 = fromCy; x2 = toX; y2 = toCy; }
+      else { x1 = fromX; y1 = fromCy; x2 = toX+toW; y2 = toCy; }
+    } else {
+      if (dy > 0) { x1 = fromCx; y1 = fromY+fromH; x2 = toCx; y2 = toY; }
+      else { x1 = fromCx; y1 = fromY; x2 = toCx; y2 = toY+toH; }
+    }
+
+    const dist = Math.sqrt((x2-x1)**2 + (y2-y1)**2);
+    const curve = Math.min(dist * 0.35, 150);
+    let cx1, cy1, cx2, cy2;
+    if (Math.abs(dx) > Math.abs(dy)) {
+      cx1 = x1+(dx>0?curve:-curve); cy1 = y1; cx2 = x2-(dx>0?curve:-curve); cy2 = y2;
+    } else {
+      cx1 = x1; cy1 = y1+(dy>0?curve:-curve); cx2 = x2; cy2 = y2-(dy>0?curve:-curve);
+    }
+
+    const lineClass = `rel-line ${rel.type}`;
+    const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    path.setAttribute('d', `M ${x1} ${y1} C ${cx1} ${cy1}, ${cx2} ${cy2}, ${x2} ${y2}`);
+    path.setAttribute('class', lineClass);
+    path.dataset.from = rel.from; path.dataset.to = rel.to;
+    svg.appendChild(path);
+
+    // Arrowhead for inheritance (triangle)
+    if (rel.type === 'inheritance') {
+      const angle = Math.atan2(y2 - cy2, x2 - cx2);
+      const sz = 10;
+      const ax = x2 - sz * Math.cos(angle - Math.PI/6);
+      const ay = y2 - sz * Math.sin(angle - Math.PI/6);
+      const bx = x2 - sz * Math.cos(angle + Math.PI/6);
+      const by = y2 - sz * Math.sin(angle + Math.PI/6);
+      const tri = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
+      tri.setAttribute('points', `${x2},${y2} ${ax},${ay} ${bx},${by}`);
+      tri.setAttribute('fill', 'none'); tri.setAttribute('stroke', 'var(--accent)');
+      tri.setAttribute('stroke-width', '1.5'); tri.setAttribute('class', lineClass);
+      tri.dataset.from = rel.from; tri.dataset.to = rel.to;
+      svg.appendChild(tri);
+    }
+
+    // Arrowhead for belongs/uses
+    if (rel.type === 'belongs' || rel.type === 'uses') {
+      const angle = Math.atan2(y2 - cy2, x2 - cx2);
+      const sz = 8;
+      const ax = x2 - sz * Math.cos(angle - Math.PI/6);
+      const ay = y2 - sz * Math.sin(angle - Math.PI/6);
+      const bx = x2 - sz * Math.cos(angle + Math.PI/6);
+      const by = y2 - sz * Math.sin(angle + Math.PI/6);
+      const arrow = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
+      arrow.setAttribute('points', `${x2},${y2} ${ax},${ay} ${bx},${by}`);
+      arrow.setAttribute('class', lineClass); arrow.setAttribute('fill', 'currentColor');
+      arrow.dataset.from = rel.from; arrow.dataset.to = rel.to;
+      svg.appendChild(arrow);
+    }
+
+    // Label at midpoint
+    if (rel.label) {
+      const midX = (x1+x2)/2, midY = (y1+y2)/2;
+      const label = document.createElement('div');
+      label.style.cssText = `position:absolute;left:${midX-30}px;top:${midY-10}px;font-size:11px;font-weight:600;color:#374151;background:#ffffff;border:1px solid #d1d5db;padding:3px 10px;border-radius:5px;white-space:nowrap;z-index:6;pointer-events:none;transition:opacity 0.2s;font-family:'JetBrains Mono',monospace;box-shadow:0 1px 3px rgba(0,0,0,0.08);`;
+      label.textContent = rel.label;
+      label.dataset.from = rel.from; label.dataset.to = rel.to;
+      label.className = 'rel-label';
+      markersDiv.appendChild(label);
+    }
+  });
+
+  if (hoveredClass) applyHighlight(hoveredClass);
+}
+
+// ═══════════════════════════════════════════════════════
+// DETAIL PANEL
+// ═══════════════════════════════════════════════════════
+
+function openDetail(name) {
+  const cls = classes.find(c => c.name === name);
+  if (!cls) return;
+  const panel = document.getElementById('detailPanel');
+  document.getElementById('detailName').textContent = cls.name;
+  const body = document.getElementById('detailBody');
+
+  const relsFrom = relationships.filter(r => r.from === name);
+  const relsTo = relationships.filter(r => r.to === name);
+
+  let relsHtml = '';
+  if (relsFrom.length || relsTo.length) {
+    relsHtml += '<div class="detail-section"><h4>Relationships</h4>';
+    relsFrom.forEach(r => {
+      relsHtml += `<div class="detail-rel"><span class="arrow">→</span><span class="target">${r.to}</span><span class="rel-type">${r.label || r.type}</span></div>`;
+    });
+    relsTo.forEach(r => {
+      relsHtml += `<div class="detail-rel"><span class="arrow">←</span><span class="target">${r.from}</span><span class="rel-type">${r.label || r.type}</span></div>`;
+    });
+    relsHtml += '</div>';
+  }
+
+  let propsHtml = '';
+  if (cls.properties.length) {
+    propsHtml += '<div class="detail-section"><h4>Attributes</h4>';
+    cls.properties.forEach(p => {
+      propsHtml += `<div style="display:flex;align-items:center;gap:6px;padding:4px 0;border-bottom:1px solid var(--border);font-size:12px">
+        <span style="font-family:'JetBrains Mono',monospace;color:${p.vis==='public'?'var(--success)':p.vis==='private'?'var(--danger)':'var(--purple)'};font-weight:700;width:12px">${p.vis==='public'?'+':p.vis==='private'?'-':'#'}</span>
+        <span style="font-family:'JetBrains Mono',monospace;flex:1;font-size:11px">${p.name}</span>
+        <span style="font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--ink3)">${p.type}</span>
+      </div>`;
+      if (p.note) propsHtml += `<div style="padding:2px 0 4px 18px;font-size:10px;color:var(--ink3)">${p.note}</div>`;
+    });
+    propsHtml += '</div>';
+  }
+
+  let methodsHtml = '';
+  if (cls.methods.length) {
+    methodsHtml += '<div class="detail-section"><h4>Methods</h4>';
+    cls.methods.forEach(m => {
+      const tags = m.tags ? m.tags.map(t => `<span class="member-tag tag-${t}" style="font-size:8px;background:var(--surface3);color:var(--ink3);padding:1px 5px;border-radius:2px">${t}</span>`).join('') : '';
+      methodsHtml += `<div style="display:flex;align-items:center;gap:6px;padding:4px 0;border-bottom:1px solid var(--border);font-size:12px">
+        <span style="font-family:'JetBrains Mono',monospace;color:${m.vis==='public'?'var(--success)':'var(--danger)'};font-weight:700;width:12px">${m.vis==='public'?'+':'-'}</span>
+        <span style="font-family:'JetBrains Mono',monospace;flex:1;font-size:11px">${m.name}</span>
+        <span style="font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--ink3)">${m.type}</span>
+        ${tags}
+      </div>`;
+      if (m.note) methodsHtml += `<div style="padding:2px 0 4px 18px;font-size:10px;color:var(--ink3)">${m.note}</div>`;
+    });
+    methodsHtml += '</div>';
+  }
+
+  body.innerHTML = `<div class="detail-section"><div class="detail-desc">${cls.desc}</div></div>${relsHtml}${propsHtml}${methodsHtml}`;
+  panel.classList.add('open');
+}
+
+function closeDetail() { document.getElementById('detailPanel').classList.remove('open'); }
+
+// ═══════════════════════════════════════════════════════
+// MINIMAP
+// ═══════════════════════════════════════════════════════
+
+function updateMinimap() {
+  const minimap = document.getElementById('minimap');
+  const viewport = document.getElementById('minimapViewport');
+  const mw = minimap.offsetWidth, mh = minimap.offsetHeight;
+  let minX=Infinity, minY=Infinity, maxX=-Infinity, maxY=-Infinity;
+  classes.forEach(c => { minX=Math.min(minX,c.x); minY=Math.min(minY,c.y); maxX=Math.max(maxX,c.x+300); maxY=Math.max(maxY,c.y+200); });
+  const pad = 60; minX-=pad; minY-=pad; maxX+=pad; maxY+=pad;
+  const scale = Math.min(mw/(maxX-minX), mh/(maxY-minY));
+  minimap.querySelectorAll('.minimap-dot').forEach(d=>d.remove());
+  const colors = { framework:'var(--accent)', model:'var(--success)', controller:'var(--info)', middleware:'var(--purple)' };
+  classes.forEach(c => {
+    const dot = document.createElement('div'); dot.className='minimap-dot';
+    dot.style.left=((c.x-minX)*scale)+'px'; dot.style.top=((c.y-minY)*scale)+'px';
+    dot.style.width=(300*scale)+'px'; dot.style.height=(80*scale)+'px';
+    dot.style.background=colors[c.group]||colors.model; minimap.appendChild(dot);
+  });
+  const wr = canvasWrapper.getBoundingClientRect();
+  viewport.style.left=Math.max(0,(-panX/zoom-minX)*scale)+'px';
+  viewport.style.top=Math.max(0,(-panY/zoom-minY)*scale)+'px';
+  viewport.style.width=Math.min(mw,(wr.width/zoom)*scale)+'px';
+  viewport.style.height=Math.min(mh,(wr.height/zoom)*scale)+'px';
+}
+
+// ═══════════════════════════════════════════════════════
+// ACTIONS
+// ═══════════════════════════════════════════════════════
+
+function resetView() { zoom=1; panX=0; panY=0; applyTransform(); updateMinimap(); }
+
+function autoLayout() {
+  // Framework layer (top center)
+  const fw = classes.filter(c=>c.group==='framework');
+  fw.forEach((c,i) => { c.x = 400 + i*400; c.y = 20; });
+
+  // Models layer
+  const models = classes.filter(c=>c.group==='model');
+  const modelPositions = [
+    {x:100,y:200}, {x:500,y:200}, {x:900,y:200},
+    {x:100,y:420}, {x:500,y:420}, {x:900,y:420},
+    {x:500,y:620}, {x:900,y:620},
+  ];
+  models.forEach((c,i) => { if(modelPositions[i]){c.x=modelPositions[i].x; c.y=modelPositions[i].y;} });
+
+  // Controllers
+  const ctrls = classes.filter(c=>c.group==='controller');
+  ctrls.forEach((c,i) => { c.x = 1350; c.y = 20 + i*320; });
+
+  // Middleware
+  const mw = classes.filter(c=>c.group==='middleware');
+  mw.forEach((c,i) => { c.x = 1350; c.y = 680 + i*160; });
+
+  classes.forEach(c => {
+    const card = document.getElementById(`class-${c.name}`);
+    if(card){card.style.left=c.x+'px';card.style.top=c.y+'px';}
+  });
+  drawLines(); updateMinimap();
+}
+
+// ═══════════════════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════════════════
+
+drawLines(); updateMinimap();
+</script>
+</body>
+</html>

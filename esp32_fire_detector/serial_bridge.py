@@ -25,7 +25,6 @@ def connect_serial():
     while True:
         try:
             ser = serial.Serial(SERIAL_PORT, BAUD_RATE, timeout=1)
-            # Disable DTR/RTS supaya ESP32 tidak reset saat bridge connect
             ser.dtr = False
             ser.rts = False
             time.sleep(0.5)
@@ -175,7 +174,7 @@ def main():
                 last_heartbeat = now
                 kirim_heartbeat()
 
-            time.sleep(0.1)  # 100ms delay supaya tidak busy loop
+            time.sleep(0.1)
 
     except KeyboardInterrupt:
         print("\n[BRIDGE] Dihentikan")

@@ -40,7 +40,6 @@ export default function Dashboard({ activeRoom, deviceId, iot }) {
 
     return (
         <div className="py-3 sm:py-5 space-y-3 sm:space-y-4">
-            {/* Header */}
             <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
                     <h1 className="text-xl sm:text-2xl font-normal text-white tracking-tight">Halo, Admin</h1>
@@ -59,24 +58,19 @@ export default function Dashboard({ activeRoom, deviceId, iot }) {
                 </div>
             </div>
 
-            {/* Stat cards — compact, 2 cols mobile / 4 cols desktop */}
             <MagicBentoGrid enableSpotlight enableBorderGlow enableTilt enableMagnetism clickEffect glowColor="255, 255, 255" spotlightRadius={350} className="grid gap-2 sm:gap-3 grid-cols-2 lg:grid-cols-4">
                 {stats.map(s => <StatCard key={s.title} {...s} />)}
             </MagicBentoGrid>
 
-            {/* 3D Room Model — full width, large, prominent */}
             <RoomModel room={activeRoom} iot={iot} />
 
-            {/* Status + Quick Actions row */}
             <div className="grid gap-3 sm:gap-4 grid-cols-1 md:grid-cols-[1fr_1.5fr]">
                 <StatusCard status={emergency} systemActive={workerOnline} deviceLabel={`Device-${deviceId}`} updatedLabel={rt(latest?.created_at)} />
                 <QuickActions actuatorState={actuatorState} onAction={sendActuator} />
             </div>
 
-            {/* Sensor readings — full width */}
             <SensorReadings readings={feed} />
 
-            {/* Bottom section: sidebar panels + threshold */}
             <div className="grid gap-3 sm:gap-4 grid-cols-1 xl:grid-cols-[1fr_340px]">
                 <div className="space-y-3 sm:space-y-4">
                     <ThresholdSettings settings={iot.data?.settings} onSave={saveThresholds} />

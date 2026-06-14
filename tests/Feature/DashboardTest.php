@@ -61,7 +61,6 @@ class DashboardTest extends TestCase
         $this->seedDevice();
         $this->seedSettings();
 
-        // Insert BAHAYA sensor data
         DB::table('sensor_data')->insert([
             'device_id' => 1, 'gas_value' => 500, 'smoke_value' => 300,
             'temperature' => 60, 'humidity' => 0, 'flame_value' => 100,

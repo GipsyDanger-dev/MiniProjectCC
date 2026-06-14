@@ -4,8 +4,6 @@ import { OrbitControls, Html } from "@react-three/drei";
 import * as THREE from "three";
 import GlassSurface from "./GlassSurface";
 
-// ─── SensorLabel (Html overlay) ───────────────────────────────────────────────
-
 function SensorLabel({ position, label, value, unit, status }) {
     const color = status === "Alert" ? "#ef4444" : "#22c55e";
     return (
@@ -38,8 +36,6 @@ function SensorLabel({ position, label, value, unit, status }) {
     );
 }
 
-// ─── FanBlades ────────────────────────────────────────────────────────────────
-
 function FanBlades({ fanSpeed, fanStatus, position = [0, 0, 0] }) {
     const groupRef = useRef();
     const currentSpeed = useRef(0);
@@ -71,8 +67,6 @@ function FanBlades({ fanSpeed, fanStatus, position = [0, 0, 0] }) {
         </group>
     );
 }
-
-// ─── EmergencyEffects ─────────────────────────────────────────────────────────
 
 function EmergencyEffects({ emergency }) {
     const pointLightRef = useRef();
@@ -125,8 +119,6 @@ function EmergencyEffects({ emergency }) {
     );
 }
 
-// ─── Room ─────────────────────────────────────────────────────────────────────
-
 function Room() {
     return (
         <group>
@@ -149,7 +141,6 @@ function Room() {
                 <meshStandardMaterial color="#4a4a45" roughness={0.8} />
             </mesh>
 
-            {/* Indigo accent baseboard */}
             <mesh position={[0, 0.04, -2.44]}>
                 <boxGeometry args={[5.8, 0.08, 0.02]} />
                 <meshStandardMaterial color="#7c3aed" emissive="#7c3aed" emissiveIntensity={0.3} roughness={0.5} metalness={0.3} />
@@ -163,7 +154,6 @@ function Room() {
                 <meshStandardMaterial color="#7c3aed" emissive="#7c3aed" emissiveIntensity={0.3} roughness={0.5} metalness={0.3} />
             </mesh>
 
-            {/* Ceiling beams */}
             {[-2, 0, 2].map((x) => (
                 <mesh key={`bz-${x}`} position={[x, 2.96, 0]}>
                     <boxGeometry args={[0.08, 0.08, 5]} />
@@ -177,7 +167,6 @@ function Room() {
                 </mesh>
             ))}
 
-            {/* Wall edge highlights */}
             <mesh position={[0, 3, -2.44]}>
                 <boxGeometry args={[6, 0.02, 0.02]} />
                 <meshStandardMaterial color="#5a5a55" metalness={0.4} roughness={0.5} />
@@ -193,8 +182,6 @@ function Room() {
         </group>
     );
 }
-
-// ─── Workstation ──────────────────────────────────────────────────────────────
 
 function Workstation() {
     const ledRef = useRef();
@@ -242,8 +229,6 @@ function Workstation() {
     );
 }
 
-// ─── SensorModule ─────────────────────────────────────────────────────────────
-
 function SensorModule({ position, rotation, bodyColor = "#2a5a2a", capColor, capRadius }) {
     return (
         <group position={position} rotation={rotation}>
@@ -269,8 +254,6 @@ function SensorModule({ position, rotation, bodyColor = "#2a5a2a", capColor, cap
     );
 }
 
-// ─── ExhaustFan ───────────────────────────────────────────────────────────────
-
 function ExhaustFan({ fanSpeed, fanStatus }) {
     const grillePositions = [-2, -1, 0, 1, 2];
     return (
@@ -279,7 +262,6 @@ function ExhaustFan({ fanSpeed, fanStatus }) {
                 <boxGeometry args={[1.4, 1.4, 0.25]} />
                 <meshStandardMaterial color="#1e1e1c" roughness={0.7} metalness={0.8} />
             </mesh>
-            {/* Indigo accent frame */}
             {[
                 { size: [1.4, 0.06, 0.28], pos: [0, 0.67, 0] },
                 { size: [1.4, 0.06, 0.28], pos: [0, -0.67, 0] },
@@ -308,8 +290,6 @@ function ExhaustFan({ fanSpeed, fanStatus }) {
     );
 }
 
-// ─── FilingCabinet ────────────────────────────────────────────────────────────
-
 function FilingCabinet({ position }) {
     return (
         <group position={position}>
@@ -326,8 +306,6 @@ function FilingCabinet({ position }) {
         </group>
     );
 }
-
-// ─── Whiteboard ───────────────────────────────────────────────────────────────
 
 function Whiteboard({ position }) {
     return (
@@ -355,8 +333,6 @@ function Whiteboard({ position }) {
     );
 }
 
-// ─── FireExtinguisher ─────────────────────────────────────────────────────────
-
 function FireExtinguisher({ position }) {
     return (
         <group position={position}>
@@ -375,8 +351,6 @@ function FireExtinguisher({ position }) {
         </group>
     );
 }
-
-// ─── Monitor ──────────────────────────────────────────────────────────────────
 
 function Monitor({ position }) {
     const screenRef = useRef();
@@ -398,8 +372,6 @@ function Monitor({ position }) {
         </group>
     );
 }
-
-// ─── Buzzer ───────────────────────────────────────────────────────────────────
 
 function Buzzer({ active, position }) {
     const emissiveRef = useRef();
@@ -425,8 +397,6 @@ function Buzzer({ active, position }) {
     );
 }
 
-// ─── CableRun ─────────────────────────────────────────────────────────────────
-
 function CableRun({ points, color = "#333" }) {
     const curve = useMemo(() => {
         const vecs = points.map((p) => new THREE.Vector3(...p));
@@ -440,8 +410,6 @@ function CableRun({ points, color = "#333" }) {
         </mesh>
     );
 }
-
-// ─── ServerRack ───────────────────────────────────────────────────────────────
 
 function ServerRack() {
     return (
@@ -475,8 +443,6 @@ function ServerRack() {
         </group>
     );
 }
-
-// ─── OfficeScene ──────────────────────────────────────────────────────────────
 
 const cablePoints = {
     mq2: [[-2.95, 1.8, -0.5], [-2.95, 0.3, -0.5], [-2.95, 0.3, 0.5], [-1.5, 0.78, 0.5]],
@@ -539,8 +505,6 @@ function OfficeScene({ iot }) {
     );
 }
 
-// ─── RoomModel (default export) ───────────────────────────────────────────────
-
 export default function RoomModel({ room, iot }) {
     const emergency = iot?.data?.emergency_status || "AMAN";
     const actuator = iot?.data?.device_actuator;
@@ -561,7 +525,6 @@ export default function RoomModel({ room, iot }) {
 
     return (
         <GlassSurface className="p-0 overflow-hidden">
-            {/* Header */}
             <div className="flex items-center justify-between px-3 sm:px-4 py-2.5 sm:py-3 border-b border-[rgba(33,35,39,0.8)]">
                 <div>
                     <p className="text-[10px] sm:text-[11px] uppercase font-normal text-[#7d8187]"
@@ -594,7 +557,6 @@ export default function RoomModel({ room, iot }) {
                 </div>
             </div>
 
-            {/* 3D Canvas */}
             <div className="h-[280px] sm:h-[350px] relative" style={{ background: "rgba(20,20,18,0.95)" }}>
                 <Canvas camera={{ position: [4, 3, 4], fov: 48 }} dpr={[1, 2]} shadows gl={{ antialias: true, toneMapping: THREE.ACESFilmicToneMapping }}>
                     <Suspense fallback={null}>
@@ -617,7 +579,6 @@ export default function RoomModel({ room, iot }) {
                 </div>
             </div>
 
-            {/* Sensor summary bar */}
             <div className="grid grid-cols-4 border-t border-[rgba(33,35,39,0.8)]">
                 {[
                     { label: "Gas", value: `${gas} ppm`, alert: gas > gasTh },

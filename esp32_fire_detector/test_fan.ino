@@ -1,6 +1,3 @@
-// Test Sketch — Fan langsung HIGH tanpa fuzzy logic
-// Upload ke ESP32 untuk test hardware
-
 #define IN1        18
 #define IN2        19
 #define ENA        21
@@ -14,10 +11,8 @@ void setup() {
   pinMode(IN2, OUTPUT);
   pinMode(BUZZER_PIN, OUTPUT);
 
-  // Setup PWM (10-bit resolution)
   ledcAttach(ENA, 5000, 10);
 
-  // Matikan semua dulu
   digitalWrite(IN1, LOW);
   digitalWrite(IN2, LOW);
   ledcWrite(ENA, 0);

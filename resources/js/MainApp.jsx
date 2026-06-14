@@ -88,7 +88,6 @@ export default function MainApp() {
             <div className="ambient-grid" />
 
             <div className="flex min-h-screen relative z-10">
-                {/* Sidebar — fixed on desktop, overlay on mobile */}
                 <Sidebar
                     collapsed={collapsed}
                     setCollapsed={setCollapsed}
@@ -100,7 +99,6 @@ export default function MainApp() {
                     setMobileOpen={setMobileOpen}
                 />
 
-                {/* Main content — takes remaining space */}
                 <div className={cn("flex-1 flex flex-col min-h-screen transition-all duration-200", collapsed ? "lg:ml-[60px]" : "lg:ml-[200px]")}>
                     <Topbar
                         mobileOpen={mobileOpen}
