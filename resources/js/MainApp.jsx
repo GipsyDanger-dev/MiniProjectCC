@@ -41,7 +41,7 @@ export default function MainApp() {
     }, []);
 
     useEffect(() => {
-        fetch("/api/auth/user", { headers: { Accept: "application/json" } })
+        fetch("/api/user", { headers: { Accept: "application/json" } })
             .then((res) => res.json())
             .then((data) => { if (data.status === "success") setUser(data.user); })
             .catch(() => {})
@@ -101,7 +101,7 @@ export default function MainApp() {
                 />
 
                 {/* Main content — takes remaining space */}
-                <div className="flex-1 flex flex-col min-h-screen lg:ml-0">
+                <div className={cn("flex-1 flex flex-col min-h-screen transition-all duration-200", collapsed ? "lg:ml-[60px]" : "lg:ml-[200px]")}>
                     <Topbar
                         mobileOpen={mobileOpen}
                         setMobileOpen={setMobileOpen}

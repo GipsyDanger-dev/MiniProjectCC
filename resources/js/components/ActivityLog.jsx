@@ -59,7 +59,7 @@ export default function ActivityLog({ entries: incomingEntries = [] }) {
                             </div>
                             <span className="text-[9px] sm:text-[10px] text-[#7d8187] whitespace-nowrap shrink-0 mt-0.5"
                                   style={{ fontFamily: "'Geist Mono', monospace", letterSpacing: '0.5px' }}>
-                                {formatTime(entry.created_at || entry.time)}
+                                {entry.time || formatTime(entry.created_at)}
                             </span>
                         </div>
                     );
