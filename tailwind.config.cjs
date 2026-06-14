@@ -51,6 +51,11 @@ module.exports = {
                     "active-foreground": "hsl(var(--sidebar-active-foreground))",
                     border: "hsl(var(--sidebar-border))",
                 },
+
+                /* Compat tokens */
+                ink: { DEFAULT: "#ffffff", 2: "hsl(var(--ink2))", 3: "hsl(var(--ink3))" },
+                surface: { DEFAULT: "#0a0a0a", 2: "rgba(25,25,25,0.7)", 3: "rgba(33,35,39,0.6)" },
+                edge: { DEFAULT: "rgba(33,35,39,0.8)", 2: "rgba(54,58,63,0.5)" },
             },
             borderRadius: {
                 none: "0px",

@@ -19,6 +19,15 @@
         --body: #dadbdf;
         --body-mid: #7d8187;
 
+        /* Compat tokens (friend's naming) */
+        --ink2: 215 12% 55%;
+        --ink3: 215 10% 38%;
+        --surface: 0 0% 4%;
+        --surface2: 0 0% 10%;
+        --surface3: 0 0% 13%;
+        --edge: 210 6% 14%;
+        --edge2: 210 6% 20%;
+
         /* Accent — indigo family */
         --accent-dusk: #7c3aed;
         --accent-twilight: #c4b5fd;
