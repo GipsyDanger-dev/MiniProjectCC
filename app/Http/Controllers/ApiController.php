@@ -8,12 +8,15 @@ use App\Models\Command;
 use App\Models\ActivityLog;
 use App\Models\DeviceActuator;
 use App\Models\WorkerStatus;
+use App\Models\Device;
+use App\Models\User;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Cache;
 use App\Events\SensorDataReceived;
-use App\Models\Device;
 use App\Models\SystemSettings;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Hash;
 
 class ApiController extends Controller
 {
@@ -463,8 +466,29 @@ class ApiController extends Controller
         }
     }
 
+    public function flameSensor(Request $request)
+    {
+        try {
+            $deviceId = $request->query('device_id', 1);
+            $latest = SensorData::where('device_id', $deviceId)
+                ->orderBy('id', 'desc')
+                ->first();
 
-  public function saveSettings(Request $request)
+            return response()->json([
+                'status' => 'success',
+                'data' => $latest ? [
+                    'flame_value' => $latest->flame_value,
+                    'status' => $latest->status_indikasi,
+                    'timestamp' => $latest->created_at,
+                ] : null,
+            ]);
+        } catch (\Exception $e) {
+            Log::error("flameSensor error: " . $e->getMessage());
+            return response()->json(['status' => 'error', 'message' => $e->getMessage()], 500);
+        }
+    }
+
+    public function saveSettings(Request $request)
     {
         try {
             $request->validate([
@@ -504,6 +528,87 @@ class ApiController extends Controller
             Log::error("saveSettings error: " . $e->getMessage());
             return response()->json(['status' => 'error', 'message' => $e->getMessage()], 500);
         }
+    }
+
+    public function devices()
+    {
+        $devices = Device::query()
+            ->orderBy('id')
+            ->get(['id', 'device_name', 'location', 'status', 'api_key']);
+
+        return response()->json([
+            'status' => 'success',
+            'devices' => $devices,
+        ]);
+    }
+
+    public function createDevice(Request $request)
+    {
+        $validated = $request->validate([
+            'device_name' => 'required|string|max:255',
+            'location' => 'required|string|max:255',
+            'api_key' => 'required|string|max:255|unique:devices,api_key',
+            'status' => 'nullable|in:online,offline',
+        ]);
+
+        $device = Device::create([
+            'device_name' => $validated['device_name'],
+            'location' => $validated['location'],
+            'api_key' => $validated['api_key'],
+            'status' => $validated['status'] ?? 'offline',
+        ]);
+
+        return response()->json([
+            'status' => 'success',
+            'device' => $device->only([
+                'id',
+                'device_name',
+                'location',
+                'status',
+                'api_key',
+            ]),
+        ]);
+    }
+
+    public function updateDevice(Request $request, Device $device)
+    {
+        $validated = $request->validate([
+            'device_name' => 'required|string|max:255',
+            'location' => 'nullable|string|max:255',
+            'status' => 'nullable|string|max:50',
+        ]);
+
+        $device->fill($validated);
+        $device->save();
+
+        return response()->json([
+            'status' => 'success',
+            'device' => $device->only([
+                'id',
+                'device_name',
+                'location',
+                'status',
+                'api_key',
+            ]),
+        ]);
+    }
+
+    public function resetDevice(Device $device)
+    {
+        $device->status = 'offline';
+        $device->save();
+
+        ActivityLog::create([
+            'action_type' => 'SYSTEM_UPDATE',
+            'status' => 'AMAN',
+            'description' => "Device {$device->id} reset",
+            'message' => "Device {$device->device_name} reset to offline",
+        ]);
+
+        return response()->json([
+            'status' => 'success',
+            'device' => $device->only(['id', 'status']),
+        ]);
     }
 
     public function getSettings()
@@ -755,75 +860,64 @@ class ApiController extends Controller
         }
     }
 
-    public function getDevices()
-    {
-        $devices = Device::all();
-        return response()->json(['status' => 'success', 'data' => $devices]);
-    }
-
-    public function createDevice(Request $request)
+    public function login(Request $request)
     {
         $request->validate([
-            'device_name' => 'required|string|max:255',
-            'location' => 'nullable|string|max:255',
-            'api_key' => 'nullable|string|max:255',
+            'email' => 'required|email',
+            'password' => 'required|string'
         ]);
 
-        $device = Device::create([
-            'device_name' => $request->device_name,
-            'location' => $request->location,
-            'api_key' => $request->api_key,
-            'status' => $request->status ?? 'offline',
+        $user = User::where('email', $request->email)->first();
+
+        if (!$user || !Hash::check($request->password, $user->password)) {
+            return response()->json(['status' => 'error', 'message' => 'Invalid credentials'], 401);
+        }
+
+        session()->put('user_id', $user->id);
+        session()->put('user_name', $user->name);
+        session()->put('user_email', $user->email);
+
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Login successful',
+            'user' => [
+                'id' => $user->id,
+                'name' => $user->name,
+                'email' => $user->email
+            ]
         ]);
-
-        return response()->json(['status' => 'success', 'data' => $device], 201);
     }
 
-    public function updateDevice(Request $request, $id)
+    public function logout(Request $request)
     {
-        $device = Device::find($id);
-        if (!$device) {
-            return response()->json(['status' => 'error', 'message' => 'Device not found'], 404);
+        session()->forget(['user_id', 'user_name', 'user_email']);
+        session()->flush();
+
+        return response()->json(['status' => 'success', 'message' => 'Logout successful']);
+    }
+
+    public function getUser(Request $request)
+    {
+        $userId = session()->get('user_id');
+
+        if (!$userId) {
+            return response()->json(['status' => 'error', 'message' => 'Unauthorized'], 401);
         }
 
-        $device->update($request->only(['device_name', 'location', 'status']));
-        return response()->json(['status' => 'success', 'data' => $device]);
-    }
+        $user = User::find($userId);
 
-    public function resetDevice($id)
-    {
-        $device = Device::find($id);
-        if (!$device) {
-            return response()->json(['status' => 'error', 'message' => 'Device not found'], 404);
-        }
-
-        $device->update(['status' => 'offline']);
-        Command::where('device_id', $id)->delete();
-        DeviceActuator::where('device_id', $id)->delete();
-        SensorData::where('device_id', $id)->delete();
-
-        return response()->json(['status' => 'success', 'message' => 'Device reset']);
-    }
-
-    public function getUser()
-    {
-        $user = auth()->user();
         if (!$user) {
-            return response()->json([
-                'id' => 1,
-                'name' => 'Admin',
-                'email' => 'admin@smartsafety.local',
-                'role' => 'admin',
-            ]);
+            session()->flush();
+            return response()->json(['status' => 'error', 'message' => 'User not found'], 404);
         }
-        return response()->json($user);
-    }
 
-    public function logout()
-    {
-        if (auth()->check()) {
-            auth()->user()->currentAccessToken()->delete();
-        }
-        return response()->json(['status' => 'success', 'message' => 'Logged out']);
+        return response()->json([
+            'status' => 'success',
+            'user' => [
+                'id' => $user->id,
+                'name' => $user->name,
+                'email' => $user->email
+            ]
+        ]);
     }
 }
