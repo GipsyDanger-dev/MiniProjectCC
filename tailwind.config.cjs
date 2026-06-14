@@ -9,10 +9,19 @@ module.exports = {
         extend: {
             fontFamily: {
                 sans: [
-                    '"Plus Jakarta Sans"',
+                    '"Inter"',
                     "ui-sans-serif",
                     "system-ui",
                     "sans-serif",
+                ],
+                mono: [
+                    '"Geist Mono"',
+                    '"JetBrains Mono"',
+                    "ui-monospace",
+                    "SFMono-Regular",
+                    "Menlo",
+                    "Monaco",
+                    "monospace",
                 ],
             },
             colors: {
@@ -49,18 +58,26 @@ module.exports = {
                     DEFAULT: "hsl(var(--destructive))",
                     foreground: "hsl(var(--destructive-foreground))",
                 },
-                lime: {
-                    DEFAULT: "hsl(var(--accent-lime))",
-                    foreground: "hsl(var(--accent-lime-foreground))",
+
+                /* xAI canvas tokens — semi-transparent */
+                canvas: {
+                    DEFAULT: "#0a0a0a",
+                    soft: "rgba(26,28,32,0.7)",
+                    card: "rgba(25,25,25,0.7)",
+                    mid: "#363a3f",
                 },
-                "dark-card": {
-                    DEFAULT: "hsl(var(--dark-card))",
-                    foreground: "hsl(var(--dark-card-foreground))",
-                },
-                "deep-green": {
-                    DEFAULT: "hsl(var(--deep-green))",
-                    foreground: "hsl(var(--deep-green-foreground))",
-                },
+                hairline: "rgba(33,35,39,0.8)",
+                ink: { DEFAULT: "#ffffff", hover: "#fafaf7" },
+                body: { DEFAULT: "#dadbdf", mid: "#7d8187" },
+
+                /* xAI accent palette (reserved) */
+                sunset: { DEFAULT: "#ff7a17", soft: "#ffc285" },
+                dusk: { DEFAULT: "#7c3aed" },
+                twilight: "#c4b5fd",
+                breeze: "#a0c3ec",
+                midnight: "#0d1726",
+
+                /* Semantic */
                 danger: {
                     DEFAULT: "hsl(var(--danger))",
                     foreground: "hsl(var(--danger-foreground))",
@@ -73,6 +90,7 @@ module.exports = {
                     DEFAULT: "hsl(var(--warning))",
                     foreground: "hsl(var(--warning-foreground))",
                 },
+
                 sidebar: {
                     DEFAULT: "hsl(var(--sidebar-background))",
                     foreground: "hsl(var(--sidebar-foreground))",
@@ -83,11 +101,18 @@ module.exports = {
                     border: "hsl(var(--sidebar-border))",
                 },
             },
+            borderRadius: {
+                none: "0px",
+                sm: "8px",
+                md: "8px",
+                lg: "8px",
+                pill: "9999px",
+                full: "9999px",
+            },
             boxShadow: {
+                none: "none",
                 card: "var(--shadow-card)",
                 "card-hover": "var(--shadow-card-hover)",
-                lime: "var(--shadow-lime)",
-                dark: "var(--shadow-dark)",
             },
             animation: {
                 "fade-in-up": "fade-in-up 0.35s ease-out both",
