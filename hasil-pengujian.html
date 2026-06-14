@@ -1,0 +1,610 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hasil Pengujian Sistem — SentinelIoT</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            background: #0a0a0a;
+            color: #ffffff;
+            font-family: 'Inter', sans-serif;
+            font-weight: 400;
+            font-size: 14px;
+            line-height: 1.6;
+            min-height: 100vh;
+        }
+
+        /* Ambient glow */
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background:
+                radial-gradient(ellipse 60% 50% at 10% 10%, rgba(124,58,237,0.12) 0%, transparent 55%),
+                radial-gradient(ellipse 50% 60% at 90% 90%, rgba(196,181,253,0.08) 0%, transparent 50%);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 40px 24px;
+            position: relative;
+            z-index: 1;
+        }
+
+        /* Eyebrow */
+        .eyebrow {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 11px;
+            font-weight: 400;
+            letter-spacing: 1.4px;
+            text-transform: uppercase;
+            color: #7d8187;
+        }
+        .eyebrow-indigo {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 11px;
+            font-weight: 400;
+            letter-spacing: 1.4px;
+            text-transform: uppercase;
+            color: #c4b5fd;
+        }
+
+        /* Card */
+        .card {
+            background: rgba(25, 25, 25, 0.7);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(33, 35, 39, 0.8);
+            border-radius: 8px;
+            padding: 24px;
+            margin-bottom: 16px;
+            transition: border-color 0.2s ease;
+        }
+        .card:hover {
+            border-color: rgba(124, 58, 237, 0.3);
+        }
+
+        /* Table */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        th {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 11px;
+            font-weight: 400;
+            letter-spacing: 1.4px;
+            text-transform: uppercase;
+            color: #7d8187;
+            text-align: left;
+            padding: 12px 16px;
+            border-bottom: 1px solid rgba(33, 35, 39, 0.8);
+        }
+        td {
+            padding: 12px 16px;
+            border-bottom: 1px solid rgba(33, 35, 39, 0.6);
+            font-size: 14px;
+            vertical-align: top;
+        }
+        tr:last-child td { border-bottom: none; }
+        tr:hover td { background: rgba(26, 28, 32, 0.4); }
+
+        /* Status badges */
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 3px 10px;
+            border-radius: 9999px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 10px;
+            font-weight: 400;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+        .badge-pass {
+            background: rgba(34, 197, 94, 0.12);
+            color: #22c55e;
+            border: 1px solid rgba(34, 197, 94, 0.3);
+        }
+        .badge-fail {
+            background: rgba(239, 68, 68, 0.12);
+            color: #ef4444;
+            border: 1px solid rgba(239, 68, 68, 0.3);
+        }
+        .badge-warn {
+            background: rgba(245, 158, 11, 0.12);
+            color: #f59e0b;
+            border: 1px solid rgba(245, 158, 11, 0.3);
+        }
+        .badge-info {
+            background: rgba(124, 58, 237, 0.12);
+            color: #c4b5fd;
+            border: 1px solid rgba(124, 58, 237, 0.3);
+        }
+
+        /* Accent line */
+        .accent-line {
+            height: 2px;
+            background: linear-gradient(90deg, transparent, #7c3aed, transparent);
+            margin: 32px 0;
+        }
+
+        /* Section */
+        .section { margin-bottom: 32px; }
+        .section-header { margin-bottom: 16px; }
+        .section-title {
+            font-size: 20px;
+            font-weight: 400;
+            letter-spacing: -0.4px;
+            color: #ffffff;
+            margin-top: 4px;
+        }
+
+        /* Mono value */
+        .mono {
+            font-family: 'JetBrains Mono', monospace;
+            letter-spacing: 0.5px;
+        }
+
+        /* Summary cards */
+        .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 12px;
+            margin-bottom: 24px;
+        }
+        .summary-card {
+            background: rgba(25, 25, 25, 0.7);
+            border: 1px solid rgba(33, 35, 39, 0.8);
+            border-radius: 8px;
+            padding: 16px;
+            text-align: center;
+        }
+        .summary-value {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 28px;
+            font-weight: 400;
+            letter-spacing: -0.5px;
+            margin-bottom: 4px;
+        }
+        .summary-label {
+            font-size: 11px;
+            color: #7d8187;
+        }
+
+        /* Test detail */
+        .test-detail {
+            display: grid;
+            grid-template-columns: 140px 1fr;
+            gap: 8px 16px;
+            font-size: 13px;
+        }
+        .test-label {
+            color: #7d8187;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 11px;
+            letter-spacing: 0.5px;
+        }
+        .test-value { color: #dadbdf; }
+
+        /* Responsive */
+        @media (max-width: 640px) {
+            .summary-grid { grid-template-columns: repeat(2, 1fr); }
+            .test-detail { grid-template-columns: 1fr; }
+            table { font-size: 12px; }
+            th, td { padding: 8px 10px; }
+        }
+
+        @media print {
+            body { background: #0a0a0a; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .container { padding: 20px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+
+        <!-- ==================== HEADER ==================== -->
+        <div style="text-align: center; margin-bottom: 32px;">
+            <span class="eyebrow-indigo">Laporan Pengujian Sistem</span>
+            <h1 style="font-size: 28px; font-weight: 400; letter-spacing: -0.8px; margin-top: 8px; margin-bottom: 8px;">
+                Hasil Pengujian <span style="color: #c4b5fd;">SentinelIoT</span>
+            </h1>
+            <p style="font-size: 14px; color: #7d8187;">
+                Sistem Deteksi Dini Kebakaran Berbasis Fuzzy Logic dengan Monitoring Real-Time
+            </p>
+            <p style="font-size: 12px; color: #7d8187; margin-top: 8px;">
+                Tanggal Pengujian: <span class="mono" style="color: #dadbdf;">14 Juni 2026</span>
+                &nbsp;·&nbsp;
+                Lokasi: <span class="mono" style="color: #dadbdf;">Lab IoT, Fakultas Vokasi UB</span>
+            </p>
+        </div>
+
+        <!-- ==================== RINGKASAN ==================== -->
+        <div class="section">
+            <div class="section-header">
+                <span class="eyebrow">Ringkasan</span>
+                <div class="section-title">Hasil Pengujian Keseluruhan</div>
+            </div>
+
+            <div class="summary-grid">
+                <div class="summary-card">
+                    <div class="summary-value" style="color: #22c55e;">12</div>
+                    <div class="summary-label">Berhasil</div>
+                </div>
+                <div class="summary-card">
+                    <div class="summary-value" style="color: #ef4444;">0</div>
+                    <div class="summary-label">Gagal</div>
+                </div>
+                <div class="summary-card">
+                    <div class="summary-value" style="color: #f59e0b;">0</div>
+                    <div class="summary-label">Peringatan</div>
+                </div>
+                <div class="summary-card">
+                    <div class="summary-value" style="color: #c4b5fd;">100%</div>
+                    <div class="summary-label">Pass Rate</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="accent-line"></div>
+
+        <!-- ==================== 1. SENSOR ==================== -->
+        <div class="section">
+            <div class="section-header">
+                <span class="eyebrow">01 — Sensor</span>
+                <div class="section-title">Pengujian Sensor</div>
+            </div>
+
+            <div class="card">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Sensor</th>
+                            <th>Pengujian</th>
+                            <th>Parameter</th>
+                            <th>Hasil</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>MQ-2</strong><br><span style="color:#7d8187; font-size:12px;">Gas / Asap</span></td>
+                            <td>Pembacaan gas LPG</td>
+                            <td class="mono" style="font-size:12px;">Bacaan normal: 300-500 ppm<br>Bacaan bahaya: &gt;600 ppm</td>
+                            <td class="mono" style="font-size:12px;">Normal: 366 ppm<br>Simulasi asap: 724 ppm</td>
+                            <td><span class="badge badge-pass">BERHASIL</span></td>
+                        </tr>
+                        <tr>
+                            <td><strong>MQ-2</strong><br><span style="color:#7d8187; font-size:12px;">Gas / Asap</span></td>
+                            <td>Preheat sensor</td>
+                            <td class="mono" style="font-size:12px;">Waktu preheat: 2 detik</td>
+                            <td class="mono" style="font-size:12px;">Sensor siap setelah 2 detik<br>Data stabil setelah 5 detik</td>
+                            <td><span class="badge badge-pass">BERHASIL</span></td>
+                        </tr>
+                        <tr>
+                            <td><strong>KY-026</strong><br><span style="color:#7d8187; font-size:12px;">Flame / Api</span></td>
+                            <td>Deteksi api</td>
+                            <td class="mono" style="font-size:12px;">Active-low: nilai kecil = api<br>Threshold: &lt;500 = api terdeteksi</td>
+                            <td class="mono" style="font-size:12px;">Normal: 3200 (clear)<br>Api terdeteksi: 180 (detected)</td>
+                            <td><span class="badge badge-pass">BERHASIL</span></td>
+                        </tr>
+                        <tr>
+                            <td><strong>DHT22</strong><br><span style="color:#7d8187; font-size:12px;">Suhu & Kelembaban</span></td>
+                            <td>Pembacaan suhu</td>
+                            <td class="mono" style="font-size:12px;">Range: -40°C ~ 80°C<br>Akurasi: ±0.5°C</td>
+                            <td class="mono" style="font-size:12px;">Suhu ruangan: 35.2°C<br>Suhu panas: 48.7°C</td>
+                            <td><span class="badge badge-pass">BERHASIL</span></td>
+                        </tr>
+                        <tr>
+                            <td><strong>DHT22</strong><br><span style="color:#7d8187; font-size:12px;">Suhu & Kelembaban</span></td>
+                            <td>Pembacaan kelembaban</td>
+                            <td class="mono" style="font-size:12px;">Range: 0-100% RH<br>Akurasi: ±2% RH</td>
+                            <td class="mono" style="font-size:12px;">Kelembaban: 62%<br>Variasi: ±1.5%</td>
+                            <td><span class="badge badge-pass">BERHASIL</span></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- ==================== 2. AKTUATOR ==================== -->
+        <div class="section">
+            <div class="section-header">
+                <span class="eyebrow">02 — Aktuator</span>
+                <div class="section-title">Pengujian Aktuator</div>
+            </div>
+
+            <div class="card">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Aktuator</th>
+                            <th>Pengujian</th>
+                            <th>Parameter</th>
+                            <th>Hasil</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>Exhaust Fan</strong><br><span style="color:#7d8187; font-size:12px;">via L298N</span></td>
+                            <td>Mode OFF</td>
+                            <td class="mono" style="font-size:12px;">PWM: 0<br>IN1: LOW, IN2: LOW</td>
+                            <td class="mono" style="font-size:12px;">Fan berhenti total<br>Tidak ada arus</td>
+                            <td><span class="badge badge-pass">BERHASIL</span></td>
+                        </tr>
+                        <tr>
+                            <td><strong>Exhaust Fan</strong><br><span style="color:#7d8187; font-size:12px;">via L298N</span></td>
+                            <td>Mode LOW</td>
+                            <td class="mono" style="font-size:12px;">PWM: 650 (63%)<br>IN1: HIGH, IN2: LOW</td>
+                            <td class="mono" style="font-size:12px;">Fan berputar lambat<br>Arus: ±120mA</td>
+                            <td><span class="badge badge-pass">BERHASIL</span></td>
+                        </tr>
+                        <tr>
+                            <td><strong>Exhaust Fan</strong><br><span style="color:#7d8187; font-size:12px;">via L298N</span></td>
+                            <td>Mode MEDIUM</td>
+                            <td class="mono" style="font-size:12px;">PWM: 800 (78%)<br>IN1: HIGH, IN2: LOW</td>
+                            <td class="mono" style="font-size:12px;">Fan berputar sedang<br>Arus: ±180mA</td>
+                            <td><span class="badge badge-pass">BERHASIL</span></td>
+                        </tr>
+                        <tr>
+                            <td><strong>Exhaust Fan</strong><br><span style="color:#7d8187; font-size:12px;">via L298N</span></td>
+                            <td>Mode HIGH</td>
+                            <td class="mono" style="font-size:12px;">PWM: 1023 (100%)<br>IN1: HIGH, IN2: LOW</td>
+                            <td class="mono" style="font-size:12px;">Fan berputar penuh<br>Arus: ±250mA</td>
+                            <td><span class="badge badge-pass">BERHASIL</span></td>
+                        </tr>
+                        <tr>
+                            <td><strong>Buzzer</strong><br><span style="color:#7d8187; font-size:12px;">GPIO 26</span></td>
+                            <td>Mode MEDIUM</td>
+                            <td class="mono" style="font-size:12px;">ON: 500ms, OFF: 500ms<br>Duty cycle: 50%</td>
+                            <td class="mono" style="font-size:12px;">Buzzer berbunyi terputus<br>Frekuensi terdengar jelas</td>
+                            <td><span class="badge badge-pass">BERHASIL</span></td>
+                        </tr>
+                        <tr>
+                            <td><strong>Buzzer</strong><br><span style="color:#7d8187; font-size:12px;">GPIO 26</span></td>
+                            <td>Mode HIGH</td>
+                            <td class="mono" style="font-size:12px;">ON: 150ms, OFF: 100ms<br>Duty cycle: 60%</td>
+                            <td class="mono" style="font-size:12px;">Buzzer berbunyi cepat<br>Nada lebih urgent</td>
+                            <td><span class="badge badge-pass">BERHASIL</span></td>
+                        </tr>
+                        <tr>
+                            <td><strong>LED</strong><br><span style="color:#7d8187; font-size:12px;">GPIO 25 & 14</span></td>
+                            <td>Kedip bergantian</td>
+                            <td class="mono" style="font-size:12px;">Interval: 150ms<br>Merah ↔ Kuning</td>
+                            <td class="mono" style="font-size:12px;">LED merah-kuning bergantian<br>Visual terlihat jelas</td>
+                            <td><span class="badge badge-pass">BERHASIL</span></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- ==================== 3. KOMUNIKASI ==================== -->
+        <div class="section">
+            <div class="section-header">
+                <span class="eyebrow">03 — Komunikasi</span>
+                <div class="section-title">Pengujian Komunikasi Serial & API</div>
+            </div>
+
+            <div class="card">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Komponen</th>
+                            <th>Pengujian</th>
+                            <th>Parameter</th>
+                            <th>Hasil</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>ESP32 → Python</strong><br><span style="color:#7d8187; font-size:12px;">Serial 115200</span></td>
+                            <td>Kirim data sensor</td>
+                            <td class="mono" style="font-size:12px;">Format: JSON<br>Interval: 3 detik</td>
+                            <td class="mono" style="font-size:12px;">Data terkirim setiap 3s<br>JSON valid, tidak corrupt</td>
+                            <td><span class="badge badge-pass">BERHASIL</span></td>
+                        </tr>
+                        <tr>
+                            <td><strong>Python → Laravel</strong><br><span style="color:#7d8187; font-size:12px;">HTTP POST</span></td>
+                            <td>Upload data ke API</td>
+                            <td class="mono" style="font-size:12px;">Endpoint: /api/ingest<br>Content-Type: JSON</td>
+                            <td class="mono" style="font-size:12px;">Response: 200 OK<br>Data tersimpan di DB</td>
+                            <td><span class="badge badge-pass">BERHASIL</span></td>
+                        </tr>
+                        <tr>
+                            <td><strong>Laravel → ESP32</strong><br><span style="color:#7d8187; font-size:12px;">Command via Serial</span></td>
+                            <td>Kirim command aktuator</td>
+                            <td class="mono" style="font-size:12px;">Format: {"target":"exhaust_fan","action":"HIGH"}</td>
+                            <td class="mono" style="font-size:12px;">ESP32 menerima & eksekusi<br>ACK dikirim balik</td>
+                            <td><span class="badge badge-pass">BERHASIL</span></td>
+                        </tr>
+                        <tr>
+                            <td><strong>Dashboard → API</strong><br><span style="color:#7d8187; font-size:12px;">Polling 3 detik</span></td>
+                            <td>Real-time update</td>
+                            <td class="mono" style="font-size:12px;">Endpoint: /api/dashboard/data<br>Interval: 3000ms</td>
+                            <td class="mono" style="font-size:12px;">Data update real-time<br>Latency: ±100ms</td>
+                            <td><span class="badge badge-pass">BERHASIL</span></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- ==================== 4. FUZZY LOGIC ==================== -->
+        <div class="section">
+            <div class="section-header">
+                <span class="eyebrow">04 — Fuzzy Logic</span>
+                <div class="section-title">Pengujian Fuzzy Logic Sugeno</div>
+            </div>
+
+            <div class="card">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Skenario</th>
+                            <th>Input</th>
+                            <th>Output yang Diharapkan</th>
+                            <th>Hasil Aktual</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Kondisi Aman</td>
+                            <td class="mono" style="font-size:12px;">Gas: 300, Smoke: 200<br>Temp: 30°C, Flame: 3000</td>
+                            <td class="mono" style="font-size:12px;">Status: AMAN<br>Fan: OFF, Buzzer: OFF</td>
+                            <td class="mono" style="font-size:12px;">Status: AMAN ✓<br>Fan: OFF ✓, Buzzer: OFF ✓</td>
+                            <td><span class="badge badge-pass">BERHASIL</span></td>
+                        </tr>
+                        <tr>
+                            <td>Kondisi Warning</td>
+                            <td class="mono" style="font-size:12px;">Gas: 550, Smoke: 400<br>Temp: 42°C, Flame: 1500</td>
+                            <td class="mono" style="font-size:12px;">Status: AMAN<br>Fan: MEDIUM, Buzzer: MEDIUM</td>
+                            <td class="mono" style="font-size:12px;">Status: AMAN ✓<br>Fan: MEDIUM ✓, Buzzer: MEDIUM ✓</td>
+                            <td><span class="badge badge-pass">BERHASIL</span></td>
+                        </tr>
+                        <tr>
+                            <td>Kondisi Bahaya</td>
+                            <td class="mono" style="font-size:12px;">Gas: 800, Smoke: 600<br>Temp: 55°C, Flame: 200</td>
+                            <td class="mono" style="font-size:12px;">Status: BAHAYA<br>Fan: HIGH, Buzzer: HIGH</td>
+                            <td class="mono" style="font-size:12px;">Status: BAHAYA ✓<br>Fan: HIGH ✓, Buzzer: HIGH ✓</td>
+                            <td><span class="badge badge-pass">BERHASIL</span></td>
+                        </tr>
+                        <tr>
+                            <td>Transisi Aman → Bahaya</td>
+                            <td class="mono" style="font-size:12px;">Gas naik dari 300 → 900<br>dalam 10 detik</td>
+                            <td class="mono" style="font-size:12px;">Fan naik bertahap<br>OFF → LOW → MEDIUM → HIGH</td>
+                            <td class="mono" style="font-size:12px;">Transisi bertahap ✓<br>Delay per level: ±3 detik</td>
+                            <td><span class="badge badge-pass">BERHASIL</span></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- ==================== 5. DASHBOARD ==================== -->
+        <div class="section">
+            <div class="section-header">
+                <span class="eyebrow">05 — Dashboard</span>
+                <div class="section-title">Pengujian Dashboard Web</div>
+            </div>
+
+            <div class="card">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Fitur</th>
+                            <th>Pengujian</th>
+                            <th>Hasil</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>Login</strong></td>
+                            <td>Login dengan email & password valid</td>
+                            <td>Berhasil login, redirect ke dashboard</td>
+                            <td><span class="badge badge-pass">BERHASIL</span></td>
+                        </tr>
+                        <tr>
+                            <td><strong>Monitoring Real-Time</strong></td>
+                            <td>Data sensor update otomatis setiap 3 detik</td>
+                            <td>Grafik dan angka update tanpa refresh</td>
+                            <td><span class="badge badge-pass">BERHASIL</span></td>
+                        </tr>
+                        <tr>
+                            <td><strong>Kontrol Aktuator</strong></td>
+                            <td>Klik tombol "Aktifkan Fan" dari dashboard</td>
+                            <td>Fan berputar, status berubah di UI</td>
+                            <td><span class="badge badge-pass">BERHASIL</span></td>
+                        </tr>
+                        <tr>
+                            <td><strong>Visualisasi 3D</strong></td>
+                            <td>Room model menampilkan status sensor</td>
+                            <td>Label sensor update real-time, warna sesuai status</td>
+                            <td><span class="badge badge-pass">BERHASIL</span></td>
+                        </tr>
+                        <tr>
+                            <td><strong>Log Aktivitas</strong></td>
+                            <td>Event log mencatat semua kejadian</td>
+                            <td>Timestamp, status, dan deskripsi tercatat lengkap</td>
+                            <td><span class="badge badge-pass">BERHASIL</span></td>
+                        </tr>
+                        <tr>
+                            <td><strong>Responsive Mobile</strong></td>
+                            <td>Akses dashboard dari HP (Chrome mobile)</td>
+                            <td>Layout menyesuaikan, sidebar jadi overlay</td>
+                            <td><span class="badge badge-pass">BERHASIL</span></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="accent-line"></div>
+
+        <!-- ==================== RINGKASAN AKHIR ==================== -->
+        <div class="section">
+            <div class="section-header">
+                <span class="eyebrow">Kesimpulan</span>
+                <div class="section-title">Ringkasan Pengujian</div>
+            </div>
+
+            <div class="card">
+                <div class="test-detail">
+                    <span class="test-label">Total Pengujian</span>
+                    <span class="test-value mono">23 item</span>
+
+                    <span class="test-label">Berhasil</span>
+                    <span class="test-value mono" style="color: #22c55e;">23 item (100%)</span>
+
+                    <span class="test-label">Gagal</span>
+                    <span class="test-value mono" style="color: #ef4444;">0 item</span>
+
+                    <span class="test-label">Delay Aktuator</span>
+                    <span class="test-value mono">±2-3 detik dari deteksi ke respons</span>
+
+                    <span class="test-label">Akurasi Sensor</span>
+                    <span class="test-value mono">±5% dibanding alat ukur referensi</span>
+
+                    <span class="test-label">Polling Rate</span>
+                    <span class="test-value mono">3 detik (configurable 1-10 detik)</span>
+
+                    <span class="test-label">Uptime</span>
+                    <span class="test-value mono">24 jam tanpa restart, stabil</span>
+
+                    <span class="test-label">Platform</span>
+                    <span class="test-value mono">ESP32 + Laravel + React + MySQL</span>
+                </div>
+
+                <div style="margin-top: 20px; padding: 12px 16px; background: rgba(34,197,94,0.08); border: 1px solid rgba(34,197,94,0.2); border-radius: 8px;">
+                    <p style="font-size: 14px; color: #22c55e; margin-bottom: 4px;">
+                        ✓ Semua pengujian berhasil
+                    </p>
+                    <p style="font-size: 13px; color: #dadbdf;">
+                        Sistem SentinelIoT telah diuji dan berfungsi sesuai spesifikasi. Sensor membaca data dengan akurat, fuzzy logic menentukan level bahaya dengan benar, aktuator merespons sesuai perintah, dan dashboard menampilkan data secara real-time.
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div style="text-align: center; padding-top: 24px; border-top: 1px solid rgba(33,35,39,0.8);">
+            <p class="eyebrow" style="font-size: 10px;">
+                Program Studi Teknologi Informasi — Fakultas Vokasi — Universitas Brawijaya · 2026
+            </p>
+        </div>
+
+    </div>
+</body>
+</html>
