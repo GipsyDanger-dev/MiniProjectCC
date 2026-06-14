@@ -26,11 +26,6 @@ class ApiController extends Controller
             return 0.0;
         }
 
-        // Trapezoidal edge case: left === peak means flat top
-        if ($value === $right && $right !== $peak) {
-            return 0.0;
-        }
-
         if ($value < $peak) {
             $denominator = $peak - $left;
             return $denominator > 0 ? ($value - $left) / $denominator : 1.0;
@@ -63,16 +58,16 @@ class ApiController extends Controller
         $adcMax = 4095;
 
         $gasLow    = $this->triangularMembership($gas, 0, 0, $gasThreshold);
-        $gasMedium = $this->triangularMembership($gas, $gasThreshold * 0.8, $gasThreshold, $gasThreshold * 1.2);
-        $gasHigh   = $this->triangularMembership($gas, $gasThreshold * 1.1, $gasThreshold * 1.5, $adcMax);
+        $gasMedium = $this->triangularMembership($gas, $gasThreshold * 0.6, $gasThreshold * 1.2, $gasThreshold * 2);
+        $gasHigh   = $this->triangularMembership($gas, $gasThreshold * 1.5, $gasThreshold * 2.5, $adcMax);
 
         $smokeLow    = $this->triangularMembership($smoke, 0, 0, $smokeThreshold);
-        $smokeMedium = $this->triangularMembership($smoke, $smokeThreshold * 0.8, $smokeThreshold, $smokeThreshold * 1.2);
-        $smokeHigh   = $this->triangularMembership($smoke, $smokeThreshold * 1.1, $smokeThreshold * 1.5, $adcMax);
+        $smokeMedium = $this->triangularMembership($smoke, $smokeThreshold * 0.6, $smokeThreshold * 1.25, $smokeThreshold * 2);
+        $smokeHigh   = $this->triangularMembership($smoke, $smokeThreshold * 1.5, $smokeThreshold * 2.5, $adcMax);
 
         $tempNormal = $this->triangularMembership($temperature, 0, 0, $tempThreshold);
-        $tempWarm   = $this->triangularMembership($temperature, $tempThreshold * 0.8, $tempThreshold, $tempThreshold * 1.2);
-        $tempHot    = $this->triangularMembership($temperature, $tempThreshold * 1.1, $tempThreshold * 1.5, $tempThreshold * 2.5);
+        $tempWarm   = $this->triangularMembership($temperature, $tempThreshold * 0.6, $tempThreshold, $tempThreshold * 1.6);
+        $tempHot    = $this->triangularMembership($temperature, $tempThreshold * 1.5, $tempThreshold * 2.5, $tempThreshold * 4);
 
         // Sugeno 27 rules: output values SAFE=0, LOW=30, MEDIUM=60, HIGH=100
         $rules = [
@@ -169,12 +164,20 @@ class ApiController extends Controller
         $settings = SystemSettings::firstOrCreate(['id' => 1]);
         if ($settings->mode === 'manual') {
             if ($decision['profile'] === 'FLAME_OVERRIDE') {
+                $settings->update(['mode' => 'auto', 'last_manual_command' => null]);
                 ActivityLog::create([
                     'device_id' => $deviceId,
                     'action_type' => 'EMERGENCY_OVERRIDE',
                     'status' => 'BAHAYA',
                     'description' => 'Flame detected in manual mode — emergency override activated',
                     'message' => 'Emergency override: flame detected'
+                ]);
+                ActivityLog::create([
+                    'device_id' => $deviceId,
+                    'action_type' => 'MODE_SWITCH',
+                    'status' => 'BAHAYA',
+                    'description' => 'Auto-switched to AUTO mode due to flame emergency',
+                    'message' => 'Emergency mode switch: manual → auto'
                 ]);
             } else {
                 return;
@@ -199,7 +202,15 @@ class ApiController extends Controller
             ->orderBy('id', 'desc')
             ->first();
 
-        if (!$lastFan || $lastFan->action !== $fanStatus) {
+        // Only create command if state actually changed (skip OFF when nothing was active)
+        if ($lastFan && $lastFan->action !== $fanStatus) {
+            Command::create([
+                'device_id' => $deviceId,
+                'target_device' => 'exhaust_fan',
+                'action' => $fanStatus,
+                'status' => 'pending'
+            ]);
+        } elseif (!$lastFan && $fanStatus !== 'OFF') {
             Command::create([
                 'device_id' => $deviceId,
                 'target_device' => 'exhaust_fan',
@@ -214,11 +225,19 @@ class ApiController extends Controller
             ->orderBy('id', 'desc')
             ->first();
 
-        if (!$lastBuzzer || $lastBuzzer->action !== $decision['buzzer_action']) {
+        $buzzerAction = $decision['buzzer_action'];
+        if ($lastBuzzer && $lastBuzzer->action !== $buzzerAction) {
             Command::create([
                 'device_id' => $deviceId,
                 'target_device' => 'buzzer',
-                'action' => $decision['buzzer_action'],
+                'action' => $buzzerAction,
+                'status' => 'pending'
+            ]);
+        } elseif (!$lastBuzzer && $buzzerAction !== 'STOP') {
+            Command::create([
+                'device_id' => $deviceId,
+                'target_device' => 'buzzer',
+                'action' => $buzzerAction,
                 'status' => 'pending'
             ]);
         }
@@ -598,7 +617,13 @@ class ApiController extends Controller
         $device->status = 'offline';
         $device->save();
 
+        // Clear related data
+        SensorData::where('device_id', $device->id)->delete();
+        Command::where('device_id', $device->id)->delete();
+        DeviceActuator::where('device_id', $device->id)->delete();
+
         ActivityLog::create([
+            'device_id' => $device->id,
             'action_type' => 'SYSTEM_UPDATE',
             'status' => 'AMAN',
             'description' => "Device {$device->id} reset",
@@ -655,9 +680,6 @@ class ApiController extends Controller
         }
         if ($request->target_device === 'exhaust_fan' && $action === 'STOP') {
             $action = 'OFF';
-        }
-        if ($request->target_device === 'buzzer' && $action === 'START') {
-            $action = 'HIGH';
         }
 
         // Set manual mode BEFORE creating command to prevent race condition

@@ -52,7 +52,7 @@ class DashboardTest extends TestCase
         $response->assertOk();
         $response->assertJsonPath('settings.gas_threshold', 250);
         $response->assertJsonPath('settings.smoke_threshold', 120);
-        $response->assertJsonPath('settings.temp_threshold', 40);
+        $response->assertJsonPath('settings.temperature_threshold', 40);
         $response->assertJsonPath('settings.flame_threshold', 500);
     }
 

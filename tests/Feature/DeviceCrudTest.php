@@ -21,7 +21,7 @@ class DeviceCrudTest extends TestCase
         $response = $this->getJson('/api/devices');
 
         $response->assertOk();
-        $response->assertJsonCount(1, 'data');
+        $response->assertJsonCount(1, 'devices');
     }
 
     public function test_create_device(): void
@@ -32,8 +32,8 @@ class DeviceCrudTest extends TestCase
             'api_key' => 'new-key-456',
         ]);
 
-        $response->assertCreated();
-        $response->assertJsonPath('data.device_name', 'New Sensor');
+        $response->assertOk();
+        $response->assertJsonPath('device.device_name', 'New Sensor');
 
         $this->assertDatabaseHas('devices', [
             'device_name' => 'New Sensor',

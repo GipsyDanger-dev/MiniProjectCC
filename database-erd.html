@@ -356,15 +356,19 @@
 </div>
 
 <div class="legend">
-  <h4>Relasi</h4>
+  <h4>Notasi Relasi</h4>
   <div class="legend-items">
     <div class="legend-item">
-      <div class="legend-line solid" style="border-color:var(--accent)"></div>
-      <span>One-to-Many (1 : N)</span>
+      <span style="font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:700;background:var(--accent-dim);color:var(--accent);padding:2px 8px;border-radius:4px;border:1.5px solid rgba(232,155,42,0.25)">1</span>
+      <span style="color:var(--ink2)">───</span>
+      <span style="font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:700;background:var(--info-dim);color:#60a5fa;padding:2px 8px;border-radius:4px;border:1.5px solid rgba(59,130,246,0.25)">N</span>
+      <span>One-to-Many</span>
     </div>
     <div class="legend-item">
-      <div class="legend-line solid" style="border-color:var(--accent);border-width:3px"></div>
-      <span>One-to-One (1 : 1)</span>
+      <span style="font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:700;background:var(--accent-dim);color:var(--accent);padding:2px 8px;border-radius:4px;border:1.5px solid rgba(232,155,42,0.25)">1</span>
+      <span style="color:var(--ink2)">───</span>
+      <span style="font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:700;background:var(--accent-dim);color:var(--accent);padding:2px 8px;border-radius:4px;border:1.5px solid rgba(232,155,42,0.25)">1</span>
+      <span>One-to-One</span>
     </div>
   </div>
   <h4 style="margin-top:12px">Kolom</h4>
@@ -863,88 +867,38 @@ function drawLines() {
     path.dataset.to = rel.to;
     svg.appendChild(path);
 
-    // Crow's foot / cardinality symbols
-    const angle = Math.atan2(y2 - cy2, x2 - cx2);
-    const arrowSize = 8;
-
-    if (rel.type === 'one-to-many') {
-      // Crow's foot at "to" end (many side)
-      const perpX = Math.sin(angle) * arrowSize;
-      const perpY = -Math.cos(angle) * arrowSize;
-      const backX = -Math.cos(angle) * arrowSize * 1.8;
-      const backY = -Math.sin(angle) * arrowSize * 1.8;
-
-      const line1 = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-      line1.setAttribute('x1', x2); line1.setAttribute('y1', y2);
-      line1.setAttribute('x2', x2 + backX + perpX); line1.setAttribute('y2', y2 + backY + perpY);
-      line1.setAttribute('class', 'rel-path'); line1.setAttribute('stroke-width', '2');
-      line1.dataset.from = rel.from; line1.dataset.to = rel.to;
-      svg.appendChild(line1);
-
-      const line2 = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-      line2.setAttribute('x1', x2); line2.setAttribute('y1', y2);
-      line2.setAttribute('x2', x2 + backX - perpX); line2.setAttribute('y2', y2 + backY - perpY);
-      line2.setAttribute('class', 'rel-path'); line2.setAttribute('stroke-width', '2');
-      line2.dataset.from = rel.from; line2.dataset.to = rel.to;
-      svg.appendChild(line2);
-
-      // Single line at "from" end (one side)
-      const fromAngle = Math.atan2(y1 - cy1, x1 - cx1);
-      const fPerpX = Math.sin(fromAngle) * arrowSize;
-      const fPerpY = -Math.cos(fromAngle) * arrowSize;
-      const fLine = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-      fLine.setAttribute('x1', x1 - fPerpX); fLine.setAttribute('y1', y1 - fPerpY);
-      fLine.setAttribute('x2', x1 + fPerpX); fLine.setAttribute('y2', y1 + fPerpY);
-      fLine.setAttribute('class', 'rel-path'); fLine.setAttribute('stroke-width', '2');
-      fLine.dataset.from = rel.from; fLine.dataset.to = rel.to;
-      svg.appendChild(fLine);
-
-    } else if (rel.type === 'one-to-one') {
-      // Single line at both ends
-      [{ px: x1, py: y1, a: Math.atan2(y1 - cy1, x1 - cx1) },
-       { px: x2, py: y2, a: Math.atan2(y2 - cy2, x2 - cx2) }].forEach(p => {
-        const pX = Math.sin(p.a) * arrowSize;
-        const pY = -Math.cos(p.a) * arrowSize;
-        const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-        line.setAttribute('x1', p.px - pX); line.setAttribute('y1', p.py - pY);
-        line.setAttribute('x2', p.px + pX); line.setAttribute('y2', p.py + pY);
-        line.setAttribute('class', 'rel-path'); line.setAttribute('stroke-width', '2.5');
-        line.dataset.from = rel.from; line.dataset.to = rel.to;
-        svg.appendChild(line);
-      });
-    }
-
-    // ── Cardinality badges (1 / N) ──
+    // ── Cardinality notation: [1] ─── [N] ──
     const midX = (x1 + x2) / 2;
     const midY = (y1 + y2) / 2;
-
-    // Position badges near the endpoints, offset perpendicular to the line
     const lineAngle = Math.atan2(y2 - y1, x2 - x1);
-    const perpOff = 20;
+    const perpOff = 22;
+    const alongOff = 28;
 
+    // [1] badge near "from" endpoint
     const badge1 = document.createElement('div');
     badge1.className = 'cardinality-badge one-end';
     badge1.dataset.relIndex = relIndex;
     badge1.textContent = '1';
-    badge1.style.left = (x1 + Math.cos(lineAngle) * 20 - Math.sin(lineAngle) * perpOff - 14) + 'px';
-    badge1.style.top = (y1 + Math.sin(lineAngle) * 20 + Math.cos(lineAngle) * perpOff - 12) + 'px';
+    badge1.style.left = (x1 + Math.cos(lineAngle) * alongOff - Math.sin(lineAngle) * perpOff - 16) + 'px';
+    badge1.style.top = (y1 + Math.sin(lineAngle) * alongOff + Math.cos(lineAngle) * perpOff - 14) + 'px';
     markersDiv.appendChild(badge1);
 
+    // [N] or [1] badge near "to" endpoint
     const badgeN = document.createElement('div');
     badgeN.className = 'cardinality-badge many-end';
     badgeN.dataset.relIndex = relIndex;
     badgeN.textContent = rel.type === 'one-to-one' ? '1' : 'N';
-    badgeN.style.left = (x2 - Math.cos(lineAngle) * 20 + Math.sin(lineAngle) * perpOff - 14) + 'px';
-    badgeN.style.top = (y2 - Math.sin(lineAngle) * 20 - Math.cos(lineAngle) * perpOff - 12) + 'px';
+    badgeN.style.left = (x2 - Math.cos(lineAngle) * alongOff + Math.sin(lineAngle) * perpOff - 16) + 'px';
+    badgeN.style.top = (y2 - Math.sin(lineAngle) * alongOff - Math.cos(lineAngle) * perpOff - 14) + 'px';
     markersDiv.appendChild(badgeN);
 
-    // ── Relationship type label at midpoint ──
+    // Relationship type label at midpoint
     const typeLabel = document.createElement('div');
     typeLabel.className = 'rel-type-label';
     typeLabel.dataset.relIndex = relIndex;
     typeLabel.innerHTML = `${rel.type}<span class="label-fk">${rel.fromCol} → ${rel.toCol}</span>`;
-    typeLabel.style.left = (midX - 70) + 'px';
-    typeLabel.style.top = (midY - 16) + 'px';
+    typeLabel.style.left = (midX - 75) + 'px';
+    typeLabel.style.top = (midY - 18) + 'px';
     markersDiv.appendChild(typeLabel);
   });
 

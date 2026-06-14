@@ -17,6 +17,10 @@ Route::middleware([CheckApiKey::class])->group(function () {
 Route::get('/dashboard/data', [ApiController::class, 'dashboard']);
 Route::get('/sensor/flame', [ApiController::class, 'flameSensor']);
 
+// Mode & emergency
+Route::post('/mode', [ApiController::class, 'setMode']);
+Route::post('/emergency', [ApiController::class, 'emergency']);
+
 // Device management
 Route::get('/devices', [ApiController::class, 'devices']);
 Route::post('/devices', [ApiController::class, 'createDevice']);
