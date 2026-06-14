@@ -12,7 +12,7 @@ import DeviceStatus from "./pages/DeviceStatus";
 import Settings from "./pages/Settings";
 import PlaceholderPage from "./pages/PlaceholderPage";
 import NewDevice from "./pages/NewDevice";
-import LoginPage from "./pages/LoginPage";
+// LoginPage removed — using blade template login at /login
 
 export default function MainApp() {
     const { theme, toggleTheme } = useTheme();
@@ -94,7 +94,8 @@ export default function MainApp() {
     }
 
     if (!user) {
-        return <LoginPage onLogin={setUser} />;
+        window.location.href = "/login";
+        return null;
     }
 
     const pages = {

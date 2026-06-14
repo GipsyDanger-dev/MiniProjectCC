@@ -1,5 +1,6 @@
 import React from "react";
 import { AlertTriangle, CheckCircle, Settings, Zap, Activity } from "lucide-react";
+import GlassSurface from "./GlassSurface";
 
 function formatTime(value) {
     if (!value) return "";
@@ -14,85 +15,56 @@ function formatTime(value) {
     return d.toLocaleDateString("en-GB", { day: "2-digit", month: "short" });
 }
 
-function parseDescription(desc) {
-    if (!desc) return null;
-    const triggered = desc.match(/Triggered:\s*([^|]+)/)?.[1]?.trim();
-    const nearLimit = desc.match(/Near limit:\s*([^|]+)/)?.[1]?.trim();
-    const sensors = desc.match(/(?:Gas|Smoke|Temp|Flame):\s*[\d.]+\/[\d.]+(?:C?)/g);
-    return { triggered, nearLimit, sensors };
-}
-
-function getIcon(actionType) {
+function getIcon(isDanger, actionType) {
+    if (isDanger) return AlertTriangle;
     if (actionType === "MANUAL_COMMAND") return Zap;
     if (actionType === "SYSTEM_UPDATE" || actionType === "MODE_SWITCH") return Settings;
     return Activity;
 }
 
-export default function ActivityLog({ entries: incomingEntries = [], onViewAll }) {
+export default function ActivityLog({ entries: incomingEntries = [] }) {
     const entries = incomingEntries.length ? incomingEntries : [];
 
     return (
-        <div className="bg-surface2 border border-edge rounded-lg shadow-card">
-            <div className="flex items-center justify-between px-4 py-3 border-b border-edge">
-                <p className="text-[12px] font-medium text-ink2">
-                    Event Log
-                </p>
-                <span
-                    className="text-[11px] text-accent cursor-pointer hover:underline"
-                    onClick={onViewAll}
-                >
-                    View All
+        <GlassSurface className="p-3 sm:p-4">
+            <div className="flex items-center justify-between mb-3">
+                <p className="text-xs sm:text-sm font-normal text-white tracking-tight">Event Log</p>
+                <span className="text-[10px] sm:text-[11px] bg-[rgba(26,28,32,0.6)] text-[#dadbdf] px-2 sm:px-3 py-0.5 sm:py-1 rounded-[9999px] font-normal border border-[rgba(33,35,39,0.8)]"
+                      style={{ fontFamily: "'Geist Mono', monospace", letterSpacing: '1px' }}>
+                    {entries.length}
                 </span>
             </div>
             <div className="max-h-[300px] overflow-auto thin-scroll">
                 {entries.length === 0 && (
-                    <p className="text-[10px] text-ink3 py-4 text-center px-3">No recent events</p>
+                    <p className="text-xs text-center py-6 text-[#7d8187]">No recent events</p>
                 )}
-                {entries.slice(0, 5).map((entry) => {
+                {entries.slice(0, 6).map((entry, i) => {
                     const isDanger = entry.status === "BAHAYA";
-                    const isSystem = entry.action_type === "SYSTEM_UPDATE" || entry.action_type === "MODE_SWITCH";
-                    const Icon = isDanger ? AlertTriangle : isSystem ? Settings : CheckCircle;
-                    const parsed = parseDescription(entry.description);
+                    const Icon = getIcon(isDanger, entry.action_type);
 
                     return (
-                        <div
-                            key={entry.id}
-                            className={`flex items-start gap-2 px-3 py-2 border-b border-edge last:border-b-0 border-l-2 ${
-                                isDanger
-                                    ? "border-l-danger bg-danger/[0.03]"
-                                    : "border-l-transparent"
-                            }`}
-                        >
-                            <div className={`shrink-0 mt-0.5 ${isDanger ? "text-danger" : "text-ink3"}`}>
-                                <Icon className="w-3 h-3" strokeWidth={1.5} />
-                            </div>
+                        <div key={entry.id || i}
+                            className="flex items-start gap-2.5 sm:gap-3 rounded-lg border border-[rgba(33,35,39,0.8)] bg-[rgba(10,10,10,0.6)] px-2.5 sm:px-3 py-2 sm:py-2.5 mb-1.5 hover:bg-[rgba(26,28,32,0.6)] transition-all duration-150">
+                            <span className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg flex items-center justify-center shrink-0"
+                                  style={{ background: isDanger ? 'rgba(239,68,68,0.1)' : 'linear-gradient(135deg, rgba(124,58,237,0.1) 0%, rgba(196,181,253,0.05) 100%)', border: `1px solid ${isDanger ? 'rgba(239,68,68,0.3)' : 'rgba(124,58,237,0.15)'}` }}>
+                                <Icon className={`w-3 h-3 sm:w-3.5 sm:h-3.5 ${isDanger ? 'text-[#ef4444]' : 'text-[#c4b5fd]'}`} strokeWidth={1.5} />
+                            </span>
                             <div className="flex-1 min-w-0">
-                                <p className={`text-[10px] leading-snug ${isDanger ? "text-danger font-medium" : "text-ink2"}`}>
+                                <p className={`text-xs sm:text-sm font-normal leading-snug ${isDanger ? 'text-[#ef4444]' : 'text-white'}`}>
                                     {entry.message}
                                 </p>
-                                {parsed?.triggered && (
-                                    <p className="text-[9px] text-danger/80 leading-snug mt-0.5">
-                                        Triggered: {parsed.triggered}
-                                    </p>
-                                )}
-                                {parsed?.nearLimit && (
-                                    <p className="text-[9px] text-amber-500 leading-snug mt-0.5">
-                                        Near limit: {parsed.nearLimit}
-                                    </p>
-                                )}
-                                {!parsed?.triggered && !parsed?.nearLimit && entry.description && (
-                                    <p className="text-[9px] text-ink3 leading-snug mt-0.5">
-                                        {entry.description}
-                                    </p>
+                                {entry.description && (
+                                    <p className="text-[10px] sm:text-[11px] mt-0.5 text-[#7d8187] truncate">{entry.description}</p>
                                 )}
                             </div>
-                            <span className="text-[9px] text-ink3 whitespace-nowrap shrink-0 mt-0.5">
+                            <span className="text-[9px] sm:text-[10px] text-[#7d8187] whitespace-nowrap shrink-0 mt-0.5"
+                                  style={{ fontFamily: "'Geist Mono', monospace", letterSpacing: '0.5px' }}>
                                 {formatTime(entry.created_at || entry.time)}
                             </span>
                         </div>
                     );
                 })}
             </div>
-        </div>
+        </GlassSurface>
     );
 }

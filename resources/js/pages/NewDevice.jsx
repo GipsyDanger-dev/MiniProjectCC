@@ -1,141 +1,54 @@
 import React, { useState } from "react";
 import { Cpu, KeyRound, MapPin, PlusCircle } from "lucide-react";
+import GlassSurface from "../components/GlassSurface";
 
 export default function NewDevice({ onCreated, onReload }) {
-    const [deviceName, setDeviceName] = useState("");
-    const [location, setLocation] = useState("");
-    const [apiKey, setApiKey] = useState("");
-    const [status, setStatus] = useState("offline");
-    const [submitting, setSubmitting] = useState(false);
-    const [error, setError] = useState("");
-    const [success, setSuccess] = useState("");
+    const [dn, setDn] = useState(""), [loc, setLoc] = useState(""), [ak, setAk] = useState(""), [st, setSt] = useState("offline"), [sub, setSub] = useState(false), [err, setErr] = useState(""), [ok, setOk] = useState("");
 
-    const handleSubmit = async (event) => {
-        event.preventDefault();
-        setError("");
-        setSuccess("");
-
-        if (!deviceName.trim() || !location.trim() || !apiKey.trim()) {
-            setError("Please complete all required fields.");
-            return;
-        }
-
-        setSubmitting(true);
+    const submit = async e => {
+        e.preventDefault(); setErr(""); setOk("");
+        if (!dn.trim() || !loc.trim() || !ak.trim()) { setErr("Please complete all fields."); return; }
+        setSub(true);
         try {
-            const res = await fetch("/api/devices", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    Accept: "application/json",
-                    "X-CSRF-TOKEN": document.querySelector('meta[name="csrf-token"]')?.getAttribute("content") || "",
-                },
-                body: JSON.stringify({
-                    device_name: deviceName.trim(),
-                    location,
-                    api_key: apiKey.trim(),
-                    status,
-                }),
-            });
-
-            const payload = await res.json();
-            if (payload.status !== "success") {
-                setError(payload.message || "Failed to create device.");
-                return;
-            }
-
-            setSuccess("Device created successfully.");
-            setDeviceName("");
-            setApiKey("");
-            setStatus("offline");
-            onCreated?.(payload.data);
-            onReload?.();
-        } catch (_err) {
-            setError("Failed to create device.");
-        } finally {
-            setSubmitting(false);
-        }
+            const r = await fetch("/api/devices", { method: "POST", headers: { "Content-Type": "application/json", Accept: "application/json", "X-CSRF-TOKEN": document.querySelector('meta[name="csrf-token"]')?.getAttribute("content") || "" }, body: JSON.stringify({ device_name: dn.trim(), location: loc, api_key: ak.trim(), status: st }) });
+            const p = await r.json();
+            if (p.status !== "success") { setErr(p.message || "Failed."); return; }
+            setOk("Device created."); setDn(""); setAk(""); setSt("offline"); onCreated?.(p.device || p.data); onReload?.();
+        } catch { setErr("Failed to create."); } finally { setSub(false); }
     };
 
-    const FieldRow = ({ icon: Icon, label, children }) => (
-        <div className="py-2.5 border-b border-edge">
-            <p className="text-[9px] uppercase tracking-[0.08em] text-ink3 flex items-center gap-1.5 mb-1.5">
-                {Icon && <Icon className="w-3 h-3" />}
-                {label}
-            </p>
-            {children}
-        </div>
-    );
-
     return (
-        <div className="flex flex-col gap-2.5">
-            <div>
-                <p className="text-[12px] font-medium text-ink2">New Device</p>
-                <p className="text-[11px] text-ink3 mt-0.5">Add a new device for your rooms and integrations.</p>
-            </div>
-
-            <div className="max-w-xl">
-                <div className="bg-surface2 border border-edge rounded-lg shadow-card">
-                    <div className="px-4 py-3 border-b border-edge">
-                        <p className="text-[12px] font-medium text-ink2">Device Configuration</p>
+        <div className="pb-4 sm:pb-5 space-y-3 sm:space-y-4">
+            <div><h1 className="text-xl sm:text-2xl font-normal text-white tracking-tight">New Device</h1><p className="text-xs sm:text-sm text-[#7d8187] mt-0.5">Add a new device for your rooms.</p></div>
+            <GlassSurface className="p-3 sm:p-5 max-w-xl">
+                <form onSubmit={submit} className="space-y-2 sm:space-y-3">
+                    <div className="rounded-lg border border-[rgba(33,35,39,0.8)] bg-[rgba(10,10,10,0.6)] px-2.5 sm:px-3 py-2 sm:py-2.5">
+                        <p className="text-[10px] sm:text-[11px] uppercase tracking-[1.2px] text-[#7d8187] font-normal flex items-center gap-1.5" style={{ fontFamily: "'Geist Mono', monospace" }}><Cpu className="w-3 h-3" />Device Name</p>
+                        <input value={dn} onChange={e => setDn(e.target.value)} className="text-xs sm:text-sm mt-1 sm:mt-1.5 w-full bg-transparent outline-none border-b border-[rgba(33,35,39,0.8)] text-white pb-1 focus:border-[#7c3aed] transition-all duration-150 font-normal" placeholder="Warehouse Gateway" />
                     </div>
-                    <form onSubmit={handleSubmit} className="px-4">
-                        <FieldRow icon={Cpu} label="Device Name">
-                            <input
-                                type="text"
-                                value={deviceName}
-                                onChange={(e) => setDeviceName(e.target.value)}
-                                className="text-[10px] w-full bg-transparent outline-none border-b border-edge text-ink pb-0.5 focus:border-accent transition-smooth"
-                                placeholder="Warehouse Gateway"
-                            />
-                        </FieldRow>
-
-                        <FieldRow icon={MapPin} label="Room / Location">
-                            <input
-                                type="text"
-                                value={location}
-                                onChange={(e) => setLocation(e.target.value)}
-                                className="text-[10px] w-full bg-transparent outline-none border-b border-edge text-ink pb-0.5 focus:border-accent transition-smooth"
-                                placeholder="Warehouse"
-                            />
-                        </FieldRow>
-
-                        <FieldRow icon={KeyRound} label="API Key">
-                            <input
-                                type="text"
-                                value={apiKey}
-                                onChange={(e) => setApiKey(e.target.value)}
-                                className="text-[10px] w-full bg-transparent outline-none border-b border-edge text-ink pb-0.5 focus:border-accent transition-smooth"
-                                placeholder="key-warehouse-001"
-                            />
-                        </FieldRow>
-
-                        <FieldRow label="Status">
-                            <select
-                                value={status}
-                                onChange={(e) => setStatus(e.target.value)}
-                                className="text-[10px] w-full bg-transparent outline-none border-b border-edge text-ink pb-0.5 focus:border-accent transition-smooth"
-                            >
-                                <option value="offline">offline</option>
-                                <option value="online">online</option>
-                            </select>
-                        </FieldRow>
-
-                        {error && <p className="text-[10px] text-danger py-1.5">{error}</p>}
-                        {success && <p className="text-[10px] text-success py-1.5">{success}</p>}
-
-                        <div className="py-2.5">
-                            <button
-                                type="submit"
-                                disabled={submitting || !deviceName.trim() || !apiKey.trim() || !location.trim()}
-                                className="w-full h-9 rounded-lg bg-accent text-accent-foreground text-[12px] font-medium flex items-center justify-center gap-1.5 hover:bg-accent/90 transition-smooth disabled:opacity-50"
-                            >
-                                <PlusCircle className="w-3 h-3" />
-                                {submitting ? "Creating..." : "Create Device"}
-                            </button>
-                        </div>
-                    </form>
-                </div>
-            </div>
+                    <div className="rounded-lg border border-[rgba(33,35,39,0.8)] bg-[rgba(10,10,10,0.6)] px-2.5 sm:px-3 py-2 sm:py-2.5">
+                        <p className="text-[10px] sm:text-[11px] uppercase tracking-[1.2px] text-[#7d8187] font-normal flex items-center gap-1.5" style={{ fontFamily: "'Geist Mono', monospace" }}><MapPin className="w-3 h-3" />Location</p>
+                        <input value={loc} onChange={e => setLoc(e.target.value)} className="text-xs sm:text-sm mt-1 sm:mt-1.5 w-full bg-transparent outline-none border-b border-[rgba(33,35,39,0.8)] text-white pb-1 focus:border-[#7c3aed] transition-all duration-150 font-normal" placeholder="Warehouse" />
+                    </div>
+                    <div className="rounded-lg border border-[rgba(33,35,39,0.8)] bg-[rgba(10,10,10,0.6)] px-2.5 sm:px-3 py-2 sm:py-2.5">
+                        <p className="text-[10px] sm:text-[11px] uppercase tracking-[1.2px] text-[#7d8187] font-normal flex items-center gap-1.5" style={{ fontFamily: "'Geist Mono', monospace" }}><KeyRound className="w-3 h-3" />API Key</p>
+                        <input value={ak} onChange={e => setAk(e.target.value)} className="text-xs sm:text-sm mt-1 sm:mt-1.5 w-full bg-transparent outline-none border-b border-[rgba(33,35,39,0.8)] text-white pb-1 focus:border-[#7c3aed] transition-all duration-150 font-normal" placeholder="key-001" />
+                    </div>
+                    <div className="rounded-lg border border-[rgba(33,35,39,0.8)] bg-[rgba(10,10,10,0.6)] px-2.5 sm:px-3 py-2 sm:py-2.5">
+                        <p className="text-[10px] sm:text-[11px] uppercase tracking-[1.2px] text-[#7d8187] font-normal" style={{ fontFamily: "'Geist Mono', monospace" }}>Status</p>
+                        <select value={st} onChange={e => setSt(e.target.value)} className="text-xs sm:text-sm mt-1 sm:mt-1.5 w-full bg-transparent outline-none border-b border-[rgba(33,35,39,0.8)] text-white pb-1 focus:border-[#7c3aed] transition-all duration-150 font-normal">
+                            <option value="offline">offline</option>
+                            <option value="online">online</option>
+                        </select>
+                    </div>
+                    {err && <p className="text-xs text-[#ef4444]">{err}</p>}
+                    {ok && <p className="text-xs text-[#22c55e]">{ok}</p>}
+                    <button type="submit" disabled={sub || !dn.trim() || !ak.trim() || !loc.trim()}
+                        className="h-9 sm:h-10 px-4 sm:px-5 rounded-[9999px] bg-white text-[#0a0a0a] font-normal text-xs sm:text-sm hover:bg-[#fafaf7] transition-all duration-150 disabled:opacity-50 inline-flex items-center gap-2">
+                        <PlusCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4" strokeWidth={1.5} />{sub ? "Creating..." : "Create Device"}
+                    </button>
+                </form>
+            </GlassSurface>
         </div>
     );
 }

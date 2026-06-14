@@ -1,126 +1,61 @@
 import React from "react";
-import { Bell, List, Loader2, Play, Square, Zap } from "lucide-react";
+import { Bell, List, Play, Square, ShieldCheck, AlertTriangle, Zap } from "lucide-react";
+import GlassSurface from "./GlassSurface";
 
-export function StatusCard({
-    status = "AMAN",
-    systemActive = true,
-    onToggle,
-    deviceLabel = "IOT-SEC-0A42F",
-    updatedLabel = "Updated 2s ago",
-}) {
+export function StatusCard({ status = "AMAN", systemActive = true, deviceLabel = "IOT-SEC-0A42F", updatedLabel = "Updated 2s ago" }) {
     const isDanger = status === "BAHAYA";
     return (
-        <div className="bg-surface2 border border-edge rounded-lg shadow-card p-4 h-full flex flex-col">
-            <div className="flex items-center justify-between mb-3">
-                <p className="text-[11px] text-ink3">
-                    Status Indikasi
-                </p>
-                <div
-                    onClick={onToggle}
-                    className={`w-10 h-5 rounded-full cursor-pointer relative transition-smooth ${
-                        systemActive
-                            ? "bg-accent/20"
-                            : "bg-surface3"
-                    }`}
-                >
-                    <span
-                        className={`absolute top-0.5 w-4 h-4 rounded-full transition-all ${
-                            systemActive
-                                ? "left-[20px] bg-accent"
-                                : "left-0.5 bg-edge2"
-                        }`}
-                    />
-                </div>
-            </div>
-            <p className="text-center text-[11px] text-ink3 mb-3">
+        <GlassSurface className={`p-4 h-full ${isDanger ? "animate-danger-border border-[#ef4444]/50" : ""}`}>
+            <p className="text-[10px] sm:text-[11px] uppercase tracking-[1.2px] font-normal text-[#7d8187] mb-2"
+               style={{ fontFamily: "'Geist Mono', monospace" }}>System Status</p>
+            <p className="inline-flex items-center px-2 py-0.5 rounded-[9999px] text-[10px] font-normal bg-[rgba(26,28,32,0.6)] text-[#dadbdf] border border-[rgba(33,35,39,0.8)]"
+               style={{ fontFamily: "'Geist Mono', monospace", letterSpacing: '0.5px' }}>
                 {updatedLabel}
             </p>
-            <p
-                className={`text-2xl font-medium text-center tracking-[0.02em] ${
-                    isDanger ? "text-danger animate-pulse" : "text-success"
-                }`}
-            >
-                {status}
-            </p>
-            <div className="mt-auto pt-3 flex items-end justify-between">
-                <div>
-                    <p className="text-[10px] uppercase tracking-[0.10em] text-ink3">
-                        Device ID
-                    </p>
-                    <p className="text-sm font-medium mt-0.5">{deviceLabel}</p>
-                </div>
+            <div className="mt-3 flex items-center gap-3" role={isDanger ? "alert" : "status"} aria-live={isDanger ? "assertive" : "polite"}>
+                {isDanger ? (
+                    <AlertTriangle className="w-6 h-6 text-[#ef4444] animate-danger-shake" strokeWidth={1.5} />
+                ) : (
+                    <ShieldCheck className="w-6 h-6 text-[#22c55e]" strokeWidth={1.5} />
+                )}
+                <p className={`text-xl sm:text-2xl font-normal tracking-tight ${isDanger ? "text-[#ef4444] animate-danger-text" : "text-[#22c55e]"}`}
+                   style={{ fontFamily: "'Geist Mono', monospace", letterSpacing: '-0.5px' }}>
+                    SISTEM {status}
+                </p>
             </div>
-        </div>
+            <div className="mt-2">
+                <p className="text-[10px] uppercase tracking-[1.2px] font-normal text-[#7d8187]" style={{ fontFamily: "'Geist Mono', monospace" }}>Device ID</p>
+                <p className="text-sm font-normal mt-0.5 text-white" style={{ fontFamily: "'Geist Mono', monospace", letterSpacing: '0.5px' }}>{deviceLabel}</p>
+            </div>
+        </GlassSurface>
     );
 }
 
-export function QuickActions({ actuatorState = {}, onAction, loading, emergencyActive = false }) {
+export function QuickActions({ actuatorState = {}, onAction }) {
     const actions = [
-        {
-            label: "Aktifkan Fan",
-            icon: Zap,
-            target: "exhaust_fan",
-            active: actuatorState.exhaust_fan === "START" || actuatorState.exhaust_fan === "HIGH" || actuatorState.exhaust_fan === "MEDIUM" || actuatorState.exhaust_fan === "LOW",
-            action: { target_device: "exhaust_fan", action: "START" },
-            primary: true,
-        },
-        {
-            label: "Stop Fan",
-            icon: Square,
-            target: "exhaust_fan",
-            active: actuatorState.exhaust_fan === "STOP" || actuatorState.exhaust_fan === "OFF",
-            action: { target_device: "exhaust_fan", action: "STOP" },
-            primary: false,
-        },
-        {
-            label: "Start Buzzer",
-            icon: Bell,
-            target: "buzzer",
-            active: actuatorState.buzzer === "START",
-            action: { target_device: "buzzer", action: "START" },
-            primary: false,
-        },
-        {
-            label: "Stop Buzzer",
-            icon: Square,
-            target: "buzzer",
-            active: actuatorState.buzzer === "STOP",
-            action: { target_device: "buzzer", action: "STOP" },
-            primary: false,
-        },
-        { label: "View Logs", icon: List, target: null, active: false, action: { navigate: "activity" }, primary: false },
-        { label: emergencyActive ? "MATIKAN" : "EMERGENCY", icon: emergencyActive ? Square : Zap, target: "emergency", active: emergencyActive, action: { emergency: true }, primary: true, danger: !emergencyActive, success: emergencyActive },
+        { label: "Aktifkan Fan", icon: Play, active: actuatorState.exhaust_fan === "START", action: { target_device: "exhaust_fan", action: "START" } },
+        { label: "Hentikan Fan", icon: Square, active: actuatorState.exhaust_fan === "STOP", action: { target_device: "exhaust_fan", action: "STOP" } },
+        { label: "Test Buzzer", icon: Bell, active: actuatorState.buzzer === "START", action: { target_device: "buzzer", action: "START" } },
+        { label: "Lihat Log", icon: List, active: false },
     ];
 
     return (
-        <div className="grid grid-cols-3 gap-1.5">
-            {actions.map((action) => {
-                const isLoading = loading && action.target === loading;
-                return (
-                    <button
-                        key={action.label}
-                        type="button"
-                        disabled={isLoading}
-                        onClick={() => onAction?.(action.action)}
-                        className={`h-9 rounded-lg border text-[12px] font-medium flex items-center justify-center gap-1.5 transition-smooth cursor-pointer disabled:opacity-50 disabled:cursor-wait ${
-                            action.success
-                                ? "bg-success text-white border-success hover:bg-success/80 col-span-3"
-                                : action.danger
-                                ? "bg-danger text-white border-danger hover:bg-danger/80 col-span-3 animate-pulse"
-                                : action.primary
-                                ? "bg-accent text-white border-accent hover:bg-accent/80"
-                                : "bg-surface3 border-edge2 text-ink2 hover:border-accent hover:text-accent"
-                        }`}
-                    >
-                        {isLoading ? (
-                            <Loader2 className="w-3 h-3 animate-spin" />
-                        ) : (
-                            <action.icon className="w-3 h-3" />
-                        )}
-                        {action.label}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3">
+            {actions.map(a => (
+                <GlassSurface key={a.label} className={`p-3 sm:p-4 bento-card bento-card--border-glow group ${a.active ? "!bg-[rgba(26,28,32,0.8)] !border-[rgba(124,58,237,0.3)]" : ""}`}>
+                    <button onClick={() => a.action && onAction?.(a.action)}
+                        className="flex flex-col justify-between h-full text-left min-h-[70px] sm:min-h-[80px] w-full">
+                        <span className={`w-8 h-8 sm:w-9 sm:h-9 rounded-lg flex items-center justify-center transition-all duration-200 ${
+                            a.active ? "bg-[rgba(124,58,237,0.15)] border border-[rgba(124,58,237,0.3)] text-[#c4b5fd]" : "bg-[rgba(26,28,32,0.6)] border border-[rgba(33,35,39,0.8)] text-white group-hover:border-[rgba(124,58,237,0.2)]"
+                        }`}>
+                            <a.icon className="w-3.5 h-3.5 sm:w-4 sm:h-4" strokeWidth={1.5} />
+                        </span>
+                        <span className={`text-xs sm:text-sm font-normal ${a.active ? "text-[#c4b5fd]" : "text-white"}`}>
+                            {a.label}
+                        </span>
                     </button>
-                );
-            })}
+                </GlassSurface>
+            ))}
         </div>
     );
 }

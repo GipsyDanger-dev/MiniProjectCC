@@ -1,5 +1,6 @@
 import React from "react";
 import { BellRing, Cpu, Fan, Monitor } from "lucide-react";
+import GlassSurface from "../components/GlassSurface";
 
 export default function DeviceStatus({ activeRoom, iot }) {
     const latest = iot.latestReading;
@@ -11,102 +12,30 @@ export default function DeviceStatus({ activeRoom, iot }) {
     const buzzerOn = actuator?.alarm_status === "ON";
 
     const cards = [
-        {
-            title: "ESP32 Microcontroller",
-            status: "ONLINE",
-            icon: Cpu,
-            details: ["Health 98%", "Uptime 4h 52m", "IP Address 192.168.1.4"],
-        },
-        {
-            title: "Exhaust Fan",
-            status: fanOn ? "RUNNING" : "IDLE",
-            icon: Fan,
-            value: fanOn ? actuator.fan_status : "OFF",
-            details: [`Fuzzy: ${actuator?.fan_status || "OFF"}`, "Running today: 2h 14m"],
-        },
-        {
-            title: "Buzzer",
-            status: buzzerOn ? "ACTIVE" : "SILENT",
-            icon: BellRing,
-            value: buzzerOn ? "On" : "Silent",
-            details: ["Last trigger: 38 mins ago", "Triggers today: 4"],
-        },
-        {
-            title: "OLED Display",
-            status: "CONNECTED",
-            icon: Monitor,
-            details: [
-                `Gas: ${Math.round(Number(latest?.gas_value || 0))}ppm`,
-                `Api: ${Math.round(Number(latest?.flame_value || 0))} Analog`,
-                `Kelembapan: ${Math.round(Number(latest?.humidity || 0))}%`,
-                `Suhu: ${Math.round(Number(latest?.temperature || 0))}°C`,
-            ],
-        },
-    ];
-
-    const checks = [
-        { endpoint: "GET /api/dashboard/data", latency: iot.error ? "--" : "ok", ok: !iot.error },
-        { endpoint: "POST /api/ingest", latency: latest ? "live" : "--", ok: Boolean(latest) },
-        { endpoint: "GET /api/command/get", latency: workerOnline ? "active" : "--", ok: workerOnline },
-        { endpoint: "POST /api/status/update", latency: latestCommand ? "recent" : "--", ok: Boolean(latestCommand) },
+        { title: "ESP32 Microcontroller", status: "ONLINE", icon: Cpu, details: ["Health 98%", "Uptime 4h 52m", "IP 192.168.1.4"] },
+        { title: "Exhaust Fan", status: fanOn ? "RUNNING" : "IDLE", icon: Fan, value: fanOn ? actuator.fan_status : "OFF", details: [`Fuzzy: ${actuator?.fan_status || "OFF"}`, "Running today: 2h 14m"] },
+        { title: "Buzzer", status: buzzerOn ? "ACTIVE" : "SILENT", icon: BellRing, value: buzzerOn ? "On" : "Silent", details: ["Last trigger: 38 mins ago", "Triggers today: 4"] },
+        { title: "OLED Display", status: "CONNECTED", icon: Monitor, details: [`Gas: ${Math.round(Number(latest?.gas_value || 0))}ppm`, `Temp: ${Math.round(Number(latest?.temperature || 0))}°C`, `Humidity: ${Math.round(Number(latest?.humidity || 0))}%`] },
     ];
 
     return (
-        <div className="flex flex-col gap-2.5">
-            <div>
-                <p className="text-[12px] font-medium text-ink2">Device Status</p>
-                <p className="text-[11px] text-ink3 mt-0.5">Hardware, connectivity, and server diagnostics</p>
-            </div>
-
-            <div className="grid grid-cols-2 xl:grid-cols-4 gap-2">
-                {cards.map((card) => (
-                    <article key={card.title} className="bg-surface2 border border-edge rounded-lg shadow-card">
-                        <div className="px-4 py-3 border-b border-edge">
-                            <div className="flex items-center gap-1.5">
-                                <card.icon className="w-3.5 h-3.5 text-accent" />
-                                <p className="text-[12px] font-medium text-ink2">{card.title}</p>
-                            </div>
-                        </div>
-                        <div className="px-4 py-3">
-                            <div className="flex items-center justify-between">
-                                <span className={`text-[11px] font-medium px-2 py-0.5 rounded-md ${
-                                    card.status === "RUNNING" || card.status === "ONLINE" || card.status === "CONNECTED"
-                                        ? "text-success bg-success/10"
-                                        : card.status === "ACTIVE"
-                                          ? "text-accent bg-accent/10"
-                                          : "text-ink3 bg-surface3"
-                                }`}>
-                                    {card.status}
+        <div className="pb-4 sm:pb-5 space-y-3 sm:space-y-4">
+            <div><h1 className="text-xl sm:text-2xl font-normal tracking-tight">Device Status</h1><p className="text-xs sm:text-sm text-[#7d8187] mt-0.5">Hardware & connectivity</p></div>
+            <div className="grid gap-2 sm:gap-3 grid-cols-2 lg:grid-cols-4">
+                {cards.map(c => (
+                    <GlassSurface key={c.title} className="p-3 sm:p-4">
+                        <div className="flex items-start justify-between gap-1.5 sm:gap-2">
+                            <div className="flex items-center gap-1.5 sm:gap-2 min-w-0">
+                                <span className="w-6 h-6 sm:w-7 sm:h-7 rounded-lg bg-[rgba(26,28,32,0.6)] border border-[rgba(33,35,39,0.8)] inline-flex items-center justify-center shrink-0">
+                                    <c.icon className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-[#c4b5fd]" strokeWidth={1.5} />
                                 </span>
-                                {card.value ? (
-                                    <span className="text-sm font-medium text-ink tabular-nums">{card.value}</span>
-                                ) : null}
+                                <div className="min-w-0"><h3 className="text-xs sm:text-sm font-normal truncate">{c.title}</h3><p className="text-[9px] sm:text-[10px] text-[#22c55e] font-normal" style={{ fontFamily: "'Geist Mono', monospace", letterSpacing: '1px' }}>{c.status}</p></div>
                             </div>
-                            <div className="mt-2 space-y-1">
-                                {card.details.map((detail) => (
-                                    <p key={detail} className="text-[10px] text-ink3 tracking-[0.04em]">{detail}</p>
-                                ))}
-                            </div>
+                            {c.value && <span className="text-2xl sm:text-3xl leading-none font-normal tracking-tight shrink-0" style={{ fontFamily: "'Geist Mono', monospace", letterSpacing: '-0.5px' }}>{c.value}</span>}
                         </div>
-                    </article>
+                        <div className="mt-1.5 sm:mt-2 space-y-0.5">{c.details.map(d => <p key={d} className="text-[10px] sm:text-[11px] text-[#7d8187]">{d}</p>)}</div>
+                    </GlassSurface>
                 ))}
-            </div>
-
-            <div className="bg-surface2 border border-edge rounded-lg shadow-card">
-                <div className="px-4 py-3 border-b border-edge">
-                    <p className="text-[12px] font-medium text-ink2">API Health Checks</p>
-                </div>
-                <div className="px-4">
-                    {checks.map((check, i) => (
-                        <div key={check.endpoint} className={`flex items-center justify-between py-2 ${i < checks.length - 1 ? "border-b border-edge" : ""}`}>
-                            <span className="text-[10px] text-ink2 tracking-[0.04em] font-mono">{check.endpoint}</span>
-                            <div className="flex items-center gap-2">
-                                <span className="text-[10px] text-ink3 tabular-nums">{check.latency}</span>
-                                <span className={`w-1.5 h-1.5 ${check.ok ? "bg-success" : "bg-danger"}`} />
-                            </div>
-                        </div>
-                    ))}
-                </div>
             </div>
         </div>
     );
