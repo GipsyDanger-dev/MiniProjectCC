@@ -1,0 +1,1142 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SentinelIoT — Interactive Database ERD</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0f1117;
+    --surface: #161820;
+    --surface2: #1c1e28;
+    --surface3: #232530;
+    --border: #2a2d3a;
+    --ink: #e2e4ed;
+    --ink2: #9ca0b0;
+    --ink3: #6b6f82;
+    --accent: #e89b2a;
+    --accent-dim: rgba(232,155,42,0.15);
+    --accent-glow: rgba(232,155,42,0.35);
+    --danger: #e5484d;
+    --danger-dim: rgba(229,72,77,0.12);
+    --success: #46a758;
+    --success-dim: rgba(70,167,88,0.12);
+    --info: #3b82f6;
+    --info-dim: rgba(59,130,246,0.12);
+    --purple: #8b5cf6;
+    --purple-dim: rgba(139,92,246,0.12);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Inter', system-ui, sans-serif;
+    background: var(--bg);
+    color: var(--ink);
+    height: 100vh;
+    overflow: hidden;
+    user-select: none;
+  }
+
+  /* ── Header ── */
+  .header {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 12px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 52px;
+    z-index: 100;
+    position: relative;
+  }
+  .header-left { display: flex; align-items: center; gap: 16px; }
+  .header h1 { font-size: 15px; font-weight: 600; }
+  .header h1 span { color: var(--accent); }
+  .header-stats { display: flex; gap: 16px; font-size: 11px; color: var(--ink3); }
+  .header-stats strong { color: var(--ink2); font-weight: 500; }
+  .header-right { display: flex; align-items: center; gap: 8px; }
+  .btn {
+    background: var(--surface2); border: 1px solid var(--border);
+    color: var(--ink2); font-size: 11px; font-weight: 500;
+    padding: 6px 12px; border-radius: 6px; cursor: pointer;
+    transition: all 0.15s; font-family: inherit;
+  }
+  .btn:hover { background: var(--surface3); color: var(--ink); border-color: var(--ink3); }
+  .btn-accent { background: var(--accent-dim); color: var(--accent); border-color: rgba(232,155,42,0.2); }
+  .btn-accent:hover { background: rgba(232,155,42,0.2); }
+
+  /* ── Toolbar ── */
+  .toolbar {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 8px 24px;
+    display: flex; align-items: center; gap: 12px;
+    height: 40px; font-size: 11px; color: var(--ink3);
+  }
+  .toolbar .sep { width: 1px; height: 16px; background: var(--border); }
+  .zoom-display { font-family: 'JetBrains Mono', monospace; color: var(--ink2); min-width: 40px; text-align: center; }
+
+  /* ── Legend ── */
+  .legend {
+    position: fixed; bottom: 16px; left: 16px;
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 8px; padding: 14px 18px; z-index: 50; font-size: 12px;
+  }
+  .legend h4 { font-size: 10px; color: var(--ink3); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 10px; }
+  .legend-items { display: flex; flex-direction: column; gap: 8px; }
+  .legend-item { display: flex; align-items: center; gap: 10px; color: var(--ink2); font-size: 12px; }
+  .legend-line { width: 28px; height: 0; border-top: 2.5px solid; flex-shrink: 0; }
+  .legend-line.solid { border-style: solid; }
+  .legend-line.dashed { border-style: dashed; }
+  .legend-symbol {
+    width: 24px; height: 22px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 10px; font-weight: 700; border-radius: 3px; flex-shrink: 0;
+  }
+
+  /* ── Canvas ── */
+  .canvas-wrapper {
+    position: absolute; top: 92px; left: 0; right: 0; bottom: 0;
+    overflow: hidden; cursor: grab;
+  }
+  .canvas-wrapper.dragging-canvas { cursor: grabbing; }
+  .canvas-wrapper.dragging-table { cursor: default; }
+  .canvas {
+    position: absolute; top: 0; left: 0;
+    width: 4000px; height: 3000px; transform-origin: 0 0;
+  }
+  .grid-bg {
+    position: absolute; inset: 0;
+    background-image: radial-gradient(circle, var(--border) 1px, transparent 1px);
+    background-size: 24px 24px; opacity: 0.4; pointer-events: none;
+  }
+
+  /* ── SVG Lines ── */
+  .lines-svg {
+    position: absolute; top: 0; left: 0;
+    width: 100%; height: 100%; pointer-events: none; z-index: 5;
+  }
+  .rel-path {
+    fill: none; stroke: var(--accent); stroke-width: 2;
+    stroke-linecap: round; transition: opacity 0.2s, stroke-width 0.2s, stroke 0.2s;
+  }
+  .rel-path.glow {
+    filter: drop-shadow(0 0 6px var(--accent-glow));
+  }
+  .rel-path.dimmed { opacity: 0.1; stroke-width: 1; }
+  .rel-path.highlighted { opacity: 1; stroke-width: 3; stroke: var(--accent); }
+  .rel-path.highlighted.glow { filter: drop-shadow(0 0 10px var(--accent-glow)); }
+
+  /* ── Cardinality Labels ── */
+  .cardinality-badge {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 14px; font-weight: 700;
+    padding: 4px 10px; border-radius: 4px;
+    white-space: nowrap; letter-spacing: 0.04em;
+    position: absolute; z-index: 6; pointer-events: none;
+    transition: opacity 0.2s, transform 0.2s;
+    border: 1.5px solid transparent;
+  }
+  .cardinality-badge.one-end {
+    background: var(--accent-dim); color: var(--accent);
+    border-color: rgba(232,155,42,0.25);
+  }
+  .cardinality-badge.many-end {
+    background: var(--info-dim); color: #60a5fa;
+    border-color: rgba(59,130,246,0.25);
+  }
+  .cardinality-badge.dimmed { opacity: 0.15; transform: scale(0.9); }
+  .cardinality-badge.highlighted { opacity: 1; transform: scale(1.1); }
+
+  /* ── Relationship Type Label ── */
+  .rel-type-label {
+    position: absolute; z-index: 6; pointer-events: none;
+    font-size: 13px; font-weight: 600; color: var(--ink);
+    background: var(--surface); border: 1.5px solid var(--border);
+    padding: 5px 14px; border-radius: 6px;
+    white-space: nowrap; letter-spacing: 0.02em;
+    transition: opacity 0.2s, transform 0.2s, border-color 0.2s;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+  }
+  .rel-type-label .label-fk {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px; color: var(--info); margin-left: 8px;
+    font-weight: 500;
+  }
+  .rel-type-label.dimmed { opacity: 0.15; transform: scale(0.9); }
+  .rel-type-label.highlighted {
+    opacity: 1; transform: scale(1.05);
+    border-color: var(--accent); color: var(--accent);
+  }
+
+  /* ── Table Card ── */
+  .table-card {
+    position: absolute; width: 270px;
+    background: var(--surface); border: 1.5px solid var(--border);
+    border-radius: 10px; overflow: hidden; z-index: 10;
+    transition: box-shadow 0.25s, border-color 0.25s, z-index 0s;
+    cursor: default;
+  }
+  .table-card:hover {
+    border-color: rgba(232,155,42,0.4);
+    box-shadow: 0 4px 24px rgba(0,0,0,0.3), 0 0 0 1px rgba(232,155,42,0.15);
+    z-index: 20;
+  }
+  .table-card.highlight {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 1.5px var(--accent), 0 4px 32px rgba(232,155,42,0.2), 0 0 20px rgba(232,155,42,0.08);
+    z-index: 25;
+  }
+  .table-card.related {
+    border-color: rgba(232,155,42,0.3);
+    box-shadow: 0 2px 16px rgba(0,0,0,0.2);
+    z-index: 22;
+  }
+  .table-card.unrelated {
+    opacity: 0.35;
+  }
+  .table-card.dragging {
+    opacity: 0.9; box-shadow: 0 12px 40px rgba(0,0,0,0.5);
+    z-index: 50; cursor: grabbing;
+  }
+
+  .card-head {
+    padding: 10px 14px;
+    display: flex; align-items: center; justify-content: space-between;
+    border-bottom: 1px solid var(--border); cursor: grab;
+  }
+  .card-head:active { cursor: grabbing; }
+  .card-head h3 { font-size: 13px; font-weight: 600; font-family: 'JetBrains Mono', monospace; }
+  .card-head .badge {
+    font-size: 9px; font-weight: 600;
+    letter-spacing: 0.06em; text-transform: uppercase;
+    padding: 3px 8px; border-radius: 4px;
+  }
+  .badge-core { background: var(--accent-dim); color: var(--accent); }
+  .badge-domain { background: var(--success-dim); color: var(--success); }
+  .badge-system { background: var(--info-dim); color: var(--info); }
+  .badge-auth { background: var(--purple-dim); color: var(--purple); }
+
+  .card-body { padding: 4px 0; max-height: 360px; overflow-y: auto; }
+  .card-body::-webkit-scrollbar { width: 4px; }
+  .card-body::-webkit-scrollbar-track { background: transparent; }
+  .card-body::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+  .col-row {
+    display: flex; align-items: center;
+    padding: 4px 14px; font-size: 12px; gap: 7px;
+    transition: background 0.1s;
+  }
+  .col-row:hover { background: var(--surface2); }
+  .col-row.pk { background: rgba(232,155,42,0.04); }
+  .col-row.fk { background: rgba(59,130,246,0.04); }
+
+  .col-icon {
+    width: 20px; height: 16px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 8px; font-weight: 700; border-radius: 3px;
+    flex-shrink: 0; font-family: 'JetBrains Mono', monospace;
+  }
+  .col-icon.pk-icon { background: var(--accent-dim); color: var(--accent); }
+  .col-icon.fk-icon { background: var(--info-dim); color: #60a5fa; }
+  .col-icon.blank { background: transparent; }
+
+  .col-name {
+    font-family: 'JetBrains Mono', monospace; font-size: 11.5px;
+    flex: 1; min-width: 0; overflow: hidden;
+    text-overflow: ellipsis; white-space: nowrap;
+  }
+  .col-name.pk-name { color: var(--accent); font-weight: 500; }
+  .col-name.fk-name { color: #60a5fa; }
+
+  .col-type {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px; color: var(--ink3); flex-shrink: 0;
+  }
+  .col-tag {
+    font-size: 9px; font-weight: 600;
+    padding: 1px 5px; border-radius: 2px;
+    flex-shrink: 0; font-family: 'JetBrains Mono', monospace;
+  }
+  .tag-uq { background: var(--accent-dim); color: var(--accent); }
+  .tag-nn { background: var(--danger-dim); color: var(--danger); }
+  .tag-def { background: var(--surface3); color: var(--ink3); }
+  .tag-idx { background: var(--info-dim); color: #60a5fa; }
+
+  /* ── Detail Panel ── */
+  .detail-panel {
+    position: fixed; right: 16px; top: 108px; bottom: 16px;
+    width: 320px; background: var(--surface);
+    border: 1px solid var(--border); border-radius: 8px;
+    z-index: 50; display: none; flex-direction: column; overflow: hidden;
+  }
+  .detail-panel.open { display: flex; }
+  .detail-head {
+    padding: 14px 18px; border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .detail-head h3 { font-size: 14px; font-family: 'JetBrains Mono', monospace; font-weight: 600; }
+  .detail-close {
+    width: 28px; height: 28px;
+    display: flex; align-items: center; justify-content: center;
+    background: none; border: none; color: var(--ink3);
+    cursor: pointer; border-radius: 4px; font-size: 16px;
+  }
+  .detail-close:hover { background: var(--surface2); color: var(--ink); }
+  .detail-body { flex: 1; overflow-y: auto; padding: 14px 18px; }
+  .detail-section { margin-bottom: 18px; }
+  .detail-section h4 {
+    font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em;
+    color: var(--ink3); margin-bottom: 10px;
+  }
+  .detail-desc {
+    font-size: 13px; color: var(--ink2); line-height: 1.7;
+    padding: 12px 14px; background: var(--surface2); border-radius: 6px;
+  }
+  .detail-rel {
+    display: flex; align-items: center; gap: 8px;
+    padding: 10px 12px; background: var(--surface2); border-radius: 6px;
+    margin-bottom: 6px; font-size: 13px;
+  }
+  .detail-rel .arrow { color: var(--accent); font-weight: 700; font-size: 16px; }
+  .detail-rel .target { font-family: 'JetBrains Mono', monospace; color: var(--ink); font-weight: 500; }
+  .detail-rel .rel-type { font-size: 11px; color: var(--ink3); margin-left: auto; }
+  .detail-rel .fk-col { font-size: 11px; color: #60a5fa; font-family: 'JetBrains Mono', monospace; }
+
+  /* ── Minimap ── */
+  .minimap {
+    position: fixed; bottom: 16px; right: 16px;
+    width: 180px; height: 120px;
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 8px; z-index: 50; overflow: hidden; cursor: pointer;
+  }
+  .minimap-viewport {
+    position: absolute; border: 1.5px solid var(--accent);
+    background: rgba(232,155,42,0.06); pointer-events: none;
+  }
+  .minimap-dot {
+    position: absolute; border-radius: 2px; opacity: 0.7;
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-left">
+    <h1>Sentinel<span>IoT</span> — Database ERD</h1>
+    <div class="header-stats">
+      <span><strong>8</strong> tabel</span>
+      <span><strong>4</strong> relasi</span>
+      <span><strong>12</strong> FK</span>
+    </div>
+  </div>
+  <div class="header-right">
+    <button class="btn" onclick="resetView()">Reset View</button>
+    <button class="btn btn-accent" onclick="autoLayout()">Auto Layout</button>
+  </div>
+</div>
+
+<div class="toolbar">
+  <span>Hover tabel untuk highlight relasi</span>
+  <div class="sep"></div>
+  <span>Geser header tabel untuk pindah posisi</span>
+  <div class="sep"></div>
+  <span>Scroll untuk zoom · Klik canvas untuk geser</span>
+  <div class="sep"></div>
+  <span class="zoom-display" id="zoomDisplay">100%</span>
+</div>
+
+<div class="canvas-wrapper" id="canvasWrapper">
+  <div class="canvas" id="canvas">
+    <div class="grid-bg"></div>
+    <svg class="lines-svg" id="linesSvg"></svg>
+    <div id="labelMarkers"></div>
+  </div>
+</div>
+
+<div class="legend">
+  <h4>Relasi</h4>
+  <div class="legend-items">
+    <div class="legend-item">
+      <div class="legend-line solid" style="border-color:var(--accent)"></div>
+      <span>One-to-Many (1 : N)</span>
+    </div>
+    <div class="legend-item">
+      <div class="legend-line solid" style="border-color:var(--accent);border-width:3px"></div>
+      <span>One-to-One (1 : 1)</span>
+    </div>
+  </div>
+  <h4 style="margin-top:12px">Kolom</h4>
+  <div class="legend-items">
+    <div class="legend-item">
+      <div class="legend-symbol pk-icon" style="background:var(--accent-dim);color:var(--accent)">PK</div>
+      <span>Primary Key</span>
+    </div>
+    <div class="legend-item">
+      <div class="legend-symbol fk-icon" style="background:var(--info-dim);color:#60a5fa">FK</div>
+      <span>Foreign Key</span>
+    </div>
+  </div>
+</div>
+
+<div class="detail-panel" id="detailPanel">
+  <div class="detail-head">
+    <h3 id="detailName">—</h3>
+    <button class="detail-close" onclick="closeDetail()">✕</button>
+  </div>
+  <div class="detail-body" id="detailBody"></div>
+</div>
+
+<div class="minimap" id="minimap">
+  <div class="minimap-viewport" id="minimapViewport"></div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════════
+// DATA
+// ═══════════════════════════════════════════════════════
+
+const tables = [
+  {
+    name: 'devices', group: 'core', x: 520, y: 40,
+    desc: 'Perangkat IoT (ESP32) yang terdaftar di sistem. Setiap device punya sensor, aktuator, dan lokasi.',
+    cols: [
+      { name: 'id', type: 'bigint', pk: true },
+      { name: 'device_name', type: 'varchar' },
+      { name: 'location', type: 'varchar', nullable: true },
+      { name: 'api_key', type: 'varchar', unique: true, nullable: true },
+      { name: 'status', type: 'varchar', def: "'offline'" },
+      { name: 'created_at', type: 'timestamp' },
+      { name: 'updated_at', type: 'timestamp' },
+    ]
+  },
+  {
+    name: 'sensor_data', group: 'domain', x: 60, y: 40,
+    desc: 'Data time-series dari sensor MQ-2, KY-026, DHT22. Setiap baris = satu pembacaan sensor.',
+    cols: [
+      { name: 'id', type: 'bigint', pk: true },
+      { name: 'device_id', type: 'bigint', fk: 'devices.id' },
+      { name: 'gas_value', type: 'float' },
+      { name: 'smoke_value', type: 'float' },
+      { name: 'temperature', type: 'float' },
+      { name: 'humidity', type: 'float', def: '0' },
+      { name: 'flame_value', type: 'float', def: '0' },
+      { name: 'fuzzy_score', type: 'float', nullable: true },
+      { name: 'status_indikasi', type: 'varchar' },
+      { name: 'fan_status', type: 'varchar', nullable: true },
+      { name: 'fan_speed', type: 'int', nullable: true },
+      { name: 'decision_profile', type: 'varchar', nullable: true },
+      { name: 'created_at', type: 'timestamp', index: true },
+      { name: 'updated_at', type: 'timestamp' },
+    ]
+  },
+  {
+    name: 'device_actuators', group: 'domain', x: 980, y: 40,
+    desc: 'Status aktuator (fan & buzzer) per device. One-to-one dengan devices.',
+    cols: [
+      { name: 'id', type: 'bigint', pk: true },
+      { name: 'device_id', type: 'bigint', fk: 'devices.id' },
+      { name: 'fan_status', type: 'varchar', def: "'OFF'" },
+      { name: 'alarm_status', type: 'varchar', def: "'OFF'" },
+      { name: 'fan_speed', type: 'int', def: '0' },
+      { name: 'created_at', type: 'timestamp' },
+      { name: 'updated_at', type: 'timestamp' },
+    ]
+  },
+  {
+    name: 'commands', group: 'domain', x: 980, y: 310,
+    desc: 'Perintah dari server ke ESP32. Worker poll tabel ini lalu eksekusi di hardware.',
+    cols: [
+      { name: 'id', type: 'bigint', pk: true },
+      { name: 'device_id', type: 'bigint', fk: 'devices.id', nullable: true },
+      { name: 'target_device', type: 'varchar' },
+      { name: 'action', type: 'varchar' },
+      { name: 'status', type: 'varchar', def: "'pending'" },
+      { name: 'created_at', type: 'timestamp' },
+      { name: 'updated_at', type: 'timestamp' },
+    ]
+  },
+  {
+    name: 'activity_logs', group: 'domain', x: 60, y: 380,
+    desc: 'Log semua event sistem: alert bahaya, perintah manual, update mode, dll.',
+    cols: [
+      { name: 'id', type: 'bigint', pk: true },
+      { name: 'device_id', type: 'bigint', fk: 'devices.id', nullable: true, index: true },
+      { name: 'action_type', type: 'varchar', nullable: true },
+      { name: 'status', type: "enum", nullable: true },
+      { name: 'description', type: 'text', nullable: true },
+      { name: 'message', type: 'varchar' },
+      { name: 'created_at', type: 'timestamp', index: true },
+      { name: 'updated_at', type: 'timestamp' },
+    ]
+  },
+  {
+    name: 'system_settings', group: 'system', x: 520, y: 430,
+    desc: 'Konfigurasi global: threshold sensor, mode operasi, status emergency. Singleton — hanya 1 baris.',
+    cols: [
+      { name: 'id', type: 'bigint', pk: true },
+      { name: 'gas_threshold', type: 'float', def: '2500' },
+      { name: 'smoke_threshold', type: 'float', def: '2000' },
+      { name: 'humidity_threshold', type: 'float', def: '70' },
+      { name: 'temperature_threshold', type: 'float', def: '45' },
+      { name: 'flame_threshold', type: 'float', def: '500' },
+      { name: 'mode', type: 'varchar', def: "'auto'" },
+      { name: 'emergency_active', type: 'boolean', def: 'false' },
+      { name: 'last_manual_command', type: 'timestamp', nullable: true },
+      { name: 'created_at', type: 'timestamp' },
+      { name: 'updated_at', type: 'timestamp' },
+    ]
+  },
+  {
+    name: 'worker_status', group: 'system', x: 980, y: 530,
+    desc: 'Heartbeat dari ESP32 worker. Jika last_heartbeat > 30 detik, worker dianggap offline.',
+    cols: [
+      { name: 'id', type: 'bigint', pk: true },
+      { name: 'component_name', type: 'varchar', unique: true },
+      { name: 'current_state', type: 'varchar' },
+      { name: 'last_heartbeat', type: 'timestamp', nullable: true },
+      { name: 'created_at', type: 'timestamp' },
+      { name: 'updated_at', type: 'timestamp' },
+    ]
+  },
+  {
+    name: 'users', group: 'auth', x: 60, y: 610,
+    desc: 'Admin/operator yang login ke dashboard SentinelIoT.',
+    cols: [
+      { name: 'id', type: 'bigint', pk: true },
+      { name: 'name', type: 'varchar' },
+      { name: 'email', type: 'varchar', unique: true },
+      { name: 'email_verified_at', type: 'timestamp', nullable: true },
+      { name: 'password', type: 'varchar' },
+      { name: 'remember_token', type: 'varchar', nullable: true },
+      { name: 'created_at', type: 'timestamp' },
+      { name: 'updated_at', type: 'timestamp' },
+    ]
+  },
+];
+
+const relationships = [
+  { from: 'devices', to: 'sensor_data', type: 'one-to-many', fromCol: 'id', toCol: 'device_id' },
+  { from: 'devices', to: 'device_actuators', type: 'one-to-one', fromCol: 'id', toCol: 'device_id' },
+  { from: 'devices', to: 'commands', type: 'one-to-many', fromCol: 'id', toCol: 'device_id' },
+  { from: 'devices', to: 'activity_logs', type: 'one-to-many', fromCol: 'id', toCol: 'device_id' },
+];
+
+// ═══════════════════════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════════════════════
+
+let zoom = 1;
+let panX = 0, panY = 0;
+let draggingTable = null;
+let dragOffsetX = 0, dragOffsetY = 0;
+let panning = false;
+let panStartX = 0, panStartY = 0;
+let hoveredTable = null;
+
+// ═══════════════════════════════════════════════════════
+// RENDER TABLES
+// ═══════════════════════════════════════════════════════
+
+const canvas = document.getElementById('canvas');
+const canvasWrapper = document.getElementById('canvasWrapper');
+
+const badgeMap = {
+  core: { label: 'CORE', cls: 'badge-core' },
+  domain: { label: 'DOMAIN', cls: 'badge-domain' },
+  system: { label: 'SYSTEM', cls: 'badge-system' },
+  auth: { label: 'AUTH', cls: 'badge-auth' },
+};
+
+tables.forEach(t => {
+  const card = document.createElement('div');
+  card.className = 'table-card';
+  card.id = `table-${t.name}`;
+  card.style.left = t.x + 'px';
+  card.style.top = t.y + 'px';
+  card.dataset.name = t.name;
+
+  const badge = badgeMap[t.group] || badgeMap.domain;
+
+  let colsHtml = t.cols.map(c => {
+    const isPk = c.pk;
+    const isFk = !!c.fk;
+    const rowCls = isPk ? 'pk' : isFk ? 'fk' : '';
+    const nameCls = isPk ? 'pk-name' : isFk ? 'fk-name' : '';
+    const iconCls = isPk ? 'pk-icon' : isFk ? 'fk-icon' : 'blank';
+    const iconTxt = isPk ? 'PK' : isFk ? 'FK' : '';
+
+    let tags = '';
+    if (c.unique) tags += '<span class="col-tag tag-uq">UQ</span>';
+    if (c.nullable) tags += '<span class="col-tag tag-nn">NULL</span>';
+    if (c.index) tags += '<span class="col-tag tag-idx">IDX</span>';
+    if (c.def !== undefined) tags += `<span class="col-tag tag-def" title="default: ${c.def}">DEF</span>`;
+
+    return `<div class="col-row ${rowCls}">
+      <span class="col-icon ${iconCls}">${iconTxt}</span>
+      <span class="col-name ${nameCls}">${c.name}</span>
+      <span class="col-type">${c.type}</span>
+      ${tags}
+    </div>`;
+  }).join('');
+
+  card.innerHTML = `
+    <div class="card-head" data-table="${t.name}">
+      <h3>${t.name}</h3>
+      <span class="badge ${badge.cls}">${badge.label}</span>
+    </div>
+    <div class="card-body">${colsHtml}</div>
+  `;
+
+  // ── Hover: highlight relasi ──
+  card.addEventListener('mouseenter', () => {
+    hoveredTable = t.name;
+    applyHighlight(t.name);
+  });
+  card.addEventListener('mouseleave', () => {
+    hoveredTable = null;
+    clearHighlight();
+  });
+
+  // Double-click to open detail
+  card.addEventListener('dblclick', () => openDetail(t.name));
+
+  canvas.appendChild(card);
+});
+
+// ═══════════════════════════════════════════════════════
+// HIGHLIGHT SYSTEM
+// ═══════════════════════════════════════════════════════
+
+function applyHighlight(tableName) {
+  // Find all related tables
+  const related = new Set([tableName]);
+  relationships.forEach(r => {
+    if (r.from === tableName || r.to === tableName) {
+      related.add(r.from);
+      related.add(r.to);
+    }
+  });
+
+  // Table cards
+  document.querySelectorAll('.table-card').forEach(card => {
+    const name = card.dataset.name;
+    card.classList.remove('highlight', 'related', 'unrelated');
+    if (name === tableName) {
+      card.classList.add('highlight');
+    } else if (related.has(name)) {
+      card.classList.add('related');
+    } else {
+      card.classList.add('unrelated');
+    }
+  });
+
+  // SVG paths
+  document.querySelectorAll('.rel-path').forEach(p => {
+    if (!p.dataset.from) return;
+    p.classList.remove('dimmed', 'highlighted');
+    if (related.has(p.dataset.from) && related.has(p.dataset.to)) {
+      p.classList.add('highlighted');
+    } else {
+      p.classList.add('dimmed');
+    }
+  });
+
+  // Cardinality badges
+  document.querySelectorAll('.cardinality-badge').forEach(b => {
+    b.classList.remove('dimmed', 'highlighted');
+    const idx = b.dataset.relIndex;
+    if (idx !== undefined) {
+      const rel = relationships[idx];
+      if (rel && related.has(rel.from) && related.has(rel.to)) {
+        b.classList.add('highlighted');
+      } else {
+        b.classList.add('dimmed');
+      }
+    }
+  });
+
+  // Type labels
+  document.querySelectorAll('.rel-type-label').forEach(l => {
+    l.classList.remove('dimmed', 'highlighted');
+    const idx = l.dataset.relIndex;
+    if (idx !== undefined) {
+      const rel = relationships[idx];
+      if (rel && related.has(rel.from) && related.has(rel.to)) {
+        l.classList.add('highlighted');
+      } else {
+        l.classList.add('dimmed');
+      }
+    }
+  });
+}
+
+function clearHighlight() {
+  document.querySelectorAll('.table-card').forEach(c => c.classList.remove('highlight', 'related', 'unrelated'));
+  document.querySelectorAll('.rel-path').forEach(p => p.classList.remove('dimmed', 'highlighted'));
+  document.querySelectorAll('.cardinality-badge').forEach(b => b.classList.remove('dimmed', 'highlighted'));
+  document.querySelectorAll('.rel-type-label').forEach(l => l.classList.remove('dimmed', 'highlighted'));
+}
+
+// ═══════════════════════════════════════════════════════
+// TABLE DRAGGING
+// ═══════════════════════════════════════════════════════
+
+document.querySelectorAll('.card-head').forEach(head => {
+  head.addEventListener('mousedown', (e) => {
+    if (e.button !== 0) return;
+    e.preventDefault();
+    const tableName = head.dataset.table;
+    const card = document.getElementById(`table-${tableName}`);
+    const rect = card.getBoundingClientRect();
+
+    draggingTable = tableName;
+    dragOffsetX = (e.clientX - rect.left) / zoom;
+    dragOffsetY = (e.clientY - rect.top) / zoom;
+
+    card.classList.add('dragging');
+    canvasWrapper.classList.add('dragging-table');
+  });
+});
+
+// ═══════════════════════════════════════════════════════
+// CANVAS PANNING
+// ═══════════════════════════════════════════════════════
+
+canvasWrapper.addEventListener('mousedown', (e) => {
+  if (draggingTable) return;
+  if (e.button === 1 || e.button === 2 || (e.button === 0 && (e.target === canvasWrapper || e.target.classList.contains('grid-bg')))) {
+    panning = true;
+    panStartX = e.clientX - panX;
+    panStartY = e.clientY - panY;
+    canvasWrapper.classList.add('dragging-canvas');
+    e.preventDefault();
+  }
+});
+
+document.addEventListener('mousemove', (e) => {
+  if (draggingTable) {
+    const card = document.getElementById(`table-${draggingTable}`);
+    const canvasRect = canvas.getBoundingClientRect();
+    const x = (e.clientX - canvasRect.left) / zoom - dragOffsetX;
+    const y = (e.clientY - canvasRect.top) / zoom - dragOffsetY;
+
+    card.style.left = Math.max(0, x) + 'px';
+    card.style.top = Math.max(0, y) + 'px';
+
+    const t = tables.find(t => t.name === draggingTable);
+    if (t) { t.x = Math.max(0, x); t.y = Math.max(0, y); }
+
+    drawLines();
+    updateMinimap();
+  }
+  if (panning) {
+    panX = e.clientX - panStartX;
+    panY = e.clientY - panStartY;
+    applyTransform();
+    updateMinimap();
+  }
+});
+
+document.addEventListener('mouseup', () => {
+  if (draggingTable) {
+    document.getElementById(`table-${draggingTable}`)?.classList.remove('dragging');
+    draggingTable = null;
+    canvasWrapper.classList.remove('dragging-table');
+  }
+  if (panning) {
+    panning = false;
+    canvasWrapper.classList.remove('dragging-canvas');
+  }
+});
+
+canvasWrapper.addEventListener('contextmenu', e => e.preventDefault());
+
+// ═══════════════════════════════════════════════════════
+// ZOOM
+// ═══════════════════════════════════════════════════════
+
+canvasWrapper.addEventListener('wheel', (e) => {
+  e.preventDefault();
+  const delta = e.deltaY > 0 ? -0.08 : 0.08;
+  const newZoom = Math.min(2, Math.max(0.3, zoom + delta));
+
+  const rect = canvasWrapper.getBoundingClientRect();
+  const mx = e.clientX - rect.left;
+  const my = e.clientY - rect.top;
+
+  panX = mx - (mx - panX) * (newZoom / zoom);
+  panY = my - (my - panY) * (newZoom / zoom);
+  zoom = newZoom;
+
+  applyTransform();
+  updateMinimap();
+}, { passive: false });
+
+function applyTransform() {
+  canvas.style.transform = `translate(${panX}px, ${panY}px) scale(${zoom})`;
+  document.getElementById('zoomDisplay').textContent = Math.round(zoom * 100) + '%';
+}
+
+// ═══════════════════════════════════════════════════════
+// DRAW RELATIONSHIP LINES
+// ═══════════════════════════════════════════════════════
+
+function drawLines() {
+  const svg = document.getElementById('linesSvg');
+  const markersDiv = document.getElementById('labelMarkers');
+  svg.innerHTML = '';
+  markersDiv.innerHTML = '';
+
+  svg.setAttribute('width', 4000);
+  svg.setAttribute('height', 3000);
+
+  // Define glow filter
+  const defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
+  defs.innerHTML = `
+    <filter id="glowFilter" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="4" result="blur"/>
+      <feFlood flood-color="rgba(232,155,42,0.5)" result="color"/>
+      <feComposite in="color" in2="blur" operator="in" result="glow"/>
+      <feMerge>
+        <feMergeNode in="glow"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  `;
+  svg.appendChild(defs);
+
+  relationships.forEach((rel, relIndex) => {
+    const fromCard = document.getElementById(`table-${rel.from}`);
+    const toCard = document.getElementById(`table-${rel.to}`);
+    if (!fromCard || !toCard) return;
+
+    const fromW = fromCard.offsetWidth;
+    const fromH = fromCard.offsetHeight;
+    const toW = toCard.offsetWidth;
+    const toH = toCard.offsetHeight;
+
+    const fromX = parseFloat(fromCard.style.left);
+    const fromY = parseFloat(fromCard.style.top);
+    const toX = parseFloat(toCard.style.left);
+    const toY = parseFloat(toCard.style.top);
+
+    const fromCx = fromX + fromW / 2;
+    const fromCy = fromY + fromH / 2;
+    const toCx = toX + toW / 2;
+    const toCy = toY + toH / 2;
+
+    // Determine best connection edges
+    let x1, y1, x2, y2;
+    const dx = toCx - fromCx;
+    const dy = toCy - fromCy;
+
+    if (Math.abs(dx) > Math.abs(dy)) {
+      if (dx > 0) { x1 = fromX + fromW; y1 = fromCy; x2 = toX; y2 = toCy; }
+      else { x1 = fromX; y1 = fromCy; x2 = toX + toW; y2 = toCy; }
+    } else {
+      if (dy > 0) { x1 = fromCx; y1 = fromY + fromH; x2 = toCx; y2 = toY; }
+      else { x1 = fromCx; y1 = fromY; x2 = toCx; y2 = toY + toH; }
+    }
+
+    // Cubic bezier
+    const dist = Math.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2);
+    const curve = Math.min(dist * 0.35, 140);
+    let cx1, cy1, cx2, cy2;
+
+    if (Math.abs(dx) > Math.abs(dy)) {
+      cx1 = x1 + (dx > 0 ? curve : -curve); cy1 = y1;
+      cx2 = x2 - (dx > 0 ? curve : -curve); cy2 = y2;
+    } else {
+      cx1 = x1; cy1 = y1 + (dy > 0 ? curve : -curve);
+      cx2 = x2; cy2 = y2 - (dy > 0 ? curve : -curve);
+    }
+
+    // Main path
+    const isOneOne = rel.type === 'one-to-one';
+    const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    path.setAttribute('d', `M ${x1} ${y1} C ${cx1} ${cy1}, ${cx2} ${cy2}, ${x2} ${y2}`);
+    path.setAttribute('class', 'rel-path glow');
+    if (isOneOne) path.setAttribute('stroke-width', '3');
+    path.dataset.from = rel.from;
+    path.dataset.to = rel.to;
+    svg.appendChild(path);
+
+    // Crow's foot / cardinality symbols
+    const angle = Math.atan2(y2 - cy2, x2 - cx2);
+    const arrowSize = 8;
+
+    if (rel.type === 'one-to-many') {
+      // Crow's foot at "to" end (many side)
+      const perpX = Math.sin(angle) * arrowSize;
+      const perpY = -Math.cos(angle) * arrowSize;
+      const backX = -Math.cos(angle) * arrowSize * 1.8;
+      const backY = -Math.sin(angle) * arrowSize * 1.8;
+
+      const line1 = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+      line1.setAttribute('x1', x2); line1.setAttribute('y1', y2);
+      line1.setAttribute('x2', x2 + backX + perpX); line1.setAttribute('y2', y2 + backY + perpY);
+      line1.setAttribute('class', 'rel-path'); line1.setAttribute('stroke-width', '2');
+      line1.dataset.from = rel.from; line1.dataset.to = rel.to;
+      svg.appendChild(line1);
+
+      const line2 = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+      line2.setAttribute('x1', x2); line2.setAttribute('y1', y2);
+      line2.setAttribute('x2', x2 + backX - perpX); line2.setAttribute('y2', y2 + backY - perpY);
+      line2.setAttribute('class', 'rel-path'); line2.setAttribute('stroke-width', '2');
+      line2.dataset.from = rel.from; line2.dataset.to = rel.to;
+      svg.appendChild(line2);
+
+      // Single line at "from" end (one side)
+      const fromAngle = Math.atan2(y1 - cy1, x1 - cx1);
+      const fPerpX = Math.sin(fromAngle) * arrowSize;
+      const fPerpY = -Math.cos(fromAngle) * arrowSize;
+      const fLine = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+      fLine.setAttribute('x1', x1 - fPerpX); fLine.setAttribute('y1', y1 - fPerpY);
+      fLine.setAttribute('x2', x1 + fPerpX); fLine.setAttribute('y2', y1 + fPerpY);
+      fLine.setAttribute('class', 'rel-path'); fLine.setAttribute('stroke-width', '2');
+      fLine.dataset.from = rel.from; fLine.dataset.to = rel.to;
+      svg.appendChild(fLine);
+
+    } else if (rel.type === 'one-to-one') {
+      // Single line at both ends
+      [{ px: x1, py: y1, a: Math.atan2(y1 - cy1, x1 - cx1) },
+       { px: x2, py: y2, a: Math.atan2(y2 - cy2, x2 - cx2) }].forEach(p => {
+        const pX = Math.sin(p.a) * arrowSize;
+        const pY = -Math.cos(p.a) * arrowSize;
+        const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+        line.setAttribute('x1', p.px - pX); line.setAttribute('y1', p.py - pY);
+        line.setAttribute('x2', p.px + pX); line.setAttribute('y2', p.py + pY);
+        line.setAttribute('class', 'rel-path'); line.setAttribute('stroke-width', '2.5');
+        line.dataset.from = rel.from; line.dataset.to = rel.to;
+        svg.appendChild(line);
+      });
+    }
+
+    // ── Cardinality badges (1 / N) ──
+    const midX = (x1 + x2) / 2;
+    const midY = (y1 + y2) / 2;
+
+    // Position badges near the endpoints, offset perpendicular to the line
+    const lineAngle = Math.atan2(y2 - y1, x2 - x1);
+    const perpOff = 20;
+
+    const badge1 = document.createElement('div');
+    badge1.className = 'cardinality-badge one-end';
+    badge1.dataset.relIndex = relIndex;
+    badge1.textContent = '1';
+    badge1.style.left = (x1 + Math.cos(lineAngle) * 20 - Math.sin(lineAngle) * perpOff - 14) + 'px';
+    badge1.style.top = (y1 + Math.sin(lineAngle) * 20 + Math.cos(lineAngle) * perpOff - 12) + 'px';
+    markersDiv.appendChild(badge1);
+
+    const badgeN = document.createElement('div');
+    badgeN.className = 'cardinality-badge many-end';
+    badgeN.dataset.relIndex = relIndex;
+    badgeN.textContent = rel.type === 'one-to-one' ? '1' : 'N';
+    badgeN.style.left = (x2 - Math.cos(lineAngle) * 20 + Math.sin(lineAngle) * perpOff - 14) + 'px';
+    badgeN.style.top = (y2 - Math.sin(lineAngle) * 20 - Math.cos(lineAngle) * perpOff - 12) + 'px';
+    markersDiv.appendChild(badgeN);
+
+    // ── Relationship type label at midpoint ──
+    const typeLabel = document.createElement('div');
+    typeLabel.className = 'rel-type-label';
+    typeLabel.dataset.relIndex = relIndex;
+    typeLabel.innerHTML = `${rel.type}<span class="label-fk">${rel.fromCol} → ${rel.toCol}</span>`;
+    typeLabel.style.left = (midX - 70) + 'px';
+    typeLabel.style.top = (midY - 16) + 'px';
+    markersDiv.appendChild(typeLabel);
+  });
+
+  // Re-apply highlight if hovering
+  if (hoveredTable) applyHighlight(hoveredTable);
+}
+
+// ═══════════════════════════════════════════════════════
+// DETAIL PANEL
+// ═══════════════════════════════════════════════════════
+
+function openDetail(tableName) {
+  const t = tables.find(t => t.name === tableName);
+  if (!t) return;
+
+  const panel = document.getElementById('detailPanel');
+  const nameEl = document.getElementById('detailName');
+  const bodyEl = document.getElementById('detailBody');
+
+  nameEl.textContent = t.name;
+
+  const relsFrom = relationships.filter(r => r.from === tableName);
+  const relsTo = relationships.filter(r => r.to === tableName);
+
+  let relsHtml = '';
+  if (relsFrom.length || relsTo.length) {
+    relsHtml += '<div class="detail-section"><h4>Relasi</h4>';
+    relsFrom.forEach(r => {
+      relsHtml += `<div class="detail-rel">
+        <span class="arrow">→</span>
+        <span class="target">${r.to}</span>
+        <span class="fk-col">${r.fromCol} → ${r.toCol}</span>
+        <span class="rel-type">${r.type}</span>
+      </div>`;
+    });
+    relsTo.forEach(r => {
+      relsHtml += `<div class="detail-rel">
+        <span class="arrow">←</span>
+        <span class="target">${r.from}</span>
+        <span class="fk-col">${r.toCol} → ${r.fromCol}</span>
+        <span class="rel-type">${r.type === 'one-to-many' ? 'many-to-one' : r.type}</span>
+      </div>`;
+    });
+    relsHtml += '</div>';
+  }
+
+  const fkCols = t.cols.filter(c => c.fk);
+  let fkHtml = '';
+  if (fkCols.length) {
+    fkHtml += '<div class="detail-section"><h4>Foreign Keys</h4>';
+    fkCols.forEach(c => {
+      fkHtml += `<div class="detail-rel">
+        <span class="fk-col">${c.name}</span>
+        <span class="arrow">→</span>
+        <span class="target">${c.fk}</span>
+      </div>`;
+    });
+    fkHtml += '</div>';
+  }
+
+  let colsHtml = '<div class="detail-section"><h4>Kolom</h4>';
+  t.cols.forEach(c => {
+    const tags = [];
+    if (c.pk) tags.push('PK');
+    if (c.fk) tags.push('FK');
+    if (c.unique) tags.push('UQ');
+    if (c.nullable) tags.push('NULLABLE');
+    if (c.def !== undefined) tags.push(`DEFAULT: ${c.def}`);
+    if (c.index) tags.push('INDEXED');
+    colsHtml += `<div style="display:flex;align-items:center;gap:8px;padding:5px 0;font-size:13px;border-bottom:1px solid var(--border)">
+      <span style="font-family:'JetBrains Mono',monospace;color:${c.pk ? 'var(--accent)' : c.fk ? '#60a5fa' : 'var(--ink)'};flex:1;font-size:12px">${c.name}</span>
+      <span style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--ink3)">${c.type}</span>
+      ${tags.map(t => `<span style="font-size:9px;background:var(--surface3);color:var(--ink3);padding:1px 5px;border-radius:2px">${t}</span>`).join('')}
+    </div>`;
+  });
+  colsHtml += '</div>';
+
+  bodyEl.innerHTML = `
+    <div class="detail-section">
+      <div class="detail-desc">${t.desc}</div>
+    </div>
+    ${relsHtml}
+    ${fkHtml}
+    ${colsHtml}
+  `;
+
+  panel.classList.add('open');
+}
+
+function closeDetail() {
+  document.getElementById('detailPanel').classList.remove('open');
+}
+
+// ═══════════════════════════════════════════════════════
+// MINIMAP
+// ═══════════════════════════════════════════════════════
+
+function updateMinimap() {
+  const minimap = document.getElementById('minimap');
+  const viewport = document.getElementById('minimapViewport');
+  const mw = minimap.offsetWidth;
+  const mh = minimap.offsetHeight;
+
+  let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+  tables.forEach(t => {
+    minX = Math.min(minX, t.x); minY = Math.min(minY, t.y);
+    maxX = Math.max(maxX, t.x + 270); maxY = Math.max(maxY, t.y + 200);
+  });
+
+  const padding = 50;
+  minX -= padding; minY -= padding; maxX += padding; maxY += padding;
+
+  const scaleX = mw / (maxX - minX);
+  const scaleY = mh / (maxY - minY);
+  const scale = Math.min(scaleX, scaleY);
+
+  minimap.querySelectorAll('.minimap-dot').forEach(d => d.remove());
+  const colors = { core: 'var(--accent)', domain: 'var(--success)', system: 'var(--info)', auth: 'var(--purple)' };
+  tables.forEach(t => {
+    const dot = document.createElement('div');
+    dot.className = 'minimap-dot';
+    dot.style.left = ((t.x - minX) * scale) + 'px';
+    dot.style.top = ((t.y - minY) * scale) + 'px';
+    dot.style.width = (270 * scale) + 'px';
+    dot.style.height = (80 * scale) + 'px';
+    dot.style.background = colors[t.group] || colors.domain;
+    minimap.appendChild(dot);
+  });
+
+  const wrapperRect = canvasWrapper.getBoundingClientRect();
+  const vx = (-panX / zoom - minX) * scale;
+  const vy = (-panY / zoom - minY) * scale;
+  const vw = (wrapperRect.width / zoom) * scale;
+  const vh = (wrapperRect.height / zoom) * scale;
+
+  viewport.style.left = Math.max(0, vx) + 'px';
+  viewport.style.top = Math.max(0, vy) + 'px';
+  viewport.style.width = Math.min(mw, vw) + 'px';
+  viewport.style.height = Math.min(mh, vh) + 'px';
+}
+
+// ═══════════════════════════════════════════════════════
+// TOOLBAR ACTIONS
+// ═══════════════════════════════════════════════════════
+
+function resetView() {
+  zoom = 1; panX = 0; panY = 0;
+  applyTransform(); updateMinimap();
+}
+
+function autoLayout() {
+  const gap = 50;
+  const cardW = 270;
+  const startX = 60;
+  const startY = 40;
+
+  const groups = { core: [], domain: [], system: [], auth: [] };
+  tables.forEach(t => (groups[t.group] || groups.domain).push(t));
+
+  const core = groups.core[0];
+  if (core) { core.x = startX + cardW + gap; core.y = startY; }
+
+  groups.domain.forEach((t, i) => {
+    if (i < 2) { t.x = startX; t.y = startY + i * 280; }
+    else { t.x = startX + (cardW + gap) * 2; t.y = startY + (i - 2) * 280; }
+  });
+
+  groups.system.forEach((t, i) => {
+    t.x = startX + cardW + gap;
+    t.y = startY + 320 + i * 280;
+  });
+
+  groups.auth.forEach((t, i) => {
+    t.x = startX;
+    t.y = startY + 600 + i * 280;
+  });
+
+  tables.forEach(t => {
+    const card = document.getElementById(`table-${t.name}`);
+    if (card) { card.style.left = t.x + 'px'; card.style.top = t.y + 'px'; }
+  });
+
+  drawLines(); updateMinimap();
+}
+
+// ═══════════════════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════════════════
+
+drawLines();
+updateMinimap();
+</script>
+
+</body>
+</html>

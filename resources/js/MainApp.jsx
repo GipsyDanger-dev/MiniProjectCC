@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState, Component } from "react";
 import { useTheme } from "./hooks/useTheme";
 import { useRealtimeIoT } from "./hooks/useRealtimeIoT";
 import { cn } from "./lib/utils";
@@ -13,6 +13,29 @@ import Settings from "./pages/Settings";
 import PlaceholderPage from "./pages/PlaceholderPage";
 import NewDevice from "./pages/NewDevice";
 import LoginPage from "./pages/LoginPage";
+
+class ErrorBoundary extends Component {
+    state = { error: null };
+    static getDerivedStateFromError(error) { return { error }; }
+    render() {
+        if (this.state.error) {
+            return (
+                <div style={{ background: "#0a0a0a", color: "#ef4444", padding: 32, minHeight: "100vh", fontFamily: "monospace" }}>
+                    <h1 style={{ fontSize: 20, marginBottom: 16 }}>⚠️ React Error</h1>
+                    <pre style={{ whiteSpace: "pre-wrap", color: "#fff", fontSize: 13, lineHeight: 1.6 }}>
+                        {this.state.error.message}
+                        {"\n\n"}
+                        {this.state.error.componentStack}
+                    </pre>
+                    <button onClick={() => this.setState({ error: null })} style={{ marginTop: 16, padding: "8px 16px", background: "#7c3aed", color: "#fff", border: "none", borderRadius: 6, cursor: "pointer" }}>
+                        Retry
+                    </button>
+                </div>
+            );
+        }
+        return this.props.children;
+    }
+}
 
 export default function MainApp() {
     const { theme, toggleTheme } = useTheme();
@@ -55,7 +78,7 @@ export default function MainApp() {
     }, []);
 
     useEffect(() => {
-        fetch("/api/auth/user", { headers: { Accept: "application/json" } })
+        fetch("/api/user", { credentials: "same-origin", headers: { Accept: "application/json" } })
             .then((res) => res.json())
             .then((data) => { if (data.status === "success") setUser(data.user); })
             .catch(() => {})
@@ -121,6 +144,7 @@ export default function MainApp() {
     const currentContent = pages[currentPage] || pages.dashboard;
 
     return (
+        <ErrorBoundary>
         <div className="min-h-screen relative" style={{ color: "#ffffff" }}>
             {/* Ambient indigo glow background */}
             <div className="ambient-grid" />
@@ -161,5 +185,6 @@ export default function MainApp() {
                 </div>
             </div>
         </div>
+        </ErrorBoundary>
     );
 }
