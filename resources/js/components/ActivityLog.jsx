@@ -1,52 +1,98 @@
 import React from "react";
-import { Fan, Flame, Thermometer, Bell } from "lucide-react";
-import GlassSurface from "./GlassSurface";
+import { AlertTriangle, CheckCircle, Settings, Zap, Activity } from "lucide-react";
 
-const iconMap = { fan: Fan, flame: Flame, temp: Thermometer, alert: Bell };
+function formatTime(value) {
+    if (!value) return "";
+    const d = new Date(value);
+    const now = new Date();
+    const diffMs = now - d;
+    const diffMin = Math.floor(diffMs / 60000);
+    if (diffMin < 1) return "now";
+    if (diffMin < 60) return `${diffMin}m`;
+    const diffHr = Math.floor(diffMin / 60);
+    if (diffHr < 24) return `${diffHr}h`;
+    return d.toLocaleDateString("en-GB", { day: "2-digit", month: "short" });
+}
 
-export default function ActivityLog({ entries: incoming = [] }) {
-    const defaults = [
-        { id: "1", icon: "fan", text: "Exhaust fan activated", time: "2m ago", status: "INFO" },
-        { id: "2", icon: "flame", text: "Flame sensor normalized", time: "12m ago", status: "RESOLVED" },
-        { id: "3", icon: "temp", text: "Temperature spike", time: "18m ago", status: "TRIGGERED" },
-        { id: "4", icon: "alert", text: "Buzzer test completed", time: "24m ago", status: "INFO" },
-        { id: "5", icon: "temp", text: "Temperature baseline", time: "41m ago", status: "RESOLVED" },
-    ];
-    const entries = incoming.length ? incoming : defaults;
+function parseDescription(desc) {
+    if (!desc) return null;
+    const triggered = desc.match(/Triggered:\s*([^|]+)/)?.[1]?.trim();
+    const nearLimit = desc.match(/Near limit:\s*([^|]+)/)?.[1]?.trim();
+    const sensors = desc.match(/(?:Gas|Smoke|Temp|Flame):\s*[\d.]+\/[\d.]+(?:C?)/g);
+    return { triggered, nearLimit, sensors };
+}
 
-    const badgeStyle = s => {
-        if (s === "TRIGGERED") return "bg-[#ef4444]/10 text-[#ef4444] border border-[#ef4444]/30";
-        if (s === "RESOLVED") return "bg-[#22c55e]/10 text-[#22c55e] border border-[#22c55e]/30";
-        return "bg-[#1a1c20] text-[#7d8187] border border-[#212327]";
-    };
+function getIcon(actionType) {
+    if (actionType === "MANUAL_COMMAND") return Zap;
+    if (actionType === "SYSTEM_UPDATE" || actionType === "MODE_SWITCH") return Settings;
+    return Activity;
+}
+
+export default function ActivityLog({ entries: incomingEntries = [], onViewAll }) {
+    const entries = incomingEntries.length ? incomingEntries : [];
 
     return (
-        <GlassSurface className="p-3 sm:p-5">
-            <div className="flex items-center justify-between mb-3 sm:mb-4">
-                <h3 className="text-xs sm:text-sm font-normal text-white tracking-tight">Log Aktivitas</h3>
-                <span className="text-[10px] sm:text-[11px] bg-[#1a1c20] text-[#dadbdf] px-2 sm:px-3 py-0.5 sm:py-1 rounded-[9999px] font-normal border border-[#212327]" style={{ fontFamily: "'Geist Mono', monospace", letterSpacing: '1px' }}>{entries.length}</span>
+        <div className="bg-surface2 border border-edge rounded-lg shadow-card">
+            <div className="flex items-center justify-between px-4 py-3 border-b border-edge">
+                <p className="text-[12px] font-medium text-ink2">
+                    Event Log
+                </p>
+                <span
+                    className="text-[11px] text-accent cursor-pointer hover:underline"
+                    onClick={onViewAll}
+                >
+                    View All
+                </span>
             </div>
-            {entries.length === 0 ? (
-                <p className="text-xs sm:text-sm text-center py-6 sm:py-8 text-[#7d8187]">Tidak ada aktivitas hari ini</p>
-            ) : (
-                <div className="space-y-1.5 sm:space-y-2 max-h-[300px] sm:max-h-[360px] overflow-auto thin-scroll pr-1" role="log" aria-label="Activity log">
-                    {entries.map(e => {
-                        const Icon = iconMap[e.icon];
-                        return (
-                            <div key={e.id} className="flex items-start gap-2.5 sm:gap-3 rounded-lg border border-[#212327] bg-[#0a0a0a] px-2.5 sm:px-3 py-2 sm:py-2.5 hover:bg-[#1a1c20] transition-all duration-150">
-                                <span className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg flex items-center justify-center shrink-0" style={{ background: 'linear-gradient(135deg, rgba(124,58,237,0.1) 0%, rgba(196,181,253,0.05) 100%)', border: '1px solid rgba(124,58,237,0.15)' }}>
-                                    <Icon className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-[#c4b5fd]" strokeWidth={1.5} />
-                                </span>
-                                <div className="flex-1 min-w-0">
-                                    <p className="text-xs sm:text-sm font-normal leading-snug text-white">{e.text}</p>
-                                    <p className="text-[10px] sm:text-[12px] mt-0.5 text-[#7d8187]" style={{ fontFamily: "'Geist Mono', monospace", letterSpacing: '0.5px' }}>{e.time}</p>
-                                </div>
-                                <span className={`px-2 py-0.5 rounded-[9999px] text-[10px] font-normal shrink-0 uppercase tracking-[1px] ${badgeStyle(e.status)}`} style={{ fontFamily: "'Geist Mono', monospace" }}>{e.status}</span>
+            <div className="max-h-[300px] overflow-auto thin-scroll">
+                {entries.length === 0 && (
+                    <p className="text-[10px] text-ink3 py-4 text-center px-3">No recent events</p>
+                )}
+                {entries.slice(0, 5).map((entry) => {
+                    const isDanger = entry.status === "BAHAYA";
+                    const isSystem = entry.action_type === "SYSTEM_UPDATE" || entry.action_type === "MODE_SWITCH";
+                    const Icon = isDanger ? AlertTriangle : isSystem ? Settings : CheckCircle;
+                    const parsed = parseDescription(entry.description);
+
+                    return (
+                        <div
+                            key={entry.id}
+                            className={`flex items-start gap-2 px-3 py-2 border-b border-edge last:border-b-0 border-l-2 ${
+                                isDanger
+                                    ? "border-l-danger bg-danger/[0.03]"
+                                    : "border-l-transparent"
+                            }`}
+                        >
+                            <div className={`shrink-0 mt-0.5 ${isDanger ? "text-danger" : "text-ink3"}`}>
+                                <Icon className="w-3 h-3" strokeWidth={1.5} />
                             </div>
-                        );
-                    })}
-                </div>
-            )}
-        </GlassSurface>
+                            <div className="flex-1 min-w-0">
+                                <p className={`text-[10px] leading-snug ${isDanger ? "text-danger font-medium" : "text-ink2"}`}>
+                                    {entry.message}
+                                </p>
+                                {parsed?.triggered && (
+                                    <p className="text-[9px] text-danger/80 leading-snug mt-0.5">
+                                        Triggered: {parsed.triggered}
+                                    </p>
+                                )}
+                                {parsed?.nearLimit && (
+                                    <p className="text-[9px] text-amber-500 leading-snug mt-0.5">
+                                        Near limit: {parsed.nearLimit}
+                                    </p>
+                                )}
+                                {!parsed?.triggered && !parsed?.nearLimit && entry.description && (
+                                    <p className="text-[9px] text-ink3 leading-snug mt-0.5">
+                                        {entry.description}
+                                    </p>
+                                )}
+                            </div>
+                            <span className="text-[9px] text-ink3 whitespace-nowrap shrink-0 mt-0.5">
+                                {formatTime(entry.created_at || entry.time)}
+                            </span>
+                        </div>
+                    );
+                })}
+            </div>
+        </div>
     );
 }
