@@ -15,4 +15,12 @@ class ActivityLog extends Model
         'description',
         'message'
     ];
+
+    // ── Relasi ──────────────────────────────────────────────
+
+    /** Log aktivitas ini milik satu device */
+    public function device()
+    {
+        return $this->belongsTo(Device::class);
+    }
 }
