@@ -53,14 +53,14 @@ function SidebarContent({
                     collapsed ? "justify-center" : "px-4",
                 )}
             >
-                <div className="w-8 h-8 border border-accent flex items-center justify-center">
+                <div className="w-8 h-8 rounded-lg border border-accent flex items-center justify-center">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="square" className="w-4 h-4 text-accent">
                         <circle cx="12" cy="12" r="8"/><line x1="12" y1="2" x2="12" y2="22"/><line x1="2" y1="12" x2="22" y2="12"/>
                     </svg>
                 </div>
                 {!collapsed && (
                     <div>
-                        <p className="font-medium text-xs text-surface tracking-[0.14em] uppercase">
+                        <p className="font-medium text-xs text-ink tracking-[0.14em] uppercase">
                             Sentinel
                         </p>
                         <p className="text-[10px] text-sidebar-muted">
@@ -83,11 +83,11 @@ function SidebarContent({
                                 onClick={() => handleClick(id)}
                                 title={collapsed ? label : undefined}
                                 className={cn(
-                                    "group flex items-center gap-3 h-9 text-[12px] uppercase tracking-[0.08em] transition-smooth border-l-2",
-                                    collapsed ? "justify-center px-0" : "px-4",
+                                    "group flex items-center gap-3 h-9 text-[13px] transition-smooth rounded-lg mx-1.5",
+                                    collapsed ? "justify-center px-0" : "px-3",
                                     isActive
-                                        ? "text-surface bg-[#1c1c18] border-l-accent"
-                                        : "text-sidebar-muted border-l-transparent hover:text-surface/60 hover:bg-white/[0.02]",
+                                        ? "text-accent bg-accent/10 font-medium"
+                                        : "text-sidebar-muted hover:text-ink hover:bg-surface3",
                                 )}
                             >
                                 <Icon
@@ -114,11 +114,11 @@ function SidebarContent({
                                 onClick={() => handleClick(id)}
                                 title={collapsed ? label : undefined}
                                 className={cn(
-                                    "group flex items-center gap-3 h-9 text-[12px] uppercase tracking-[0.08em] transition-smooth border-l-2",
-                                    collapsed ? "justify-center px-0" : "px-4",
+                                    "group flex items-center gap-3 h-9 text-[13px] transition-smooth rounded-lg mx-1.5",
+                                    collapsed ? "justify-center px-0" : "px-3",
                                     isActive
-                                        ? "text-surface bg-[#1c1c18] border-l-accent"
-                                        : "text-sidebar-muted border-l-transparent hover:text-surface/60 hover:bg-white/[0.02]",
+                                        ? "text-accent bg-accent/10 font-medium"
+                                        : "text-sidebar-muted hover:text-ink hover:bg-surface3",
                                 )}
                             >
                                 <Icon
@@ -139,7 +139,7 @@ function SidebarContent({
                     <button
                         type="button"
                         onClick={() => handleClick("new-device")}
-                        className="w-full h-8 border border-[#333] text-sidebar-muted text-[10px] uppercase tracking-[0.1em] hover:border-accent hover:text-accent transition-smooth flex items-center justify-center gap-1.5"
+                        className="w-full h-8 rounded-lg bg-accent text-accent-foreground text-[12px] font-medium hover:bg-accent/90 transition-smooth flex items-center justify-center gap-1.5"
                     >
                         <Plus className="w-3 h-3" />
                         Add Device
@@ -150,7 +150,7 @@ function SidebarContent({
                     type="button"
                     onClick={handleLogout}
                     className={cn(
-                        "w-full flex items-center gap-3 h-9 text-[10px] uppercase tracking-[0.08em] transition-smooth text-[#444] hover:text-accent",
+                        "w-full flex items-center gap-3 h-9 text-[11px] transition-smooth text-sidebar-muted hover:text-accent",
                         collapsed ? "justify-center px-0" : "px-4 justify-center",
                     )}
                 >
@@ -161,7 +161,7 @@ function SidebarContent({
                     type="button"
                     onClick={() => setCollapsed(!collapsed)}
                     className={cn(
-                        "w-full flex items-center gap-3 h-9 text-[10px] uppercase tracking-[0.08em] transition-smooth text-[#444] hover:text-accent",
+                        "w-full flex items-center gap-3 h-9 text-[11px] transition-smooth text-sidebar-muted hover:text-accent",
                         collapsed ? "justify-center px-0" : "px-4 justify-center",
                     )}
                 >
@@ -191,7 +191,7 @@ export default function Sidebar({
         <>
             <aside
                 className={cn(
-                    "hidden lg:flex flex-col fixed inset-y-0 left-0 z-30 border-r-2 border-accent transition-all duration-200 glass-sidebar overflow-hidden",
+                    "hidden lg:flex flex-col fixed inset-y-0 left-0 z-30 border-r border-sidebar-border transition-all duration-200 glass-sidebar overflow-hidden",
                     collapsed ? "w-[60px] px-2" : "w-[176px]",
                 )}
             >
@@ -214,14 +214,14 @@ export default function Sidebar({
 
             <aside
                 className={cn(
-                    "fixed inset-y-0 left-0 z-50 w-[176px] flex flex-col glass-sidebar border-r-2 border-accent transition-transform duration-200 ease-out lg:hidden overflow-y-auto thin-scroll",
+                    "fixed inset-y-0 left-0 z-50 w-[176px] flex flex-col glass-sidebar border-r border-sidebar-border transition-transform duration-200 ease-out lg:hidden overflow-y-auto thin-scroll",
                     mobileOpen ? "translate-x-0" : "-translate-x-full",
                 )}
             >
                 <button
                     type="button"
                     onClick={() => setMobileOpen(false)}
-                    className="absolute top-3 right-3 w-6 h-6 flex items-center justify-center text-surface"
+                    className="absolute top-3 right-3 w-6 h-6 flex items-center justify-center text-ink"
                 >
                     <X className="w-4 h-4" />
                 </button>

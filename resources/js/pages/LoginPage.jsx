@@ -39,44 +39,34 @@ export default function LoginPage({ onLogin }) {
     };
 
     return (
-        <div className="min-h-screen bg-[#0a0a0f] flex items-center justify-center p-4 relative overflow-hidden">
-            <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_rgba(255,60,60,0.08)_0%,_transparent_60%)]" />
-            <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_bottom_right,_rgba(255,120,0,0.05)_0%,_transparent_50%)]" />
-
-            <div className="absolute inset-0 opacity-[0.03]" style={{
-                backgroundImage: `linear-gradient(rgba(255,255,255,0.1) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.1) 1px, transparent 1px)`,
-                backgroundSize: '60px 60px'
-            }} />
-
+        <div className="min-h-screen bg-surface flex items-center justify-center p-4">
             <div className="relative w-full max-w-md">
-                <div className="absolute -inset-1 bg-gradient-to-b from-red-500/10 via-transparent to-orange-500/5 rounded-2xl blur-xl" />
-
-                <div className="relative bg-[#111118] border border-[#1e1e2a] rounded-2xl overflow-hidden">
-                    <div className="h-1 bg-gradient-to-r from-red-500 via-orange-500 to-red-500" />
+                <div className="relative bg-surface2 border border-edge rounded-xl overflow-hidden">
+                    <div className="h-1 bg-gradient-to-r from-accent via-warning to-accent" />
 
                     <div className="p-8">
                         <div className="text-center mb-8">
-                            <div className="inline-flex items-center justify-center w-16 h-16 rounded-xl bg-red-500/10 border border-red-500/20 mb-4">
-                                <Shield className="w-8 h-8 text-red-400" />
+                            <div className="inline-flex items-center justify-center w-16 h-16 rounded-xl bg-accent/10 border border-accent/20 mb-4">
+                                <Shield className="w-8 h-8 text-accent" />
                             </div>
-                            <h1 className="text-2xl font-semibold text-white tracking-tight">
-                                Sentinel<span className="text-red-400">IoT</span>
+                            <h1 className="text-2xl font-semibold text-ink tracking-tight">
+                                Sentinel<span className="text-accent">IoT</span>
                             </h1>
-                            <p className="text-[13px] text-gray-500 mt-1.5 tracking-wide">
+                            <p className="text-[13px] text-ink3 mt-1.5">
                                 Smart Safety Monitoring System
                             </p>
                         </div>
 
                         {error && (
-                            <div className="mb-6 px-4 py-3 bg-red-500/10 border border-red-500/20 rounded-lg flex items-center gap-3">
-                                <Flame className="w-4 h-4 text-red-400 flex-shrink-0" />
-                                <p className="text-[13px] text-red-300">{error}</p>
+                            <div className="mb-6 px-4 py-3 bg-danger/10 rounded-lg flex items-center gap-3">
+                                <Flame className="w-4 h-4 text-danger flex-shrink-0" />
+                                <p className="text-[13px] text-danger">{error}</p>
                             </div>
                         )}
 
                         <form onSubmit={handleSubmit} className="space-y-5">
                             <div>
-                                <label className="block text-[11px] font-medium uppercase tracking-[0.1em] text-gray-400 mb-2">
+                                <label className="block text-[11px] font-medium text-ink3 mb-2">
                                     Email
                                 </label>
                                 <input
@@ -85,12 +75,12 @@ export default function LoginPage({ onLogin }) {
                                     onChange={(e) => setEmail(e.target.value)}
                                     placeholder="admin@sentinel.id"
                                     required
-                                    className="w-full h-11 px-4 bg-[#0a0a0f] border border-[#1e1e2a] rounded-lg text-sm text-white placeholder:text-gray-600 focus:outline-none focus:border-red-500/40 focus:ring-1 focus:ring-red-500/20 transition-all"
+                                    className="w-full h-11 px-4 bg-surface border border-edge rounded-lg text-sm text-ink placeholder:text-ink3/60 focus:outline-none focus:border-accent/40 focus:ring-1 focus:ring-accent/20 transition-all"
                                 />
                             </div>
 
                             <div>
-                                <label className="block text-[11px] font-medium uppercase tracking-[0.1em] text-gray-400 mb-2">
+                                <label className="block text-[11px] font-medium text-ink3 mb-2">
                                     Password
                                 </label>
                                 <div className="relative">
@@ -100,12 +90,12 @@ export default function LoginPage({ onLogin }) {
                                         onChange={(e) => setPassword(e.target.value)}
                                         placeholder="••••••••"
                                         required
-                                        className="w-full h-11 px-4 pr-11 bg-[#0a0a0f] border border-[#1e1e2a] rounded-lg text-sm text-white placeholder:text-gray-600 focus:outline-none focus:border-red-500/40 focus:ring-1 focus:ring-red-500/20 transition-all"
+                                        className="w-full h-11 px-4 pr-11 bg-surface border border-edge rounded-lg text-sm text-ink placeholder:text-ink3/60 focus:outline-none focus:border-accent/40 focus:ring-1 focus:ring-accent/20 transition-all"
                                     />
                                     <button
                                         type="button"
                                         onClick={() => setShowPassword(!showPassword)}
-                                        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-300 transition-colors"
+                                        className="absolute right-3 top-1/2 -translate-y-1/2 text-ink3 hover:text-ink transition-colors"
                                     >
                                         {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                                     </button>
@@ -115,7 +105,7 @@ export default function LoginPage({ onLogin }) {
                             <button
                                 type="submit"
                                 disabled={loading}
-                                className="w-full h-11 bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white text-sm font-medium rounded-lg transition-all duration-200 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-red-500/20"
+                                className="w-full h-11 bg-accent hover:bg-accent/90 text-accent-foreground text-sm font-medium rounded-lg transition-all duration-200 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                             >
                                 {loading ? (
                                     <>
@@ -128,9 +118,9 @@ export default function LoginPage({ onLogin }) {
                             </button>
                         </form>
 
-                        <div className="mt-8 pt-6 border-t border-[#1e1e2a]">
-                            <div className="flex items-center justify-center gap-2 text-[11px] text-gray-600">
-                                <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                        <div className="mt-8 pt-6 border-t border-edge">
+                            <div className="flex items-center justify-center gap-2 text-[11px] text-ink3">
+                                <div className="w-1.5 h-1.5 rounded-full bg-success animate-pulse" />
                                 <span>System Operational</span>
                             </div>
                         </div>

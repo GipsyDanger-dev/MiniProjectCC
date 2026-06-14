@@ -98,13 +98,13 @@ export default function ActivityLogs({ activeRoom, iot }) {
         <div className="flex flex-col gap-2.5">
             <div className="flex flex-wrap items-center justify-between gap-2">
                 <div>
-                    <p className="text-[10px] font-medium uppercase tracking-[0.10em] text-ink2">Activity Log</p>
-                    <p className="text-[10px] text-ink3 mt-0.5">All system events and sensor alerts</p>
+                    <p className="text-[12px] font-medium text-ink2">Activity Log</p>
+                    <p className="text-[11px] text-ink3 mt-0.5">All system events and sensor alerts</p>
                 </div>
                 <button
                     type="button"
                     onClick={exportCSV}
-                    className="h-7 px-3 bg-accent text-white text-[10px] uppercase tracking-[0.1em] font-medium inline-flex items-center gap-1.5 hover:bg-accent/80 transition-smooth"
+                    className="h-8 px-3 rounded-lg bg-accent text-accent-foreground text-[12px] font-medium inline-flex items-center gap-1.5 hover:bg-accent/90 transition-smooth"
                 >
                     <Download className="w-3 h-3" />
                     Export
@@ -113,25 +113,25 @@ export default function ActivityLogs({ activeRoom, iot }) {
 
             <div className="grid grid-cols-2 xl:grid-cols-4 gap-2">
                 {stats.map((stat) => (
-                    <div key={stat.label} className="bg-surface2 border border-edge px-3 py-2.5">
-                        <p className="text-[10px] uppercase tracking-[0.08em] text-ink3">{stat.label}</p>
-                        <p className={`text-lg font-medium mt-1 tabular-nums ${stat.tone}`}>{stat.value}</p>
+                    <div key={stat.label} className="bg-surface2 border border-edge rounded-lg shadow-card px-4 py-3">
+                        <p className="text-[11px] text-ink3">{stat.label}</p>
+                        <p className={`text-lg font-semibold mt-1 tabular-nums ${stat.tone}`}>{stat.value}</p>
                     </div>
                 ))}
             </div>
 
-            <div className="bg-surface2 border border-edge">
-                <div className="flex flex-wrap items-center justify-between gap-2 px-3 py-2 border-b border-edge">
+            <div className="bg-surface2 border border-edge rounded-lg shadow-card">
+                <div className="flex flex-wrap items-center justify-between gap-2 px-4 py-3 border-b border-edge">
                     <div className="flex flex-wrap gap-1">
                         {filters.map((filter) => (
                             <button
                                 key={filter}
                                 type="button"
                                 onClick={() => setActiveFilter(filter)}
-                                className={`px-2 py-1 text-[10px] uppercase tracking-[0.08em] border border-r-0 last:border-r transition-smooth ${
+                                className={`px-2.5 py-1 text-[11px] rounded-md transition-smooth ${
                                     activeFilter === filter
-                                        ? "bg-surface text-accent border-accent"
-                                        : "bg-surface3 text-ink3 border-edge"
+                                        ? "bg-accent/10 text-accent font-medium"
+                                        : "text-ink3 hover:bg-surface3"
                                 }`}
                             >
                                 {filter}

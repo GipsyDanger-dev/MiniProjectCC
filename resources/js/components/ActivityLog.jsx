@@ -32,13 +32,13 @@ export default function ActivityLog({ entries: incomingEntries = [], onViewAll }
     const entries = incomingEntries.length ? incomingEntries : [];
 
     return (
-        <div className="bg-surface2 border border-edge">
-            <div className="flex items-center justify-between px-3 py-2 border-b border-edge">
-                <p className="text-[10px] font-medium uppercase tracking-[0.10em] text-ink2">
+        <div className="bg-surface2 border border-edge rounded-lg shadow-card">
+            <div className="flex items-center justify-between px-4 py-3 border-b border-edge">
+                <p className="text-[12px] font-medium text-ink2">
                     Event Log
                 </p>
                 <span
-                    className="text-[10px] uppercase tracking-[0.08em] text-accent cursor-pointer hover:underline"
+                    className="text-[11px] text-accent cursor-pointer hover:underline"
                     onClick={onViewAll}
                 >
                     View All

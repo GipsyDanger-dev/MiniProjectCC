@@ -10,29 +10,29 @@ export function StatusCard({
 }) {
     const isDanger = status === "BAHAYA";
     return (
-        <div className="bg-surface2 border border-edge p-4 h-full flex flex-col">
+        <div className="bg-surface2 border border-edge rounded-lg shadow-card p-4 h-full flex flex-col">
             <div className="flex items-center justify-between mb-3">
-                <p className="text-[10px] uppercase tracking-[0.10em] text-ink3">
+                <p className="text-[11px] text-ink3">
                     Status Indikasi
                 </p>
                 <div
                     onClick={onToggle}
-                    className={`w-9 h-[18px] border cursor-pointer relative transition-smooth ${
+                    className={`w-10 h-5 rounded-full cursor-pointer relative transition-smooth ${
                         systemActive
-                            ? "bg-accent/10 border-accent"
-                            : "bg-surface3 border-edge2"
+                            ? "bg-accent/20"
+                            : "bg-surface3"
                     }`}
                 >
                     <span
-                        className={`absolute top-0.5 w-3 h-3 transition-all ${
+                        className={`absolute top-0.5 w-4 h-4 rounded-full transition-all ${
                             systemActive
-                                ? "left-[18px] bg-accent"
+                                ? "left-[20px] bg-accent"
                                 : "left-0.5 bg-edge2"
                         }`}
                     />
                 </div>
             </div>
-            <p className="text-center text-[10px] text-ink3 mb-3 tracking-[0.04em]">
+            <p className="text-center text-[11px] text-ink3 mb-3">
                 {updatedLabel}
             </p>
             <p
@@ -102,7 +102,7 @@ export function QuickActions({ actuatorState = {}, onAction, loading, emergencyA
                         type="button"
                         disabled={isLoading}
                         onClick={() => onAction?.(action.action)}
-                        className={`h-8 border text-[9px] uppercase tracking-[0.08em] flex items-center justify-center gap-1.5 transition-smooth cursor-pointer disabled:opacity-50 disabled:cursor-wait ${
+                        className={`h-9 rounded-lg border text-[12px] font-medium flex items-center justify-center gap-1.5 transition-smooth cursor-pointer disabled:opacity-50 disabled:cursor-wait ${
                             action.success
                                 ? "bg-success text-white border-success hover:bg-success/80 col-span-3"
                                 : action.danger

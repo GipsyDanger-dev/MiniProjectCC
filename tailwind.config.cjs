@@ -1,6 +1,6 @@
 /** @type {import('tailwindcss').Config} */
 module.exports = {
-    darkMode: "media",
+    darkMode: "class",
     content: [
         "./resources/views/**/*.blade.php",
         "./resources/js/**/*.{js,jsx,ts,tsx}",
@@ -9,15 +9,14 @@ module.exports = {
         extend: {
             fontFamily: {
                 sans: [
-                    '"JetBrains Mono"',
-                    '"Courier New"',
-                    "Courier",
-                    "monospace",
+                    "Inter",
+                    "system-ui",
+                    "-apple-system",
+                    "sans-serif",
                 ],
                 mono: [
                     '"JetBrains Mono"',
-                    '"Courier New"',
-                    "Courier",
+                    "ui-monospace",
                     "monospace",
                 ],
             },
@@ -107,14 +106,14 @@ module.exports = {
                 },
             },
             boxShadow: {
-                card: "none",
-                "card-hover": "none",
-                lime: "var(--shadow-lime)",
-                purple: "var(--shadow-lime)",
-                dark: "none",
+                card: "0 1px 3px rgba(0,0,0,0.3), 0 1px 2px rgba(0,0,0,0.2)",
+                "card-hover": "0 4px 12px rgba(0,0,0,0.4)",
+                elevated: "0 8px 24px rgba(0,0,0,0.4)",
+                accent: "0 0 0 1px hsl(38 90% 50% / 0.15)",
             },
             borderRadius: {
                 none: "0",
+                lg: "0.5rem",
             },
             animation: {
                 "fade-in-up": "fade-in-up 0.25s ease-out both",

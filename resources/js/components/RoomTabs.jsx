@@ -3,7 +3,7 @@ import { cn } from "../lib/utils";
 
 export default function RoomTabs({ rooms, activeRoomId, onChange }) {
     return (
-        <div className="flex bg-surface2 border-b border-edge overflow-x-auto">
+        <div className="flex gap-1 overflow-x-auto">
             {rooms.map((room) => {
                 const isActive = room.id === activeRoomId;
                 return (
@@ -12,10 +12,10 @@ export default function RoomTabs({ rooms, activeRoomId, onChange }) {
                         type="button"
                         onClick={() => onChange(room.id)}
                         className={cn(
-                            "px-4 py-2 text-[10px] uppercase tracking-[0.08em] whitespace-nowrap border-b-2 transition-smooth",
+                            "px-3 py-1.5 text-[12px] rounded-md whitespace-nowrap transition-smooth",
                             isActive
-                                ? "text-accent border-b-accent bg-surface"
-                                : "text-ink3 border-b-transparent hover:text-ink2",
+                                ? "bg-accent/10 text-accent font-medium"
+                                : "text-ink3 hover:text-ink2 hover:bg-surface3",
                         )}
                     >
                         {room.label}

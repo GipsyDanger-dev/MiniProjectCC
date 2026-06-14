@@ -594,28 +594,28 @@ export default function RoomModel({ room, iot }) {
     const flameDetected = flameValue < flameTh;
 
     return (
-        <div className="bg-surface2 border border-edge">
-            <div className="flex items-center justify-between px-3 py-2 border-b border-edge">
+        <div className="bg-surface2 border border-edge rounded-lg shadow-card">
+            <div className="flex items-center justify-between px-4 py-3 border-b border-edge">
                 <div>
-                    <p className="text-[10px] uppercase tracking-[0.10em] text-ink2">3D Room Monitor</p>
-                    <p className="text-[10px] text-ink3 mt-0.5">{room}</p>
+                    <p className="text-[12px] font-medium text-ink2">3D Room Monitor</p>
+                    <p className="text-[11px] text-ink3 mt-0.5">{room}</p>
                 </div>
                 <div className="flex items-center gap-1.5">
                     <span
-                        className={`text-[10px] uppercase tracking-[0.08em] px-1.5 py-0.5 border ${
+                        className={`text-[11px] font-medium px-2 py-0.5 rounded-md ${
                             fanStatus !== "OFF"
-                                ? "text-accent border-accent bg-accent/10"
-                                : "text-ink3 border-edge2 bg-surface3"
+                                ? "text-accent bg-accent/10"
+                                : "text-ink3 bg-surface3"
                         }`}
                     >
                         Fan: {fanStatus}
                         {fanSpeed ? ` ${fanSpeed}%` : ""}
                     </span>
                     <span
-                        className={`text-[10px] uppercase tracking-[0.08em] px-1.5 py-0.5 border ${
+                        className={`text-[11px] font-medium px-2 py-0.5 rounded-md ${
                             emergency === "BAHAYA"
-                                ? "text-danger border-danger bg-danger/10"
-                                : "text-success border-success bg-success/10"
+                                ? "text-danger bg-danger/10"
+                                : "text-success bg-success/10"
                         }`}
                     >
                         {emergency}
@@ -623,7 +623,7 @@ export default function RoomModel({ room, iot }) {
                 </div>
             </div>
 
-            <div className="h-[320px] relative bg-[#2a2a26]">
+            <div className="h-[320px] relative bg-surface3">
                 <Canvas
                     camera={{ position: [4, 3, 4], fov: 48 }}
                     dpr={[1, 2]}
@@ -638,15 +638,15 @@ export default function RoomModel({ room, iot }) {
                 <div className="absolute bottom-2 left-2 right-2 flex items-center justify-between pointer-events-none">
                     <div className="flex items-center gap-1.5">
                         <div
-                            className={`w-1.5 h-1.5 ${
+                            className={`w-1.5 h-1.5 rounded-full ${
                                 emergency === "BAHAYA" ? "bg-danger animate-pulse" : "bg-success"
                             }`}
                         />
-                        <span className="text-[10px] text-ink3 uppercase tracking-[0.06em]">
+                        <span className="text-[11px] text-ink3">
                             {emergency === "BAHAYA" ? "Emergency Active" : "All Clear"}
                         </span>
                     </div>
-                    <span className="text-[10px] text-ink3 uppercase tracking-[0.06em]">
+                    <span className="text-[11px] text-ink3">
                         Drag to rotate · Scroll to zoom
                     </span>
                 </div>
@@ -669,7 +669,7 @@ export default function RoomModel({ room, iot }) {
                             s.alert ? "bg-danger/8" : ""
                         }`}
                     >
-                        <p className="text-[9px] uppercase tracking-[0.08em] text-ink3">{s.label}</p>
+                        <p className="text-[10px] text-ink3">{s.label}</p>
                         <p
                             className={`text-[13px] font-medium mt-0.5 ${
                                 s.alert ? "text-danger" : "text-ink"

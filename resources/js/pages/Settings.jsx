@@ -33,11 +33,11 @@ const fuzzyRules = [
 ];
 
 const fanOutputClass = (value) => {
-    if (value === "SAFE") return "text-success border-success bg-success/10";
-    if (value === "LOW") return "text-ink3 border-edge2 bg-surface3";
-    if (value === "MEDIUM") return "text-accent border-accent bg-accent/10";
-    if (value === "HIGH") return "text-orange-700 border-orange-400 bg-orange-50";
-    return "text-danger border-danger bg-danger/10";
+    if (value === "SAFE") return "text-success bg-success/10";
+    if (value === "LOW") return "text-ink3 bg-surface3";
+    if (value === "MEDIUM") return "text-accent bg-accent/10";
+    if (value === "HIGH") return "text-warning bg-warning/10";
+    return "text-danger bg-danger/10";
 };
 
 const maskApiKey = (value) => {
@@ -211,8 +211,8 @@ export default function Settings({ iot, pollingInterval, setPollingInterval }) {
     const SliderRow = ({ label, value, min, max, unit, onChange }) => (
         <div className="py-2.5 border-b border-edge last:border-b-0">
             <div className="flex justify-between items-center mb-1.5">
-                <span className="text-[10px] uppercase tracking-[0.08em] text-ink3">{label}</span>
-                <span className="text-[15px] font-medium text-accent tabular-nums">{value}{unit}</span>
+                <span className="text-[11px] text-ink3">{label}</span>
+                <span className="text-[15px] font-semibold text-accent tabular-nums">{value}{unit}</span>
             </div>
             <input
                 type="range"
@@ -220,7 +220,7 @@ export default function Settings({ iot, pollingInterval, setPollingInterval }) {
                 max={max}
                 value={value}
                 onChange={(e) => onChange(Number(e.target.value))}
-                className="w-full h-1 bg-surface3 border border-edge appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-3 [&::-webkit-slider-thumb]:h-3 [&::-webkit-slider-thumb]:bg-accent [&::-webkit-slider-thumb]:border-none [&::-webkit-slider-thumb]:cursor-pointer"
+                className="w-full"
             />
         </div>
     );
@@ -230,44 +230,44 @@ export default function Settings({ iot, pollingInterval, setPollingInterval }) {
     return (
         <div className="flex flex-col gap-2.5">
             <div>
-                <p className="text-[10px] font-medium uppercase tracking-[0.10em] text-ink2">Settings</p>
-                <p className="text-[10px] text-ink3 mt-0.5">Thresholds, fuzzy rules, and device configuration</p>
+                <p className="text-[12px] font-medium text-ink2">Settings</p>
+                <p className="text-[11px] text-ink3 mt-0.5">Thresholds, fuzzy rules, and device configuration</p>
             </div>
 
             <div className="grid gap-2.5 md:grid-cols-2">
-                <div className="bg-surface2 border border-edge">
-                    <div className="px-3 py-2 border-b border-edge">
-                        <p className="text-[10px] font-medium uppercase tracking-[0.10em] text-ink2">Threshold Configuration</p>
+                <div className="bg-surface2 border border-edge rounded-lg shadow-card">
+                    <div className="px-4 py-3 border-b border-edge">
+                        <p className="text-[12px] font-medium text-ink2">Threshold Configuration</p>
                     </div>
-                    <div className="px-3">
+                    <div className="px-4">
                         <SliderRow label="Gas (Raw ADC)" value={gas} min={0} max={4095} unit="" onChange={setGas} />
                         <SliderRow label="Smoke (Raw ADC)" value={smoke} min={0} max={4095} unit="" onChange={setSmoke} />
                         <SliderRow label="Humidity (%)" value={humidity} min={0} max={100} unit="%" onChange={setHumidity} />
                         <SliderRow label="Temperature (°C)" value={temp} min={0} max={80} unit="°C" onChange={setTemp} />
                         <SliderRow label="Flame (Analog)" value={flame} min={100} max={4095} unit="" onChange={setFlame} />
                     </div>
-                    <div className="px-3 py-2 border-t border-edge">
+                    <div className="px-4 py-3 border-t border-edge">
                         <div className="flex items-center justify-between mb-2">
-                            <p className="text-[10px] text-ink3">
+                            <p className="text-[11px] text-ink3">
                                 Live preview: gas {Math.round(Number(latest?.gas_value || 0))}ppm,
                                 smoke {Math.round(Number(latest?.smoke_value || 0))},
                                 api {Math.round(Number(latest?.flame_value || 0))},
                                 kelembapan {Math.round(Number(latest?.humidity || 0))}%,
                                 suhu {Math.round(Number(latest?.temperature || 0))}°C
                             </p>
-                            <span className={`text-[10px] uppercase tracking-[0.06em] px-1.5 py-0.5 border ${previewStatus.className}`}>{previewStatus.label}</span>
+                            <span className={`text-[11px] font-medium px-2 py-0.5 rounded-md ${previewStatus.className}`}>{previewStatus.label}</span>
                         </div>
                         <button
                             type="button"
                             onClick={saveThresholds}
-                            className="w-full h-8 bg-accent text-white text-[10px] uppercase tracking-[0.1em] font-medium flex items-center justify-center gap-1.5 hover:bg-accent/80 transition-smooth"
+                            className="w-full h-9 rounded-lg bg-accent text-accent-foreground text-[12px] font-medium flex items-center justify-center gap-1.5 hover:bg-accent/90 transition-smooth"
                         >
                             <Save className="w-3 h-3" />
                             {saving ? "Saving..." : "Save Thresholds"}
                         </button>
                         {saveFeedback && (
-                            <div className={`mt-2 px-2 py-1.5 text-[10px] border ${
-                                saveFeedback.type === "success" ? "bg-success/10 text-success border-success" : "bg-danger/10 text-danger border-danger"
+                            <div className={`mt-2 px-2 py-1.5 text-[11px] rounded-md ${
+                                saveFeedback.type === "success" ? "bg-success/10 text-success" : "bg-danger/10 text-danger"
                             }`}>
                                 {saveFeedback.msg}
                             </div>
@@ -275,15 +275,15 @@ export default function Settings({ iot, pollingInterval, setPollingInterval }) {
                     </div>
                 </div>
 
-                <div className="bg-surface2 border border-edge">
-                    <div className="px-3 py-2 border-b border-edge">
-                        <p className="text-[10px] font-medium uppercase tracking-[0.10em] text-ink2">Fuzzy Logic Rules</p>
-                        <p className="text-[9px] text-ink3">Read-only mapping of inputs to fan speed (27 rules — Sugeno)</p>
+                <div className="bg-surface2 border border-edge rounded-lg shadow-card">
+                    <div className="px-4 py-3 border-b border-edge">
+                        <p className="text-[12px] font-medium text-ink2">Fuzzy Logic Rules</p>
+                        <p className="text-[10px] text-ink3">Read-only mapping of inputs to fan speed (27 rules — Sugeno)</p>
                     </div>
                     <div className="overflow-auto thin-scroll">
                         <table className="w-full min-w-[380px]">
                             <thead>
-                                <tr className="text-[10px] uppercase tracking-[0.08em] text-ink3 border-b border-edge">
+                                <tr className="text-[11px] text-ink3 border-b border-edge">
                                     <th className="text-left px-3 py-2">#</th>
                                     <th className="text-left px-3 py-2">Gas</th>
                                     <th className="text-left px-3 py-2">Smoke</th>
@@ -299,7 +299,7 @@ export default function Settings({ iot, pollingInterval, setPollingInterval }) {
                                         <td className="px-3 py-1.5 text-[10px] text-ink">{rule[1]}</td>
                                         <td className="px-3 py-1.5 text-[10px] text-ink">{rule[2]}</td>
                                         <td className="px-3 py-1.5 text-right">
-                                            <span className={`inline-flex px-1.5 py-0.5 text-[9px] uppercase tracking-[0.06em] border ${fanOutputClass(rule[3])}`}>
+                                            <span className={`inline-flex px-2 py-0.5 text-[10px] font-medium rounded-md ${fanOutputClass(rule[3])}`}>
                                                 {rule[3]}
                                             </span>
                                         </td>
@@ -312,31 +312,31 @@ export default function Settings({ iot, pollingInterval, setPollingInterval }) {
             </div>
 
             <div className="grid gap-2.5 md:grid-cols-2">
-                <div className="bg-surface2 border border-edge">
-                    <div className="px-3 py-2 border-b border-edge">
-                        <p className="text-[10px] font-medium uppercase tracking-[0.10em] text-ink2">Notification Settings</p>
+                <div className="bg-surface2 border border-edge rounded-lg shadow-card">
+                    <div className="px-4 py-3 border-b border-edge">
+                        <p className="text-[12px] font-medium text-ink2">Notification Settings</p>
                     </div>
-                    <div className="px-3">
+                    <div className="px-4">
                         <div className="py-2.5 border-b border-edge flex items-center justify-between gap-2">
                             <div className="flex items-center gap-2">
-                                <ShieldAlert className="w-3 h-3 text-ink3" />
+                                <ShieldAlert className="w-3.5 h-3.5 text-ink3" />
                                 <div>
-                                    <p className="text-[10px] text-ink">Alert on BAHAYA only</p>
-                                    <p className="text-[9px] text-ink3">Ignore INFO/WARN notifications</p>
+                                    <p className="text-[13px] text-ink">Alert on BAHAYA only</p>
+                                    <p className="text-[11px] text-ink3">Ignore INFO/WARN notifications</p>
                                 </div>
                             </div>
                             <button
                                 type="button"
                                 onClick={() => setDangerOnly((v) => !v)}
-                                className={`w-9 h-[18px] border cursor-pointer relative transition-smooth ${dangerOnly ? "bg-accent/10 border-accent" : "bg-surface3 border-edge2"}`}
+                                className={`w-10 h-5 rounded-full cursor-pointer relative transition-smooth ${dangerOnly ? "bg-accent/20" : "bg-surface3"}`}
                             >
-                                <span className={`absolute top-0.5 w-3 h-3 transition-all ${dangerOnly ? "left-[18px] bg-accent" : "left-0.5 bg-edge2"}`} />
+                                <span className={`absolute top-0.5 w-4 h-4 rounded-full transition-all ${dangerOnly ? "left-[20px] bg-accent" : "left-0.5 bg-edge2"}`} />
                             </button>
                         </div>
                         <div className="py-2.5">
                             <div className="flex justify-between items-center mb-1.5">
-                                <span className="text-[10px] uppercase tracking-[0.08em] text-ink3">Polling Interval</span>
-                                <span className="text-[15px] font-medium text-accent tabular-nums">{polling}s</span>
+                                <span className="text-[11px] text-ink3">Polling Interval</span>
+                                <span className="text-[15px] font-semibold text-accent tabular-nums">{polling}s</span>
                             </div>
                             <input
                                 type="range"
@@ -344,17 +344,17 @@ export default function Settings({ iot, pollingInterval, setPollingInterval }) {
                                 max="10"
                                 value={polling}
                                 onChange={(e) => setPollingInterval(Number(e.target.value) * 1000)}
-                                className="w-full h-1 bg-surface3 border border-edge appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-3 [&::-webkit-slider-thumb]:h-3 [&::-webkit-slider-thumb]:bg-accent [&::-webkit-slider-thumb]:border-none [&::-webkit-slider-thumb]:cursor-pointer"
+                                className="w-full"
                             />
                         </div>
                     </div>
                 </div>
 
-                <div className="bg-surface2 border border-edge">
-                    <div className="px-3 py-2 border-b border-edge">
-                        <p className="text-[10px] font-medium uppercase tracking-[0.10em] text-ink2">Device Management</p>
+                <div className="bg-surface2 border border-edge rounded-lg shadow-card">
+                    <div className="px-4 py-3 border-b border-edge">
+                        <p className="text-[12px] font-medium text-ink2">Device Management</p>
                     </div>
-                    <div className="px-3">
+                    <div className="px-4">
                         <div className="py-2.5 border-b border-edge">
                             <p className="text-[9px] uppercase tracking-[0.08em] text-ink3 mb-1">Device</p>
                             <select
@@ -420,7 +420,7 @@ export default function Settings({ iot, pollingInterval, setPollingInterval }) {
                                 type="button"
                                 onClick={handleSaveDevice}
                                 disabled={!selectedDevice || deviceSaving || !deviceName.trim() || !deviceLocation.trim()}
-                                className="flex-1 h-7 bg-accent text-white text-[10px] uppercase tracking-[0.1em] font-medium hover:bg-accent/80 transition-smooth disabled:opacity-50"
+                                className="flex-1 h-9 rounded-lg bg-accent text-accent-foreground text-[12px] font-medium hover:bg-accent/90 transition-smooth disabled:opacity-50"
                             >
                                 {deviceSaving ? "Saving..." : "Save Device"}
                             </button>
@@ -428,7 +428,7 @@ export default function Settings({ iot, pollingInterval, setPollingInterval }) {
                                 type="button"
                                 onClick={handleResetDevice}
                                 disabled={!selectedDevice || deviceResetting}
-                                className="flex-1 h-7 bg-danger/10 text-danger border border-danger text-[10px] uppercase tracking-[0.1em] font-medium hover:bg-danger/20 transition-smooth disabled:opacity-50"
+                                className="flex-1 h-9 rounded-lg bg-danger/10 text-danger text-[12px] font-medium hover:bg-danger/20 transition-smooth disabled:opacity-50"
                             >
                                 {deviceResetting ? "Resetting..." : "Reset Device"}
                             </button>
