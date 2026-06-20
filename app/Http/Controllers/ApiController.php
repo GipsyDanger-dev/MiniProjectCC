@@ -190,9 +190,15 @@ class ApiController extends Controller
             ]
         );
 
+        // Clean up stuck 'processing' commands (older than 10s)
+        Command::where('device_id', $deviceId)
+            ->where('status', 'processing')
+            ->where('updated_at', '<', now()->subSeconds(10))
+            ->update(['status' => 'failed']);
+
         $lastFan = Command::where('device_id', $deviceId)
             ->where('target_device', 'exhaust_fan')
-            ->where('status', 'pending')
+            ->whereIn('status', ['pending', 'processing'])
             ->orderBy('id', 'desc')
             ->first();
 
@@ -207,7 +213,7 @@ class ApiController extends Controller
 
         $lastBuzzer = Command::where('device_id', $deviceId)
             ->where('target_device', 'buzzer')
-            ->where('status', 'pending')
+            ->whereIn('status', ['pending', 'processing'])
             ->orderBy('id', 'desc')
             ->first();
 
