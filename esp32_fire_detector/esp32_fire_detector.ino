@@ -64,7 +64,7 @@ void setBuzzer(String mode) {
     buzzerMode = BUZZ_HIGH;
   } else if (mode == "MEDIUM") {
     buzzerMode = BUZZ_MEDIUM;
-  } else {
+  } else {  // "OFF", "STOP", or any unknown value
     buzzerMode = BUZZ_OFF;
     buzzerState = false;
     digitalWrite(BUZZER_PIN, LOW);
@@ -111,8 +111,8 @@ void updateBuzzer() {
 }
 
 void kirimDataSensor() {
-  int nilaiMQ2   = analogRead(MQ2_AO);
-  int nilaiApi   = analogRead(KY026_AO);
+  int nilaiMQ2   = analogRead(MQ2_AO);   // MQ-2 detects combustible gas + smoke
+  int nilaiApi   = analogRead(KY026_AO);  // KY-026 flame sensor (active-low)
 
   float suhu       = dht.readTemperature();
   float kelembaban = dht.readHumidity();
@@ -122,8 +122,8 @@ void kirimDataSensor() {
 
   StaticJsonDocument<256> doc;
   doc["type"]        = "sensor";
-  doc["gas_value"]   = nilaiMQ2;
-  doc["smoke_value"] = nilaiMQ2;
+  doc["gas_value"]   = nilaiMQ2;      // MQ-2 analog reading for gas
+  doc["smoke_value"] = nilaiMQ2;      // Same sensor — MQ-2 also detects smoke particles
   doc["temperature"] = suhu;
   doc["humidity"]    = kelembaban;
   doc["flame_value"] = nilaiApi;

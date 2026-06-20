@@ -1,0 +1,1076 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SentinelIoT — Integrasi IoT & Cloud Architecture</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #ffffff;
+    --surface: #f9fafb;
+    --surface2: #f3f4f6;
+    --border: #e5e7eb;
+    --border2: #d1d5db;
+    --ink: #111827;
+    --ink2: #374151;
+    --ink3: #6b7280;
+    --ink4: #9ca3af;
+    --accent: #b45309;
+    --accent-light: #fffbeb;
+    --accent-border: #f59e0b;
+    --accent-dark: #92400e;
+    --success: #15803d;
+    --success-light: #f0fdf4;
+    --success-border: #86efac;
+    --warning: #a16207;
+    --warning-light: #fefce8;
+    --warning-border: #facc15;
+    --danger: #dc2626;
+    --danger-light: #fef2f2;
+    --danger-border: #fca5a5;
+    --info: #1d4ed8;
+    --info-light: #eff6ff;
+    --info-border: #93c5fd;
+    --purple: #7c3aed;
+    --purple-light: #f5f3ff;
+    --purple-border: #c4b5fd;
+    --teal: #0f766e;
+    --teal-light: #f0fdfa;
+    --teal-border: #5eead4;
+    --steel: #475569;
+    --steel-light: #f8fafc;
+    --steel-border: #94a3b8;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Inter', -apple-system, system-ui, sans-serif;
+    background: var(--bg); color: var(--ink);
+    line-height: 1.6; -webkit-font-smoothing: antialiased;
+  }
+  .container { max-width: 1200px; margin: 0 auto; padding: 48px 32px; }
+
+  /* ── Header ── */
+  .header {
+    text-align: center; margin-bottom: 64px;
+    padding-bottom: 48px; border-bottom: 1px solid var(--border);
+  }
+  .header-tag {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 6px 16px; background: var(--ink); color: #fff;
+    font-size: 11px; font-weight: 600; letter-spacing: 0.8px;
+    text-transform: uppercase; border-radius: 100px; margin-bottom: 20px;
+  }
+  .header h1 {
+    font-size: 38px; font-weight: 800; letter-spacing: -0.5px;
+    margin-bottom: 12px; color: var(--ink);
+  }
+  .header h1 span { color: var(--accent); }
+  .header .subtitle {
+    font-size: 16px; color: var(--ink3); max-width: 640px; margin: 0 auto;
+    line-height: 1.7;
+  }
+
+  /* ── Stats ── */
+  .stats-row {
+    display: grid; grid-template-columns: repeat(5, 1fr);
+    gap: 16px; margin-bottom: 64px;
+  }
+  .stat-card {
+    border: 1px solid var(--border); border-radius: 10px;
+    padding: 24px 16px; text-align: center;
+    transition: box-shadow 0.2s;
+  }
+  .stat-card:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.06); }
+  .stat-value { font-size: 32px; font-weight: 800; letter-spacing: -0.5px; }
+  .stat-label { font-size: 12px; color: var(--ink3); margin-top: 4px; font-weight: 500; }
+
+  /* ── Section ── */
+  .section { margin-bottom: 64px; }
+  .section-head {
+    display: flex; align-items: center; gap: 14px; margin-bottom: 28px;
+  }
+  .section-num {
+    width: 36px; height: 36px; display: flex; align-items: center;
+    justify-content: center; background: var(--ink); color: #fff;
+    font-size: 15px; font-weight: 700; border-radius: 8px;
+    font-family: 'JetBrains Mono', monospace;
+  }
+  .section-title {
+    font-size: 24px; font-weight: 700; letter-spacing: -0.3px; color: var(--ink);
+  }
+  .section-desc {
+    font-size: 14px; color: var(--ink3); margin-top: 4px; max-width: 700px;
+  }
+
+  /* ── Architecture Diagram ── */
+  .arch-diagram {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 12px; padding: 40px; position: relative;
+  }
+  .arch-diagram::before {
+    content: ''; position: absolute; top: 0; left: 0; right: 0;
+    height: 3px; background: linear-gradient(90deg, var(--accent), var(--info), var(--teal));
+    border-radius: 12px 12px 0 0;
+  }
+  .arch-layer { margin-bottom: 24px; }
+  .arch-layer-label {
+    font-size: 10px; font-weight: 600; color: var(--ink4);
+    text-transform: uppercase; letter-spacing: 1.2px;
+    margin-bottom: 12px; padding-left: 4px;
+  }
+  .arch-row {
+    display: flex; align-items: center; justify-content: center;
+    gap: 12px; flex-wrap: wrap;
+  }
+  .arch-box {
+    padding: 14px 20px; border-radius: 8px; text-align: center;
+    min-width: 130px; border: 1.5px solid; background: #fff;
+    transition: box-shadow 0.2s;
+  }
+  .arch-box:hover { box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+  .arch-box .label {
+    font-size: 13px; font-weight: 600; margin-bottom: 2px;
+    font-family: 'JetBrains Mono', monospace;
+  }
+  .arch-box .sub { font-size: 11px; color: var(--ink3); }
+  .arch-box.hw { border-color: var(--accent-border); background: var(--accent-light); }
+  .arch-box.hw .label { color: var(--accent-dark); }
+  .arch-box.bridge { border-color: var(--warning-border); background: var(--warning-light); }
+  .arch-box.bridge .label { color: var(--warning); }
+  .arch-box.api { border-color: var(--info-border); background: var(--info-light); }
+  .arch-box.api .label { color: var(--info); }
+  .arch-box.db { border-color: var(--success-border); background: var(--success-light); }
+  .arch-box.db .label { color: var(--success); }
+  .arch-box.ws { border-color: var(--purple-border); background: var(--purple-light); }
+  .arch-box.ws .label { color: var(--purple); }
+  .arch-box.fe { border-color: var(--teal-border); background: var(--teal-light); }
+  .arch-box.fe .label { color: var(--teal); }
+
+  .arch-arrow-row {
+    display: flex; align-items: center; justify-content: center;
+    gap: 8px; margin: 12px 0; color: var(--ink3);
+  }
+  .arch-arrow-row .line { width: 50px; height: 1.5px; background: var(--border2); }
+  .arch-arrow-row .protocol {
+    font-size: 11px; font-weight: 600; padding: 4px 12px;
+    background: #fff; border: 1px solid var(--border);
+    border-radius: 6px; white-space: nowrap; color: var(--ink2);
+  }
+  .arch-arrow-row svg { width: 14px; height: 14px; color: var(--border2); }
+
+  /* ── Protocol Cards ── */
+  .protocol-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+  .protocol-card {
+    border: 1px solid var(--border); border-radius: 12px;
+    overflow: hidden; transition: box-shadow 0.2s;
+  }
+  .protocol-card:hover { box-shadow: 0 4px 16px rgba(0,0,0,0.06); }
+  .protocol-card-head {
+    padding: 16px 20px; display: flex; align-items: center; gap: 12px;
+    border-bottom: 1px solid var(--border);
+  }
+  .protocol-icon {
+    width: 40px; height: 40px; display: flex; align-items: center;
+    justify-content: center; border-radius: 8px; font-size: 13px;
+    font-weight: 700; font-family: 'JetBrains Mono', monospace;
+  }
+  .protocol-card-head h3 { font-size: 15px; font-weight: 700; }
+  .protocol-card-head .badge {
+    font-size: 10px; font-weight: 600; padding: 3px 10px;
+    border-radius: 100px; margin-left: auto; letter-spacing: 0.3px;
+  }
+  .protocol-card-body { padding: 16px 20px; }
+  .protocol-card-body p { font-size: 13px; color: var(--ink2); margin-bottom: 12px; line-height: 1.6; }
+  .protocol-card-body .use-case {
+    font-size: 12px; color: var(--ink3); padding: 10px 14px;
+    background: var(--surface); border-radius: 6px;
+    border-left: 3px solid var(--border2); line-height: 1.5;
+  }
+  .use-case strong { color: var(--ink2); }
+
+  /* ── Data Flow ── */
+  .flow-container { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  .flow-card { border: 1px solid var(--border); border-radius: 12px; overflow: hidden; }
+  .flow-card-head {
+    padding: 14px 20px; font-size: 14px; font-weight: 700;
+    display: flex; align-items: center; gap: 10px;
+    border-bottom: 1px solid var(--border);
+  }
+  .flow-card-head .flow-icon {
+    width: 24px; height: 24px; display: flex; align-items: center;
+    justify-content: center; border-radius: 5px; font-size: 12px;
+    font-weight: 700; font-family: 'JetBrains Mono', monospace;
+  }
+  .flow-steps { padding: 16px 20px; }
+  .flow-step {
+    display: flex; gap: 14px; padding: 12px 0;
+    border-bottom: 1px solid var(--surface2);
+  }
+  .flow-step:last-child { border-bottom: none; }
+  .flow-step-num {
+    width: 26px; height: 26px; display: flex; align-items: center;
+    justify-content: center; background: var(--ink); color: #fff;
+    font-size: 11px; font-weight: 700; border-radius: 6px; flex-shrink: 0;
+    font-family: 'JetBrains Mono', monospace;
+  }
+  .flow-step-content { flex: 1; }
+  .flow-step-title { font-size: 13px; font-weight: 600; margin-bottom: 3px; }
+  .flow-step-desc { font-size: 12px; color: var(--ink3); line-height: 1.5; }
+  .flow-step-code {
+    font-family: 'JetBrains Mono', monospace; font-size: 11px;
+    color: var(--info); background: var(--info-light);
+    padding: 3px 8px; border-radius: 4px; display: inline-block;
+    margin-top: 6px;
+  }
+
+  /* ── API Table ── */
+  .api-table-wrap { border: 1px solid var(--border); border-radius: 12px; overflow: hidden; }
+  .api-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .api-table thead { background: var(--surface); }
+  .api-table th {
+    padding: 12px 16px; text-align: left; font-weight: 600;
+    font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px;
+    color: var(--ink3); border-bottom: 1px solid var(--border);
+  }
+  .api-table td {
+    padding: 10px 16px; border-bottom: 1px solid var(--surface2);
+    vertical-align: top;
+  }
+  .api-table tr:last-child td { border-bottom: none; }
+  .api-table .method {
+    display: inline-block; padding: 3px 10px; border-radius: 4px;
+    font-size: 11px; font-weight: 700;
+    font-family: 'JetBrains Mono', monospace;
+  }
+  .method.get { background: var(--info-light); color: var(--info); }
+  .method.post { background: var(--success-light); color: var(--success); }
+  .method.put { background: var(--warning-light); color: var(--warning); }
+  .api-table .endpoint {
+    font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--ink);
+  }
+  .api-table .desc { color: var(--ink2); line-height: 1.5; }
+  .api-table .auth-badge {
+    display: inline-block; padding: 2px 8px; border-radius: 4px;
+    font-size: 10px; font-weight: 600;
+  }
+  .auth-badge.session { background: var(--purple-light); color: var(--purple); }
+  .auth-badge.apikey { background: var(--accent-light); color: var(--accent); }
+  .auth-badge.public { background: var(--success-light); color: var(--success); }
+  .table-group {
+    background: var(--surface); font-weight: 600; font-size: 11px;
+    text-transform: uppercase; color: var(--ink3); letter-spacing: 0.5px;
+  }
+
+  /* ── Sync Grid ── */
+  .sync-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+  .sync-card {
+    border: 1px solid var(--border); border-radius: 12px;
+    padding: 24px; text-align: center; transition: box-shadow 0.2s;
+  }
+  .sync-card:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.06); }
+  .sync-icon {
+    width: 52px; height: 52px; margin: 0 auto 14px;
+    display: flex; align-items: center; justify-content: center;
+    border-radius: 12px; font-size: 13px; font-weight: 700;
+    font-family: 'JetBrains Mono', monospace;
+  }
+  .sync-card h4 { font-size: 15px; font-weight: 700; margin-bottom: 8px; }
+  .sync-card p { font-size: 12px; color: var(--ink3); line-height: 1.6; }
+  .sync-card .tech {
+    margin-top: 12px; display: flex; gap: 6px;
+    justify-content: center; flex-wrap: wrap;
+  }
+  .sync-card .tech span {
+    font-size: 10px; font-weight: 600; padding: 3px 10px;
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 4px; color: var(--ink2);
+  }
+
+  /* ── JSON Block ── */
+  .json-block {
+    background: #1e1e2e; border-radius: 10px; padding: 20px;
+    overflow-x: auto; position: relative;
+  }
+  .json-block::before {
+    content: attr(data-label); position: absolute;
+    top: 10px; right: 14px; font-size: 10px; font-weight: 600;
+    color: #6c7086; text-transform: uppercase; letter-spacing: 0.5px;
+  }
+  .json-block pre {
+    font-family: 'JetBrains Mono', monospace; font-size: 12px;
+    line-height: 1.7; color: #cdd6f4;
+  }
+  .json-block .key { color: #89b4fa; }
+  .json-block .str { color: #a6e3a1; }
+  .json-block .num { color: #fab387; }
+  .json-block .comment { color: #6c7086; }
+
+  /* ── Capability Cards ── */
+  .cap-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
+  .cap-card {
+    border: 1px solid var(--border); border-radius: 12px;
+    padding: 24px; transition: box-shadow 0.2s;
+  }
+  .cap-card:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.06); }
+  .cap-head { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
+  .cap-icon {
+    width: 40px; height: 40px; display: flex; align-items: center;
+    justify-content: center; border-radius: 8px; font-size: 13px;
+    font-weight: 700; font-family: 'JetBrains Mono', monospace;
+  }
+  .cap-head h4 { font-size: 15px; font-weight: 700; }
+  .cap-body { font-size: 13px; color: var(--ink2); line-height: 1.6; }
+  .cap-body ul { padding-left: 18px; margin-top: 8px; }
+  .cap-body li { margin-bottom: 4px; font-size: 12px; color: var(--ink3); }
+  .cap-body li strong { color: var(--ink2); }
+
+  /* ── Footer ── */
+  .footer {
+    margin-top: 72px; padding-top: 24px;
+    border-top: 1px solid var(--border); text-align: center;
+    color: var(--ink3); font-size: 12px;
+  }
+  .footer strong { color: var(--ink2); }
+
+  @media print {
+    .container { padding: 20px; }
+    .section { break-inside: avoid; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+    <!-- Header -->
+    <div class="header">
+        <div class="header-tag">System Architecture Document</div>
+        <h1>Sentinel<span>IoT</span> — Integrasi IoT &amp; Cloud</h1>
+        <p class="subtitle">Arsitektur integrasi REST API, WebSocket, dan Serial Bridge untuk sistem monitoring keselamatan industri real-time berbasis ESP32 dengan dukungan multi-client dan akses remote</p>
+    </div>
+
+    <!-- Stats -->
+    <div class="stats-row">
+        <div class="stat-card">
+            <div class="stat-value" style="color:var(--info)">18</div>
+            <div class="stat-label">API Endpoints</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value" style="color:var(--purple)">3</div>
+            <div class="stat-label">Protokol Komunikasi</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value" style="color:var(--success)">8</div>
+            <div class="stat-label">Database Tables</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value" style="color:var(--accent)">27</div>
+            <div class="stat-label">Fuzzy Rules (Sugeno)</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value" style="color:var(--teal)">N</div>
+            <div class="stat-label">Multi-Device Support</div>
+        </div>
+    </div>
+
+    <!-- 1. Architecture -->
+    <div class="section">
+        <div class="section-head">
+            <div class="section-num">1</div>
+            <div>
+                <div class="section-title">Arsitektur Sistem End-to-End</div>
+                <div class="section-desc">Alur data dari sensor fisik di lapangan hingga dashboard monitoring di browser — setiap layer berkomunikasi secara terstandarisasi</div>
+            </div>
+        </div>
+        <div class="arch-diagram">
+            <div class="arch-layer">
+                <div class="arch-layer-label">Hardware Layer — Sensor & Aktuator</div>
+                <div class="arch-row">
+                    <div class="arch-box hw"><div class="label">MQ-2</div><div class="sub">Gas & Smoke ADC</div></div>
+                    <div class="arch-box hw"><div class="label">DHT22</div><div class="sub">Suhu & Kelembapan</div></div>
+                    <div class="arch-box hw"><div class="label">KY-026</div><div class="sub">Deteksi Api</div></div>
+                    <div class="arch-box hw"><div class="label">ESP32</div><div class="sub">MCU — GPIO 27/32/34</div></div>
+                    <div class="arch-box hw"><div class="label">L298N + Fan</div><div class="sub">PWM Motor Driver</div></div>
+                    <div class="arch-box hw"><div class="label">Buzzer</div><div class="sub">GPIO 26 — Alarm</div></div>
+                </div>
+            </div>
+
+            <div class="arch-arrow-row">
+                <div class="line"></div>
+                <div class="protocol">USB Serial @ 115200 baud — JSON setiap 3 detik</div>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12l7 7 7-7"/></svg>
+                <div class="line"></div>
+            </div>
+
+            <div class="arch-layer">
+                <div class="arch-layer-label">Bridge Layer — Python Worker</div>
+                <div class="arch-row">
+                    <div class="arch-box bridge"><div class="label">Serial Bridge</div><div class="sub">serial_bridge.py</div></div>
+                    <div class="arch-box bridge"><div class="label">Command Worker</div><div class="sub">worker.py — Poll & Execute</div></div>
+                    <div class="arch-box bridge"><div class="label">Heartbeat</div><div class="sub">Status reporting setiap 10s</div></div>
+                </div>
+            </div>
+
+            <div class="arch-arrow-row">
+                <div class="line"></div>
+                <div class="protocol">REST API — HTTP POST/GET (JSON) + API Key Auth</div>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12l7 7 7-7"/></svg>
+                <div class="line"></div>
+            </div>
+
+            <div class="arch-layer">
+                <div class="arch-layer-label">Backend Layer — Laravel API + Database</div>
+                <div class="arch-row">
+                    <div class="arch-box api"><div class="label">Laravel 13</div><div class="sub">PHP 8.3 — REST API</div></div>
+                    <div class="arch-box api"><div class="label">Fuzzy Engine</div><div class="sub">Sugeno — 27 Rules</div></div>
+                    <div class="arch-box db"><div class="label">MySQL</div><div class="sub">8 Tables — sentinel DB</div></div>
+                    <div class="arch-box ws"><div class="label">Pusher</div><div class="sub">WebSocket Broadcast</div></div>
+                </div>
+            </div>
+
+            <div class="arch-arrow-row">
+                <div class="line"></div>
+                <div class="protocol">WebSocket (Pusher) + REST Polling setiap 3 detik — Multi-Client</div>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12l7 7 7-7"/></svg>
+                <div class="line"></div>
+            </div>
+
+            <div class="arch-layer">
+                <div class="arch-layer-label">Frontend Layer — Dashboard Monitoring</div>
+                <div class="arch-row">
+                    <div class="arch-box fe"><div class="label">React 19</div><div class="sub">SPA — Akses Remote</div></div>
+                    <div class="arch-box fe"><div class="label">Three.js</div><div class="sub">Visualisasi 3D Ruangan</div></div>
+                    <div class="arch-box fe"><div class="label">Recharts</div><div class="sub">Grafik Trend Sensor</div></div>
+                    <div class="arch-box fe"><div class="label">Polling Hook</div><div class="sub">useRealtimeIoT()</div></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 2. Protocols -->
+    <div class="section">
+        <div class="section-head">
+            <div class="section-num">2</div>
+            <div>
+                <div class="section-title">Protokol Komunikasi</div>
+                <div class="section-desc">Tiga protokol yang digunakan untuk menghubungkan setiap layer dalam sistem</div>
+            </div>
+        </div>
+        <div class="protocol-grid">
+            <div class="protocol-card">
+                <div class="protocol-card-head">
+                    <div class="protocol-icon" style="background:var(--info-light);color:var(--info)">REST</div>
+                    <h3>REST API</h3>
+                    <span class="badge" style="background:var(--info-light);color:var(--info)">PRIMARY</span>
+                </div>
+                <div class="protocol-card-body">
+                    <p>Komunikasi utama antara seluruh layer. Menggunakan JSON payload dengan autentikasi session cookie untuk dashboard dan API key untuk perangkat IoT.</p>
+                    <div class="use-case">
+                        <strong>Digunakan untuk:</strong> Data ingestion, actuator control, dashboard data, device management, konfigurasi threshold, autentikasi user
+                    </div>
+                </div>
+            </div>
+            <div class="protocol-card">
+                <div class="protocol-card-head">
+                    <div class="protocol-icon" style="background:var(--purple-light);color:var(--purple)">WS</div>
+                    <h3>WebSocket</h3>
+                    <span class="badge" style="background:var(--purple-light);color:var(--purple)">REAL-TIME</span>
+                </div>
+                <div class="protocol-card-body">
+                    <p>Pusher WebSocket untuk broadcast event sensor ke semua client yang terkoneksi. Memungkinkan update real-time tanpa menunggu polling interval.</p>
+                    <div class="use-case">
+                        <strong>Digunakan untuk:</strong> SensorDataReceived event dari Laravel ke React dashboard via Laravel Echo — update instan di semua client
+                    </div>
+                </div>
+            </div>
+            <div class="protocol-card">
+                <div class="protocol-card-head">
+                    <div class="protocol-icon" style="background:var(--accent-light);color:var(--accent)">SER</div>
+                    <h3>USB Serial</h3>
+                    <span class="badge" style="background:var(--accent-light);color:var(--accent)">HARDWARE</span>
+                </div>
+                <div class="protocol-card-body">
+                    <p>Komunikasi antara ESP32 dan Python Serial Bridge via USB. JSON payload setiap 3 detik untuk data sensor, dan command response untuk aktuator.</p>
+                    <div class="use-case">
+                        <strong>Digunakan untuk:</strong> Sensor reading dari ESP32 ke Serial Bridge, Command dari Bridge ke ESP32, ACK response setelah eksekusi
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 3. Data Flow -->
+    <div class="section">
+        <div class="section-head">
+            <div class="section-num">3</div>
+            <div>
+                <div class="section-title">Alur Pertukaran Data</div>
+                <div class="section-desc">Dua alur utama: upstream (sensor ke dashboard) dan downstream (dashboard ke hardware)</div>
+            </div>
+        </div>
+        <div class="flow-container">
+            <div class="flow-card">
+                <div class="flow-card-head" style="background:var(--success-light);color:var(--success)">
+                    <div class="flow-icon" style="background:var(--success);color:#fff">U</div>
+                    Sensor ke Dashboard (Upstream)
+                </div>
+                <div class="flow-steps">
+                    <div class="flow-step">
+                        <div class="flow-step-num">1</div>
+                        <div class="flow-step-content">
+                            <div class="flow-step-title">ESP32 Membaca Sensor</div>
+                            <div class="flow-step-desc">MQ-2, DHT22, KY-026 dibaca setiap loop, dikirim sebagai JSON via Serial USB</div>
+                            <div class="flow-step-code">{"gas_value":350,"temperature":28.5,"flame_value":800}</div>
+                        </div>
+                    </div>
+                    <div class="flow-step">
+                        <div class="flow-step-num">2</div>
+                        <div class="flow-step-content">
+                            <div class="flow-step-title">Serial Bridge ke API</div>
+                            <div class="flow-step-desc">Python serial_bridge.py menerima JSON, forward ke Laravel via HTTP POST dengan API key</div>
+                            <div class="flow-step-code">POST /api/ingest — Header: x-api-key</div>
+                        </div>
+                    </div>
+                    <div class="flow-step">
+                        <div class="flow-step-num">3</div>
+                        <div class="flow-step-content">
+                            <div class="flow-step-title">Fuzzy Logic Engine</div>
+                            <div class="flow-step-desc">27 Sugeno rules difuzzifikasi: triangular membership, weighted average, menghasilkan skor 0-100</div>
+                            <div class="flow-step-code">score=59.3 -> MEDIUM -> fan=60% buzzer=OFF</div>
+                        </div>
+                    </div>
+                    <div class="flow-step">
+                        <div class="flow-step-num">4</div>
+                        <div class="flow-step-content">
+                            <div class="flow-step-title">Simpan dan Broadcast</div>
+                            <div class="flow-step-desc">Data disimpan ke MySQL, activity log dicatat, event di-broadcast via Pusher ke semua client</div>
+                            <div class="flow-step-code">SensorDataReceived -> Laravel Echo -> React setState</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="flow-card">
+                <div class="flow-card-head" style="background:var(--info-light);color:var(--info)">
+                    <div class="flow-icon" style="background:var(--info);color:#fff">D</div>
+                    Dashboard ke Hardware (Downstream)
+                </div>
+                <div class="flow-steps">
+                    <div class="flow-step">
+                        <div class="flow-step-num">1</div>
+                        <div class="flow-step-content">
+                            <div class="flow-step-title">User Mengklik Aksi</div>
+                            <div class="flow-step-desc">Admin menekan tombol di dashboard React: Aktifkan Fan, Stop Buzzer, atau Emergency</div>
+                            <div class="flow-step-code">POST /api/actuator {"target":"exhaust_fan","action":"START"}</div>
+                        </div>
+                    </div>
+                    <div class="flow-step">
+                        <div class="flow-step-num">2</div>
+                        <div class="flow-step-content">
+                            <div class="flow-step-title">Command Queue</div>
+                            <div class="flow-step-desc">Laravel menyimpan command ke tabel commands (status: pending) dan mengaktifkan mode manual</div>
+                            <div class="flow-step-code">Command::create — status: pending, mode: manual</div>
+                        </div>
+                    </div>
+                    <div class="flow-step">
+                        <div class="flow-step-num">3</div>
+                        <div class="flow-step-content">
+                            <div class="flow-step-title">Bridge Polling</div>
+                            <div class="flow-step-desc">Python worker poll GET /api/command/get setiap 2 detik, mengambil command dengan atomic lock</div>
+                            <div class="flow-step-code">GET /api/command/get -> lockForUpdate -> processing</div>
+                        </div>
+                    </div>
+                    <div class="flow-step">
+                        <div class="flow-step-num">4</div>
+                        <div class="flow-step-content">
+                            <div class="flow-step-title">ESP32 Mengeksekusi</div>
+                            <div class="flow-step-desc">ESP32 menerima command via Serial, mengatur PWM fan atau GPIO buzzer, mengirim ACK</div>
+                            <div class="flow-step-code">{"type":"ack","id":42,"status":"completed"}</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 4. API Endpoints -->
+    <div class="section">
+        <div class="section-head">
+            <div class="section-num">4</div>
+            <div>
+                <div class="section-title">Dokumentasi API Endpoints</div>
+                <div class="section-desc">18 endpoint yang terbagi dalam 4 kategori berdasarkan autentikasi dan fungsinya</div>
+            </div>
+        </div>
+        <div class="api-table-wrap">
+            <table class="api-table">
+                <thead>
+                    <tr><th>Method</th><th>Endpoint</th><th>Deskripsi</th><th>Autentikasi</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td colspan="4" class="table-group">IoT Device Routes — API Key Authentication</td></tr>
+                    <tr>
+                        <td><span class="method post">POST</span></td>
+                        <td class="endpoint">/api/ingest</td>
+                        <td class="desc">Terima data sensor dari ESP32, jalankan fuzzy logic, simpan ke database, dan broadcast</td>
+                        <td><span class="auth-badge apikey">API Key</span></td>
+                    </tr>
+                    <tr>
+                        <td><span class="method get">GET</span></td>
+                        <td class="endpoint">/api/command/get</td>
+                        <td class="desc">Polling command pending untuk ESP32 dengan atomic lock (SELECT ... FOR UPDATE)</td>
+                        <td><span class="auth-badge apikey">API Key</span></td>
+                    </tr>
+                    <tr>
+                        <td><span class="method post">POST</span></td>
+                        <td class="endpoint">/api/status/update</td>
+                        <td class="desc">Update status command setelah ESP32 selesai eksekusi (completed / failed)</td>
+                        <td><span class="auth-badge apikey">API Key</span></td>
+                    </tr>
+                    <tr>
+                        <td><span class="method post">POST</span></td>
+                        <td class="endpoint">/api/worker/heartbeat</td>
+                        <td class="desc">Worker health check heartbeat setiap 10-30 detik untuk monitoring status</td>
+                        <td><span class="auth-badge apikey">API Key</span></td>
+                    </tr>
+
+                    <tr><td colspan="4" class="table-group">Dashboard Routes — Session Authentication</td></tr>
+                    <tr>
+                        <td><span class="method get">GET</span></td>
+                        <td class="endpoint">/api/dashboard/data</td>
+                        <td class="desc">Semua data dashboard: sensor terbaru, logs, worker status, actuator state, settings</td>
+                        <td><span class="auth-badge public">Public</span></td>
+                    </tr>
+                    <tr>
+                        <td><span class="method post">POST</span></td>
+                        <td class="endpoint">/api/actuator</td>
+                        <td class="desc">Kontrol manual fan/buzzer, otomatis switch ke mode manual</td>
+                        <td><span class="auth-badge session">Session</span></td>
+                    </tr>
+                    <tr>
+                        <td><span class="method post">POST</span></td>
+                        <td class="endpoint">/api/settings</td>
+                        <td class="desc">Update threshold gas, smoke, temperature, flame, humidity</td>
+                        <td><span class="auth-badge session">Session</span></td>
+                    </tr>
+                    <tr>
+                        <td><span class="method post">POST</span></td>
+                        <td class="endpoint">/api/emergency</td>
+                        <td class="desc">Toggle emergency mode: semua aktuator ke maksimal atau matikan</td>
+                        <td><span class="auth-badge session">Session</span></td>
+                    </tr>
+
+                    <tr><td colspan="4" class="table-group">Device Management</td></tr>
+                    <tr>
+                        <td><span class="method get">GET</span></td>
+                        <td class="endpoint">/api/devices</td>
+                        <td class="desc">List semua perangkat yang terdaftar beserta status dan API key</td>
+                        <td><span class="auth-badge public">Public</span></td>
+                    </tr>
+                    <tr>
+                        <td><span class="method post">POST</span></td>
+                        <td class="endpoint">/api/devices</td>
+                        <td class="desc">Registrasi perangkat baru dengan nama, lokasi, dan API key unik</td>
+                        <td><span class="auth-badge session">Session</span></td>
+                    </tr>
+                    <tr>
+                        <td><span class="method put">PUT</span></td>
+                        <td class="endpoint">/api/devices/{id}</td>
+                        <td class="desc">Update informasi perangkat (nama, lokasi)</td>
+                        <td><span class="auth-badge session">Session</span></td>
+                    </tr>
+                    <tr>
+                        <td><span class="method post">POST</span></td>
+                        <td class="endpoint">/api/devices/{id}/reset</td>
+                        <td class="desc">Reset perangkat: hapus semua data sensor, command, dan state aktuator</td>
+                        <td><span class="auth-badge session">Session</span></td>
+                    </tr>
+
+                    <tr><td colspan="4" class="table-group">Authentication Routes</td></tr>
+                    <tr>
+                        <td><span class="method post">POST</span></td>
+                        <td class="endpoint">/api/login</td>
+                        <td class="desc">Autentikasi admin, buat session, redirect ke dashboard</td>
+                        <td><span class="auth-badge public">Public</span></td>
+                    </tr>
+                    <tr>
+                        <td><span class="method post">POST</span></td>
+                        <td class="endpoint">/api/logout</td>
+                        <td class="desc">Hapus session dan invalidate token</td>
+                        <td><span class="auth-badge session">Session</span></td>
+                    </tr>
+                    <tr>
+                        <td><span class="method get">GET</span></td>
+                        <td class="endpoint">/api/user</td>
+                        <td class="desc">Ambil informasi user yang sedang terautentikasi</td>
+                        <td><span class="auth-badge session">Session</span></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- 5. Remote Access & Multi-Client -->
+    <div class="section">
+        <div class="section-head">
+            <div class="section-num">5</div>
+            <div>
+                <div class="section-title">Akses Remote &amp; Multi-Client</div>
+                <div class="section-desc">Kemampuan sistem dalam melayani banyak client dan perangkat secara bersamaan</div>
+            </div>
+        </div>
+        <div class="cap-grid">
+            <div class="cap-card">
+                <div class="cap-head">
+                    <div class="cap-icon" style="background:var(--info-light);color:var(--info)">RC</div>
+                    <h4>Akses Remote</h4>
+                </div>
+                <div class="cap-body">
+                    Dashboard dapat diakses dari mana saja melalui browser. Tidak perlu berada di jaringan lokal yang sama dengan ESP32.
+                    <ul>
+                        <li><strong>Session-based auth</strong> — cukup login sekali, session aktif di browser</li>
+                        <li><strong>Responsive UI</strong> — desktop dan mobile didukung</li>
+                        <li><strong>Real-time updates</strong> — data sensor terbaru tanpa refresh manual</li>
+                        <li><strong>HTTPS ready</strong> — deploy di VPS dengan SSL untuk akses aman</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="cap-card">
+                <div class="cap-head">
+                    <div class="cap-icon" style="background:var(--purple-light);color:var(--purple)">MC</div>
+                    <h4>Multi-Client</h4>
+                </div>
+                <div class="cap-body">
+                    Banyak admin dapat login dan memantau dashboard secara bersamaan tanpa konflik.
+                    <ul>
+                        <li><strong>Stateless API</strong> — setiap request independen, tidak terikat session tunggal</li>
+                        <li><strong>WebSocket broadcast</strong> — semua client menerima update yang sama</li>
+                        <li><strong>Shared database</strong> — single source of truth di MySQL</li>
+                        <li><strong>Configurable polling</strong> — setiap client bisa set interval berbeda</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="cap-card">
+                <div class="cap-head">
+                    <div class="cap-icon" style="background:var(--accent-light);color:var(--accent)">MD</div>
+                    <h4>Multi-Device</h4>
+                </div>
+                <div class="cap-body">
+                    Sistem mendukung registrasi beberapa ESP32 di lokasi berbeda, masing-masing dengan API key unik.
+                    <ul>
+                        <li><strong>Device registry</strong> — CRUD perangkat via API atau dashboard</li>
+                        <li><strong>Per-device isolation</strong> — data sensor, command, dan log terpisah per device_id</li>
+                        <li><strong>Room selection</strong> — dashboard bisa switch antar device/lokasi</li>
+                        <li><strong>API key per device</strong> — autentikasi terisolasi, revoke tanpa ganggu device lain</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="cap-card">
+                <div class="cap-head">
+                    <div class="cap-icon" style="background:var(--success-light);color:var(--success)">BT</div>
+                    <h4>Backend Reliability</h4>
+                </div>
+                <div class="cap-body">
+                    Backend Laravel dirancang untuk operasi 24/7 dengan penanganan error dan data integrity.
+                    <ul>
+                        <li><strong>Atomic commands</strong> — SELECT ... FOR UPDATE mencegah race condition</li>
+                        <li><strong>Transaction safety</strong> — sensor data dan log disimpan dalam satu transaksi</li>
+                        <li><strong>Auto-recovery</strong> — mode manual auto-switch ke auto setelah 30s inaktivitas</li>
+                        <li><strong>Worker heartbeat</strong> — monitoring status ESP32, deteksi offline otomatis</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 6. Sync Mechanism -->
+    <div class="section">
+        <div class="section-head">
+            <div class="section-num">6</div>
+            <div>
+                <div class="section-title">Mekanisme Sinkronisasi</div>
+                <div class="section-desc">Tiga mekanisme yang memastikan konsistensi data antar semua komponen sistem</div>
+            </div>
+        </div>
+        <div class="sync-grid">
+            <div class="sync-card">
+                <div class="sync-icon" style="background:var(--info-light);color:var(--info)">PL</div>
+                <h4>REST Polling</h4>
+                <p>Dashboard poll /api/dashboard/data setiap 3 detik (configurable 1-10s) untuk mendapatkan data terbaru dari server</p>
+                <div class="tech">
+                    <span>useRealtimeIoT</span>
+                    <span>setInterval</span>
+                    <span>3000ms default</span>
+                </div>
+            </div>
+            <div class="sync-card">
+                <div class="sync-icon" style="background:var(--purple-light);color:var(--purple)">WS</div>
+                <h4>WebSocket Push</h4>
+                <p>Pusher broadcast SensorDataReceived event ke semua client yang subscribe channel — update instan tanpa menunggu polling</p>
+                <div class="tech">
+                    <span>Pusher</span>
+                    <span>Laravel Echo</span>
+                    <span>Broadcast::toOthers</span>
+                </div>
+            </div>
+            <div class="sync-card">
+                <div class="sync-icon" style="background:var(--success-light);color:var(--success)">DB</div>
+                <h4>Database as Source of Truth</h4>
+                <p>MySQL database adalah single source of truth — semua komponen (ESP32 worker, dashboard, backend) membaca dan menulis ke database yang sama</p>
+                <div class="tech">
+                    <span>MySQL 8</span>
+                    <span>sentinel DB</span>
+                    <span>8 tables</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 7. JSON Payloads -->
+    <div class="section">
+        <div class="section-head">
+            <div class="section-num">7</div>
+            <div>
+                <div class="section-title">Contoh Payload JSON</div>
+                <div class="section-desc">Format data yang dipertukarkan antar setiap layer dalam sistem</div>
+            </div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+            <div>
+                <h4 style="font-size:13px;font-weight:600;margin-bottom:10px;color:var(--ink2)">Sensor Ingest Request</h4>
+                <div class="json-block" data-label="POST /api/ingest">
+<pre>{
+  <span class="key">"device_id"</span>: <span class="num">1</span>,
+  <span class="key">"gas_value"</span>: <span class="num">350</span>,
+  <span class="key">"smoke_value"</span>: <span class="num">50</span>,
+  <span class="key">"temperature"</span>: <span class="num">28.5</span>,
+  <span class="key">"humidity"</span>: <span class="num">65</span>,
+  <span class="key">"flame_value"</span>: <span class="num">800</span>
+}</pre>
+                </div>
+            </div>
+            <div>
+                <h4 style="font-size:13px;font-weight:600;margin-bottom:10px;color:var(--ink2)">Fuzzy Decision Response</h4>
+                <div class="json-block" data-label="Response 201">
+<pre>{
+  <span class="key">"status"</span>: <span class="str">"success"</span>,
+  <span class="key">"decision"</span>: {
+    <span class="key">"score"</span>: <span class="num">59.3</span>,
+    <span class="key">"fan_status"</span>: <span class="str">"MEDIUM"</span>,
+    <span class="key">"fan_speed"</span>: <span class="num">60</span>,
+    <span class="key">"buzzer_action"</span>: <span class="str">"STOP"</span>,
+    <span class="key">"profile"</span>: <span class="str">"MEDIUM"</span>,
+    <span class="key">"rules"</span>: [[<span class="str">"MEDIUM"</span>,<span class="num">0.6</span>,<span class="num">60</span>]]
+  }
+}</pre>
+                </div>
+            </div>
+            <div>
+                <h4 style="font-size:13px;font-weight:600;margin-bottom:10px;color:var(--ink2)">Actuator Command</h4>
+                <div class="json-block" data-label="POST /api/actuator">
+<pre>{
+  <span class="key">"target_device"</span>: <span class="str">"exhaust_fan"</span>,
+  <span class="key">"action"</span>: <span class="str">"START"</span>,
+  <span class="key">"device_id"</span>: <span class="num">1</span>
+}</pre>
+                </div>
+            </div>
+            <div>
+                <h4 style="font-size:13px;font-weight:600;margin-bottom:10px;color:var(--ink2)">ESP32 Serial Command &amp; ACK</h4>
+                <div class="json-block" data-label="Serial JSON">
+<pre><span class="comment">// Command ke ESP32:</span>
+{
+  <span class="key">"target"</span>: <span class="str">"exhaust_fan"</span>,
+  <span class="key">"action"</span>: <span class="str">"HIGH"</span>,
+  <span class="key">"id"</span>: <span class="num">42</span>
+}
+<span class="comment">// ACK response dari ESP32:</span>
+{
+  <span class="key">"type"</span>: <span class="str">"ack"</span>,
+  <span class="key">"id"</span>: <span class="num">42</span>,
+  <span class="key">"status"</span>: <span class="str">"completed"</span>
+}</pre>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 7. Security -->
+    <div class="section">
+        <div class="section-head">
+            <div class="section-num">7</div>
+            <div>
+                <div class="section-title">Keamanan Sistem</div>
+                <div class="section-desc">Evaluasi lapisan keamanan yang sudah ada dan area yang perlu diperkuat</div>
+            </div>
+        </div>
+
+        <!-- Security Status Banner -->
+        <div style="background:var(--warning-light);border:1px solid var(--warning);border-radius:10px;padding:16px 20px;margin-bottom:20px;display:flex;align-items:center;gap:12px;">
+            <div style="width:40px;height:40px;display:flex;align-items:center;justify-content:center;background:var(--warning);color:#fff;border-radius:8px;font-size:18px;font-weight:700;flex-shrink:0;">!</div>
+            <div>
+                <div style="font-size:14px;font-weight:700;color:var(--warning);margin-bottom:2px;">Status: Cukup, Tetapi Bisa Diperkuat</div>
+                <div style="font-size:13px;color:var(--ink2);">Mekanisme dasar sudah berjalan (API Key, Session Auth, Middleware), namun validasi input dan hak akses granular belum diimplementasikan secara rinci.</div>
+            </div>
+        </div>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+            <!-- What exists -->
+            <div style="border:1px solid var(--border);border-radius:12px;overflow:hidden;">
+                <div style="padding:14px 20px;background:var(--success-light);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px;">
+                    <div style="width:24px;height:24px;display:flex;align-items:center;justify-content:center;background:var(--success);color:#fff;border-radius:6px;font-size:12px;font-weight:700;flex-shrink:0;">&#10003;</div>
+                    <div style="font-size:14px;font-weight:700;color:var(--success);">Sudah Diimplementasi</div>
+                </div>
+                <div style="padding:16px 20px;">
+                    <div style="margin-bottom:14px;">
+                        <div style="font-size:13px;font-weight:600;margin-bottom:4px;">API Key Authentication</div>
+                        <div style="font-size:12px;color:var(--ink3);margin-bottom:6px;">Setiap device ESP32 punya API key unik. Request tanpa key yang valid ditolak 401.</div>
+                        <div style="font-family:'JetBrains Mono',monospace;font-size:11px;background:var(--surface);padding:8px 12px;border-radius:6px;border-left:3px solid var(--success);">
+                            Header: x-api-key: key-warehouse-001<br>
+                            Check: DB::table('devices')->where('api_key', $key)->exists()
+                        </div>
+                    </div>
+                    <div style="margin-bottom:14px;">
+                        <div style="font-size:13px;font-weight:600;margin-bottom:4px;">Session Authentication</div>
+                        <div style="font-size:12px;color:var(--ink3);margin-bottom:6px;">Dashboard menggunakan Laravel session cookie. User login via /api/login, session tersimpan di server.</div>
+                        <div style="font-family:'JetBrains Mono',monospace;font-size:11px;background:var(--surface);padding:8px 12px;border-radius:6px;border-left:3px solid var(--success);">
+                            Cookie: laravel_session, XSRF-TOKEN<br>
+                            Check: session()->get('user_id')
+                        </div>
+                    </div>
+                    <div style="margin-bottom:14px;">
+                        <div style="font-size:13px;font-weight:600;margin-bottom:4px;">Middleware CheckApiKey</div>
+                        <div style="font-size:12px;color:var(--ink3);margin-bottom:6px;">Middleware memeriksa API key untuk rute IoT. Jika ada session cookie (frontend), skip API key check.</div>
+                        <div style="font-family:'JetBrains Mono',monospace;font-size:11px;background:var(--surface);padding:8px 12px;border-radius:6px;border-left:3px solid var(--success);">
+                            Route::middleware([CheckApiKey::class])->group(...)
+                        </div>
+                    </div>
+                    <div>
+                        <div style="font-size:13px;font-weight:600;margin-bottom:4px;">Atomic Command Polling</div>
+                        <div style="font-size:12px;color:var(--ink3);margin-bottom:6px;">SELECT ... FOR UPDATE mencegah dua worker mengambil command yang sama secara bersamaan.</div>
+                        <div style="font-family:'JetBrains Mono',monospace;font-size:11px;background:var(--surface);padding:8px 12px;border-radius:6px;border-left:3px solid var(--success);">
+                            Command::lockForUpdate()->first()
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- What needs improvement -->
+            <div style="border:1px solid var(--border);border-radius:12px;overflow:hidden;">
+                <div style="padding:14px 20px;background:var(--danger-light);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px;">
+                    <div style="width:24px;height:24px;display:flex;align-items:center;justify-content:center;background:var(--danger);color:#fff;border-radius:6px;font-size:12px;font-weight:700;flex-shrink:0;">!</div>
+                    <div style="font-size:14px;font-weight:700;color:var(--danger);">Perlu Diperkuat</div>
+                </div>
+                <div style="padding:16px 20px;">
+                    <div style="margin-bottom:14px;">
+                        <div style="font-size:13px;font-weight:600;margin-bottom:4px;">Input Validation Depth</div>
+                        <div style="font-size:12px;color:var(--ink3);margin-bottom:6px;">Validasi sudah ada (required, numeric, exists), tapi belum ada sanitasi untuk range nilai sensor yang wajar.</div>
+                        <div style="font-family:'JetBrains Mono',monospace;font-size:11px;background:var(--surface);padding:8px 12px;border-radius:6px;border-left:3px solid var(--danger);">
+                            // Belum ada: gas_value harus 0-4095 (ADC range)<br>
+                            // Belum ada: temperature harus -40 hingga 80<br>
+                            // Belum ada: flame_value harus 0-4095
+                        </div>
+                    </div>
+                    <div style="margin-bottom:14px;">
+                        <div style="font-size:13px;font-weight:600;margin-bottom:4px;">Role-Based Access Control</div>
+                        <div style="font-size:12px;color:var(--ink3);margin-bottom:6px;">Semua user yang login punya akses penuh. Tidak ada perbedaan hak antara admin, operator, dan viewer.</div>
+                        <div style="font-family:'JetBrains Mono',monospace;font-size:11px;background:var(--surface);padding:8px 12px;border-radius:6px;border-left:3px solid var(--danger);">
+                            // Semua endpoint: akses penuh setelah login<br>
+                            // Tidak ada: role admin vs operator vs viewer<br>
+                            // Tidak ada: device ownership check
+                        </div>
+                    </div>
+                    <div style="margin-bottom:14px;">
+                        <div style="font-size:13px;font-weight:600;margin-bottom:4px;">Rate Limiting</div>
+                        <div style="font-size:12px;color:var(--ink3);margin-bottom:6px;">Tidak ada rate limiting pada endpoint /api/ingest. ESP32 bisa flood server dengan request.</div>
+                        <div style="font-family:'JetBrains Mono',monospace;font-size:11px;background:var(--surface);padding:8px 12px;border-radius:6px;border-left:3px solid var(--danger);">
+                            // Tidak ada: throttle middleware<br>
+                            // Tidak ada: per-device rate limit<br>
+                            // Resiko: DoS dari device compromised
+                        </div>
+                    </div>
+                    <div>
+                        <div style="font-size:13px;font-weight:600;margin-bottom:4px;">API Key Rotation</div>
+                        <div style="font-size:12px;color:var(--ink3);margin-bottom:6px;">API key statis, tidak ada mekanisme rotate atau expire. Jika bocor, harus update manual di database.</div>
+                        <div style="font-family:'JetBrains Mono',monospace;font-size:11px;background:var(--surface);padding:8px 12px;border-radius:6px;border-left:3px solid var(--danger);">
+                            // Tidak ada: key expiration date<br>
+                            // Tidak ada: key rotation endpoint<br>
+                            // Tidak ada: audit log untuk key usage
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Security Matrix -->
+        <div style="margin-top:20px;border:1px solid var(--border);border-radius:12px;overflow:hidden;">
+            <div style="padding:14px 20px;background:var(--surface);border-bottom:1px solid var(--border);">
+                <div style="font-size:14px;font-weight:700;">Matriks Keamanan per Endpoint</div>
+            </div>
+            <table style="width:100%;border-collapse:collapse;font-size:12px;">
+                <thead>
+                    <tr style="background:var(--surface);">
+                        <th style="padding:10px 16px;text-align:left;font-weight:600;font-size:10px;text-transform:uppercase;letter-spacing:0.5px;color:var(--ink3);border-bottom:1px solid var(--border);">Endpoint</th>
+                        <th style="padding:10px 16px;text-align:center;font-weight:600;font-size:10px;text-transform:uppercase;letter-spacing:0.5px;color:var(--ink3);border-bottom:1px solid var(--border);">Auth</th>
+                        <th style="padding:10px 16px;text-align:center;font-weight:600;font-size:10px;text-transform:uppercase;letter-spacing:0.5px;color:var(--ink3);border-bottom:1px solid var(--border);">Validation</th>
+                        <th style="padding:10px 16px;text-align:center;font-weight:600;font-size:10px;text-transform:uppercase;letter-spacing:0.5px;color:var(--ink3);border-bottom:1px solid var(--border);">Rate Limit</th>
+                        <th style="padding:10px 16px;text-align:center;font-weight:600;font-size:10px;text-transform:uppercase;letter-spacing:0.5px;color:var(--ink3);border-bottom:1px solid var(--border);">RBAC</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td style="padding:8px 16px;font-family:'JetBrains Mono',monospace;border-bottom:1px solid var(--surface2);">/api/ingest</td>
+                        <td style="padding:8px 16px;text-align:center;border-bottom:1px solid var(--surface2);"><span style="background:var(--success-light);color:var(--success);padding:2px 6px;border-radius:3px;font-size:10px;font-weight:600;">API Key</span></td>
+                        <td style="padding:8px 16px;text-align:center;border-bottom:1px solid var(--surface2);"><span style="background:var(--warning-light);color:var(--warning);padding:2px 6px;border-radius:3px;font-size:10px;font-weight:600;">Partial</span></td>
+                        <td style="padding:8px 16px;text-align:center;border-bottom:1px solid var(--surface2);"><span style="background:var(--danger-light);color:var(--danger);padding:2px 6px;border-radius:3px;font-size:10px;font-weight:600;">None</span></td>
+                        <td style="padding:8px 16px;text-align:center;border-bottom:1px solid var(--surface2);"><span style="background:var(--danger-light);color:var(--danger);padding:2px 6px;border-radius:3px;font-size:10px;font-weight:600;">None</span></td>
+                    </tr>
+                    <tr>
+                        <td style="padding:8px 16px;font-family:'JetBrains Mono',monospace;border-bottom:1px solid var(--surface2);">/api/actuator</td>
+                        <td style="padding:8px 16px;text-align:center;border-bottom:1px solid var(--surface2);"><span style="background:var(--purple-light);color:var(--purple);padding:2px 6px;border-radius:3px;font-size:10px;font-weight:600;">Session</span></td>
+                        <td style="padding:8px 16px;text-align:center;border-bottom:1px solid var(--surface2);"><span style="background:var(--success-light);color:var(--success);padding:2px 6px;border-radius:3px;font-size:10px;font-weight:600;">Good</span></td>
+                        <td style="padding:8px 16px;text-align:center;border-bottom:1px solid var(--surface2);"><span style="background:var(--danger-light);color:var(--danger);padding:2px 6px;border-radius:3px;font-size:10px;font-weight:600;">None</span></td>
+                        <td style="padding:8px 16px;text-align:center;border-bottom:1px solid var(--surface2);"><span style="background:var(--danger-light);color:var(--danger);padding:2px 6px;border-radius:3px;font-size:10px;font-weight:600;">None</span></td>
+                    </tr>
+                    <tr>
+                        <td style="padding:8px 16px;font-family:'JetBrains Mono',monospace;border-bottom:1px solid var(--surface2);">/api/settings</td>
+                        <td style="padding:8px 16px;text-align:center;border-bottom:1px solid var(--surface2);"><span style="background:var(--purple-light);color:var(--purple);padding:2px 6px;border-radius:3px;font-size:10px;font-weight:600;">Session</span></td>
+                        <td style="padding:8px 16px;text-align:center;border-bottom:1px solid var(--surface2);"><span style="background:var(--success-light);color:var(--success);padding:2px 6px;border-radius:3px;font-size:10px;font-weight:600;">Good</span></td>
+                        <td style="padding:8px 16px;text-align:center;border-bottom:1px solid var(--surface2);"><span style="background:var(--danger-light);color:var(--danger);padding:2px 6px;border-radius:3px;font-size:10px;font-weight:600;">None</span></td>
+                        <td style="padding:8px 16px;text-align:center;border-bottom:1px solid var(--surface2);"><span style="background:var(--danger-light);color:var(--danger);padding:2px 6px;border-radius:3px;font-size:10px;font-weight:600;">None</span></td>
+                    </tr>
+                    <tr>
+                        <td style="padding:8px 16px;font-family:'JetBrains Mono',monospace;border-bottom:1px solid var(--surface2);">/api/command/get</td>
+                        <td style="padding:8px 16px;text-align:center;border-bottom:1px solid var(--surface2);"><span style="background:var(--success-light);color:var(--success);padding:2px 6px;border-radius:3px;font-size:10px;font-weight:600;">API Key</span></td>
+                        <td style="padding:8px 16px;text-align:center;border-bottom:1px solid var(--surface2);"><span style="background:var(--success-light);color:var(--success);padding:2px 6px;border-radius:3px;font-size:10px;font-weight:600;">Good</span></td>
+                        <td style="padding:8px 16px;text-align:center;border-bottom:1px solid var(--surface2);"><span style="background:var(--danger-light);color:var(--danger);padding:2px 6px;border-radius:3px;font-size:10px;font-weight:600;">None</span></td>
+                        <td style="padding:8px 16px;text-align:center;border-bottom:1px solid var(--surface2);"><span style="background:var(--danger-light);color:var(--danger);padding:2px 6px;border-radius:3px;font-size:10px;font-weight:600;">None</span></td>
+                    </tr>
+                    <tr>
+                        <td style="padding:8px 16px;font-family:'JetBrains Mono',monospace;border-bottom:1px solid var(--surface2);">/api/devices</td>
+                        <td style="padding:8px 16px;text-align:center;border-bottom:1px solid var(--surface2);"><span style="background:var(--success-light);color:var(--success);padding:2px 6px;border-radius:3px;font-size:10px;font-weight:600;">Public</span></td>
+                        <td style="padding:8px 16px;text-align:center;border-bottom:1px solid var(--surface2);"><span style="background:var(--success-light);color:var(--success);padding:2px 6px;border-radius:3px;font-size:10px;font-weight:600;">Good</span></td>
+                        <td style="padding:8px 16px;text-align:center;border-bottom:1px solid var(--surface2);"><span style="background:var(--danger-light);color:var(--danger);padding:2px 6px;border-radius:3px;font-size:10px;font-weight:600;">None</span></td>
+                        <td style="padding:8px 16px;text-align:center;border-bottom:1px solid var(--surface2);"><span style="background:var(--danger-light);color:var(--danger);padding:2px 6px;border-radius:3px;font-size:10px;font-weight:600;">None</span></td>
+                    </tr>
+                    <tr>
+                        <td style="padding:8px 16px;font-family:'JetBrains Mono',monospace;">/api/login</td>
+                        <td style="padding:8px 16px;text-align:center;"><span style="background:var(--success-light);color:var(--success);padding:2px 6px;border-radius:3px;font-size:10px;font-weight:600;">Public</span></td>
+                        <td style="padding:8px 16px;text-align:center;"><span style="background:var(--success-light);color:var(--success);padding:2px 6px;border-radius:3px;font-size:10px;font-weight:600;">Good</span></td>
+                        <td style="padding:8px 16px;text-align:center;"><span style="background:var(--danger-light);color:var(--danger);padding:2px 6px;border-radius:3px;font-size:10px;font-weight:600;">None</span></td>
+                        <td style="padding:8px 16px;text-align:center;"><span style="background:var(--danger-light);color:var(--danger);padding:2px 6px;border-radius:3px;font-size:10px;font-weight:600;">None</span></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="footer">
+        <p><strong>SentinelIoT</strong> — Smart Safety Monitoring System</p>
+        <p style="margin-top:4px">Laravel 13 &middot; React 19 &middot; ESP32 &middot; Fuzzy Logic Sugeno &middot; Multi-Device &middot; Remote Access</p>
+    </div>
+
+</div>
+</body>
+</html>

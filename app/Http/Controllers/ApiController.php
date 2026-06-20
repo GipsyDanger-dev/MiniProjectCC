@@ -12,7 +12,6 @@ use App\Models\Device;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Cache;
-use App\Events\SensorDataReceived;
 use App\Models\SystemSettings;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Auth;
@@ -39,7 +38,7 @@ class ApiController extends Controller
         return 1.0;
     }
 
-    private function buildFuzzyDecision(float $gas, float $smoke, float $temperature, float $flame, float $flameThreshold, float $gasThreshold = 2500, float $smokeThreshold = 2000, float $tempThreshold = 45): array
+    private function buildFuzzyDecision(float $gas, float $smoke, float $temperature, float $flame, float $flameThreshold, float $gasThreshold = 2500, float $smokeThreshold = 800, float $tempThreshold = 45, float $humidity = 0, float $humidityThreshold = 70): array
     {
         // KY-026 active-low: lower value = more fire
         if ($flame < $flameThreshold) {
@@ -68,6 +67,10 @@ class ApiController extends Controller
         $tempNormal = $this->triangularMembership($temperature, 0, 0, $tempThreshold);
         $tempWarm   = $this->triangularMembership($temperature, $tempThreshold * 0.6, $tempThreshold, $tempThreshold * 1.6);
         $tempHot    = $this->triangularMembership($temperature, $tempThreshold * 1.5, $tempThreshold * 2.5, $tempThreshold * 4);
+
+        // Humidity membership: normal (< threshold), high (> threshold)
+        $humidNormal = $this->triangularMembership($humidity, 0, 0, $humidityThreshold);
+        $humidHigh   = $this->triangularMembership($humidity, $humidityThreshold * 0.8, $humidityThreshold * 1.2, 100);
 
         // Sugeno 27 rules: output values SAFE=0, LOW=30, MEDIUM=60, HIGH=100
         $rules = [
@@ -126,6 +129,13 @@ class ApiController extends Controller
 
         $score = $weightTotal > 0 ? $weightedSum / $weightTotal : 0.0;
 
+        // Humidity modifier: high humidity increases danger score
+        if ($humidHigh > 0) {
+            $humidityPenalty = $humidHigh * 15; // up to +15 points
+            $score = min(100, $score + $humidityPenalty);
+            $activeRules[] = ['HUMIDITY_PENALTY', round($humidHigh, 4), round($humidityPenalty, 1)];
+        }
+
         if ($score > 70) {
             $fanStatus = 'HIGH';
             $fanSpeed = 100;
@@ -155,7 +165,7 @@ class ApiController extends Controller
             'buzzer_action' => $buzzerAction,
             'profile' => $profile,
             'rules' => $activeRules,
-            'reason' => 'Sugeno weighted average on gas, smoke, and temperature (27 rules)',
+            'reason' => 'Sugeno weighted average on gas, smoke, temperature + humidity modifier (27 rules)',
         ];
     }
 
@@ -346,10 +356,16 @@ class ApiController extends Controller
                 }
             }
 
+            // Reset stuck "processing" commands older than 60 seconds
+            Command::where('status', 'processing')
+                ->where('updated_at', '<', now()->subSeconds(60))
+                ->update(['status' => 'pending']);
+
             $gasThresh = Cache::get('gas_threshold', $settings->gas_threshold ?? 2500);
-            $smokeThresh = Cache::get('smoke_threshold', $settings->smoke_threshold ?? 2000);
+            $smokeThresh = Cache::get('smoke_threshold', $settings->smoke_threshold ?? 800);
             $tempThresh = Cache::get('temperature_threshold', $settings->temperature_threshold ?? 45);
             $flameThresh = Cache::get('flame_threshold', $settings->flame_threshold ?? 500);
+            $humidityThresh = Cache::get('humidity_threshold', $settings->humidity_threshold ?? 70);
 
             $decision = $this->buildFuzzyDecision(
                 (float) $request->gas_value,
@@ -359,7 +375,9 @@ class ApiController extends Controller
                 (float) $flameThresh,
                 (float) $gasThresh,
                 (float) $smokeThresh,
-                (float) $tempThresh
+                (float) $tempThresh,
+                (float) ($request->humidity ?? 0),
+                (float) $humidityThresh
             );
 
             $status_indikasi = $decision['fan_status'] === 'OFF' ? 'AMAN' : 'BAHAYA';
@@ -404,12 +422,6 @@ class ApiController extends Controller
 
                 return $sensorData;
             });
-
-            broadcast(new SensorDataReceived(
-                $sensorData->toArray(),
-                $decision,
-                $status_indikasi
-            ))->toOthers();
 
             return response()->json([
                 'status' => 'success',
@@ -471,7 +483,7 @@ class ApiController extends Controller
                 'system_mode' => $settings->mode ?? 'auto',
                 'settings' => [
                     'gas_threshold' => Cache::get('gas_threshold', $settings->gas_threshold ?? 2500),
-                    'smoke_threshold' => Cache::get('smoke_threshold', $settings->smoke_threshold ?? 2000),
+                    'smoke_threshold' => Cache::get('smoke_threshold', $settings->smoke_threshold ?? 800),
                     'humidity_threshold' => Cache::get('humidity_threshold', $settings->humidity_threshold ?? 70),
                     'temperature_threshold' => Cache::get('temperature_threshold', $settings->temperature_threshold ?? 45),
                     'flame_threshold' => Cache::get('flame_threshold', $settings->flame_threshold ?? 500)
@@ -503,6 +515,34 @@ class ApiController extends Controller
             ]);
         } catch (\Exception $e) {
             Log::error("flameSensor error: " . $e->getMessage());
+            return response()->json(['status' => 'error', 'message' => $e->getMessage()], 500);
+        }
+    }
+
+    public function sensorHistory(Request $request)
+    {
+        try {
+            $deviceId = $request->query('device_id', 1);
+            $range = $request->query('range', '1H');
+
+            $limitMap = ['1H' => 60, '6H' => 120, '24H' => 200, '7D' => 300];
+            $limit = $limitMap[$range] ?? 60;
+
+            $data = SensorData::where('device_id', $deviceId)
+                ->orderBy('id', 'desc')
+                ->limit($limit)
+                ->get()
+                ->reverse()
+                ->values();
+
+            return response()->json([
+                'status' => 'success',
+                'range' => $range,
+                'count' => $data->count(),
+                'data' => $data,
+            ]);
+        } catch (\Exception $e) {
+            Log::error("sensorHistory error: " . $e->getMessage());
             return response()->json(['status' => 'error', 'message' => $e->getMessage()], 500);
         }
     }
@@ -642,7 +682,7 @@ class ApiController extends Controller
             'status' => 'success',
             'settings' => [
                 'gas_threshold' => (float) ($settings->gas_threshold ?? 2500),
-                'smoke_threshold' => (float) ($settings->smoke_threshold ?? 2000),
+                'smoke_threshold' => (float) ($settings->smoke_threshold ?? 800),
                 'humidity_threshold' => (float) ($settings->humidity_threshold ?? 70),
                 'temperature_threshold' => (float) ($settings->temperature_threshold ?? 45),
                 'flame_threshold' => (float) ($settings->flame_threshold ?? 500),
@@ -674,11 +714,13 @@ class ApiController extends Controller
         }
 
         $action = $request->action;
-        if ($request->target_device === 'exhaust_fan' && $action === 'START') {
-            $action = 'HIGH';
+        if ($request->target_device === 'exhaust_fan') {
+            if ($action === 'START') $action = 'HIGH';
+            if ($action === 'STOP') $action = 'OFF';
         }
-        if ($request->target_device === 'exhaust_fan' && $action === 'STOP') {
-            $action = 'OFF';
+        if ($request->target_device === 'buzzer') {
+            if ($action === 'START') $action = 'HIGH';
+            if ($action === 'STOP') $action = 'OFF';
         }
 
         SystemSettings::firstOrCreate(['id' => 1])->update([
@@ -706,7 +748,7 @@ class ApiController extends Controller
             DeviceActuator::updateOrCreate(
                 ['device_id' => $deviceId],
                 [
-                    'alarm_status' => $action !== 'STOP' ? 'ON' : 'OFF',
+                    'alarm_status' => ($action !== 'STOP' && $action !== 'OFF') ? 'ON' : 'OFF',
                 ]
             );
         }

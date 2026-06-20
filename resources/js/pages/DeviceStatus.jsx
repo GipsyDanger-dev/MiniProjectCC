@@ -6,16 +6,22 @@ export default function DeviceStatus({ activeRoom, iot }) {
     const latest = iot.latestReading;
     const emergency = iot.data?.emergency_status || "AMAN";
     const workerOnline = Boolean(iot.data?.worker_online);
+    const workerStatus = iot.data?.worker_status;
     const latestCommand = iot.data?.latest_command;
     const actuator = iot.data?.device_actuator;
     const fanOn = actuator?.fan_status && actuator.fan_status !== "OFF";
     const buzzerOn = actuator?.alarm_status === "ON";
 
+    const workerState = workerStatus?.current_state || "Unknown";
+    const lastHeartbeat = workerStatus?.last_heartbeat
+        ? new Date(workerStatus.last_heartbeat).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit", second: "2-digit" })
+        : "Never";
+
     const cards = [
-        { title: "ESP32 Microcontroller", status: "ONLINE", icon: Cpu, details: ["Health 98%", "Uptime 4h 52m", "IP 192.168.1.4"] },
-        { title: "Exhaust Fan", status: fanOn ? "RUNNING" : "IDLE", icon: Fan, value: fanOn ? actuator.fan_status : "OFF", details: [`Fuzzy: ${actuator?.fan_status || "OFF"}`, "Running today: 2h 14m"] },
-        { title: "Buzzer", status: buzzerOn ? "ACTIVE" : "SILENT", icon: BellRing, value: buzzerOn ? "On" : "Silent", details: ["Last trigger: 38 mins ago", "Triggers today: 4"] },
-        { title: "OLED Display", status: "CONNECTED", icon: Monitor, details: [`Gas: ${Math.round(Number(latest?.gas_value || 0))}ppm`, `Temp: ${Math.round(Number(latest?.temperature || 0))}°C`, `Humidity: ${Math.round(Number(latest?.humidity || 0))}%`] },
+        { title: "ESP32 Microcontroller", status: workerOnline ? "ONLINE" : "OFFLINE", icon: Cpu, details: [`State: ${workerState}`, `Last heartbeat: ${lastHeartbeat}`, `Device: ${iot.data?.device_id || 1}`] },
+        { title: "Exhaust Fan", status: fanOn ? "RUNNING" : "IDLE", icon: Fan, value: fanOn ? actuator.fan_status : "OFF", details: [`Fuzzy: ${actuator?.fan_status || "OFF"}`, `Speed: ${actuator?.fan_speed || 0}%`] },
+        { title: "Buzzer", status: buzzerOn ? "ACTIVE" : "SILENT", icon: BellRing, value: buzzerOn ? "On" : "Silent", details: [`Last cmd: ${latestCommand?.target_device === "buzzer" ? latestCommand.action : "—"}`, `Status: ${latestCommand?.target_device === "buzzer" ? latestCommand.status : "—"}`] },
+        { title: "OLED Display", status: "CONNECTED", icon: Monitor, details: [`Gas: ${Math.round(Number(latest?.gas_value || 0))} ppm`, `Temp: ${Math.round(Number(latest?.temperature || 0))}°C`, `Humidity: ${Math.round(Number(latest?.humidity || 0))}%`] },
     ];
 
     return (

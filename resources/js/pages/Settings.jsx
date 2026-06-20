@@ -17,13 +17,13 @@ const fanColor = v => {
 const mask = v => !v ? "-" : v.length <= 8 ? v : `${v.slice(0,6)}••••${v.slice(-4)}`;
 
 export default function Settings({ iot, pollingInterval, setPollingInterval }) {
-    const [gas, setGas] = useState(2500), [smoke, setSmoke] = useState(2000), [humidity, setHumidity] = useState(70), [temp, setTemp] = useState(45), [flame, setFlame] = useState(500);
+    const [gas, setGas] = useState(2500), [smoke, setSmoke] = useState(800), [humidity, setHumidity] = useState(70), [temp, setTemp] = useState(45), [flame, setFlame] = useState(500);
     const [dangerOnly, setDangerOnly] = useState(false);
     const [saving, setSaving] = useState(false);
     const [devices, setDevices] = useState([]), [dl, setDl] = useState(true), [sid, setSid] = useState(null), [dn, setDn] = useState(""), [dloc, setDloc] = useState(""), [ak, setAk] = useState(""), [ds, setDs] = useState(false), [dr, setDr] = useState(false);
     const polling = Math.round((pollingInterval || 3000) / 1000);
 
-    useEffect(() => { const s = iot.data?.settings; if (!s) return; setGas(Number(s.gas_threshold ?? 2500)); setSmoke(Number(s.smoke_threshold ?? 2000)); setHumidity(Number(s.humidity_threshold ?? 70)); setTemp(Number(s.temperature_threshold ?? 45)); setFlame(Number(s.flame_threshold ?? 500)); }, [iot.data?.settings]);
+    useEffect(() => { const s = iot.data?.settings; if (!s) return; setGas(Number(s.gas_threshold ?? 2500)); setSmoke(Number(s.smoke_threshold ?? 800)); setHumidity(Number(s.humidity_threshold ?? 70)); setTemp(Number(s.temperature_threshold ?? 45)); setFlame(Number(s.flame_threshold ?? 500)); }, [iot.data?.settings]);
     useEffect(() => { let a = true; (async () => { setDl(true); try { const r = await fetch("/api/devices", { headers: { Accept: "application/json" } }); const p = await r.json(); if (!a) return; setDevices(p.status === "success" ? p.devices || p.data || [] : []); } catch { if (a) setDevices([]); } finally { if (a) setDl(false); } })(); return () => { a = false; }; }, []);
     useEffect(() => { if (!devices.length) return; if (sid && devices.some(d => d.id === sid)) return; const pid = Number(iot?.data?.device_id); const m = devices.find(d => d.id === pid); setSid(m?.id || devices[0]?.id || null); }, [devices, iot?.data?.device_id, sid]);
     const sel = useMemo(() => devices.find(d => d.id === sid) || null, [devices, sid]);

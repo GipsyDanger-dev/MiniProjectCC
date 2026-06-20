@@ -3,7 +3,7 @@ import { Save } from "lucide-react";
 
 export default function ThresholdSettings({ settings, onSave }) {
     const [gas, setGas] = useState(2500);
-    const [smoke, setSmoke] = useState(2000);
+    const [smoke, setSmoke] = useState(800);
     const [humidity, setHumidity] = useState(70);
     const [temp, setTemp] = useState(45);
     const [flame, setFlame] = useState(500);
@@ -13,7 +13,7 @@ export default function ThresholdSettings({ settings, onSave }) {
     useEffect(() => {
         if (!settings || dirty || saving) return;
         setGas(Number(settings.gas_threshold ?? 2500));
-        setSmoke(Number(settings.smoke_threshold ?? 2000));
+        setSmoke(Number(settings.smoke_threshold ?? 800));
         setHumidity(Number(settings.humidity_threshold ?? 70));
         setTemp(Number(settings.temperature_threshold ?? 45));
         setFlame(Number(settings.flame_threshold ?? 500));
@@ -43,7 +43,7 @@ export default function ThresholdSettings({ settings, onSave }) {
             </div>
             <div className="px-4">
                 <SliderRow label="Gas (Raw ADC)" value={gas} min={0} max={4095} unit="" onChange={setGas} />
-                <SliderRow label="Smoke (Raw ADC)" value={smoke} min={0} max={4095} unit="" onChange={setSmoke} />
+                <SliderRow label="Smoke (Raw ADC)" value={smoke} min={0} max={2000} unit="" onChange={setSmoke} />
                 <SliderRow label="Humidity (%)" value={humidity} min={0} max={100} unit="%" onChange={setHumidity} />
                 <SliderRow label="Temperature (°C)" value={temp} min={0} max={80} unit="°C" onChange={setTemp} />
                 <SliderRow label="Flame (Analog)" value={flame} min={100} max={4095} unit="" onChange={setFlame} />

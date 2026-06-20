@@ -1,5 +1,5 @@
-import React, { useMemo, useState } from "react";
-import { Download, Filter } from "lucide-react";
+import React, { useEffect, useMemo, useState } from "react";
+import { Download } from "lucide-react";
 import GlassSurface from "../components/GlassSurface";
 import { Area, AreaChart, CartesianGrid, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 
@@ -12,19 +12,41 @@ const charts = [
 
 export default function SensorData({ activeRoom, iot }) {
     const [range, setRange] = useState("1H");
+    const [historyData, setHistoryData] = useState([]);
+    const [historyLoading, setHistoryLoading] = useState(false);
     const raw = iot.data?.sensor_data || [], latest = raw[0];
 
-    const base = useMemo(() => {
-        if (!raw.length) return [{ time: "12:00", gas: 440, smoke: 210, temp: 34, flame: 8 }, { time: "12:05", gas: 470, smoke: 215, temp: 36, flame: 11 }, { time: "12:10", gas: 485, smoke: 225, temp: 38, flame: 9 }, { time: "12:15", gas: 512, smoke: 238, temp: 41, flame: 15 }, { time: "12:20", gas: 468, smoke: 218, temp: 39, flame: 12 }, { time: "12:25", gas: 421, smoke: 221, temp: 36, flame: 10 }, { time: "12:30", gas: 430, smoke: 195, temp: 35, flame: 6 }];
-        return [...raw].slice(0, 12).reverse().map(i => ({ time: new Date(i.created_at).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" }), gas: Math.round(Number(i.gas_value) || 0), smoke: Math.round(Number(i.smoke_value) || 0), temp: Math.round(Number(i.temperature) || 0), flame: Math.round(Number(i.flame_value) || 0) }));
-    }, [raw]);
+    useEffect(() => {
+        let active = true;
+        const deviceId = iot.data?.device_id || 1;
+        setHistoryLoading(true);
+        fetch(`/api/sensor/history?device_id=${deviceId}&range=${range}`, { headers: { Accept: "application/json" } })
+            .then(r => r.json())
+            .then(d => { if (active && d.status === "success") setHistoryData(d.data || []); })
+            .catch(() => {})
+            .finally(() => { if (active) setHistoryLoading(false); });
+        return () => { active = false; };
+    }, [range, iot.data?.device_id]);
 
     const data = useMemo(() => {
-        if (range === "6H") return base.map(i => ({ ...i, gas: Math.round(i.gas * 0.94), smoke: Math.round(i.smoke * 0.97), temp: Math.round(i.temp * 0.95), flame: Math.round(i.flame * 0.9) }));
-        if (range === "24H") return base.map((i, x) => ({ ...i, gas: Math.round(i.gas * (0.88 + (x % 3) * 0.02)), smoke: Math.round(i.smoke * (0.9 + (x % 4) * 0.02)), temp: Math.round(i.temp * (0.9 + (x % 3) * 0.015)), flame: Math.round(i.flame * (0.82 + (x % 5) * 0.04)) }));
-        if (range === "7D") return base.map((i, x) => ({ ...i, gas: Math.round(i.gas * (0.82 + (x % 5) * 0.025)), smoke: Math.round(i.smoke * (0.86 + (x % 4) * 0.03)), temp: Math.round(i.temp * (0.88 + (x % 4) * 0.02)), flame: Math.round(i.flame * (0.78 + (x % 6) * 0.05)) }));
-        return base;
-    }, [range, base]);
+        if (historyData.length) {
+            return historyData.map(i => ({
+                time: new Date(i.created_at).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" }),
+                gas: Math.round(Number(i.gas_value) || 0),
+                smoke: Math.round(Number(i.smoke_value) || 0),
+                temp: Math.round(Number(i.temperature) || 0),
+                flame: Math.round(Number(i.flame_value) || 0),
+            }));
+        }
+        if (!raw.length) return [{ time: "--:--", gas: 0, smoke: 0, temp: 0, flame: 0 }];
+        return [...raw].slice(0, 12).reverse().map(i => ({
+            time: new Date(i.created_at).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" }),
+            gas: Math.round(Number(i.gas_value) || 0),
+            smoke: Math.round(Number(i.smoke_value) || 0),
+            temp: Math.round(Number(i.temperature) || 0),
+            flame: Math.round(Number(i.flame_value) || 0),
+        }));
+    }, [historyData, raw]);
 
     const cards = [
         { title: "Gas Level", value: Math.round(Number(latest?.gas_value || 0)), unit: "ppm", delta: latest && Number(latest.gas_value) > 250 ? "Alert" : "Normal" },
@@ -33,7 +55,19 @@ export default function SensorData({ activeRoom, iot }) {
         { title: "Flame", value: latest && Number(latest.flame_value) < 500 ? "DETECTED" : "CLEAR", unit: "", delta: latest?.status_indikasi || "Stable" },
     ];
 
-    const rows = raw.slice(0, 24).map(i => [new Date(i.created_at).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" }), `${Math.round(Number(i.gas_value) || 0)}`, `${Math.round(Number(i.smoke_value) || 0)}`, `${Math.round(Number(i.temperature) || 0)}`, Number(i.flame_value) < 500 ? "DETECTED" : "CLEAR", i.status_indikasi || "AMAN"]);
+    const [statusFilter, setStatusFilter] = useState("all");
+    const filteredRaw = statusFilter === "all" ? raw : raw.filter(i => (statusFilter === "danger" ? i.status_indikasi === "BAHAYA" : i.status_indikasi === "AMAN"));
+    const rows = filteredRaw.slice(0, 24).map(i => [new Date(i.created_at).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" }), `${Math.round(Number(i.gas_value) || 0)}`, `${Math.round(Number(i.smoke_value) || 0)}`, `${Math.round(Number(i.temperature) || 0)}`, Number(i.flame_value) < 500 ? "DETECTED" : "CLEAR", i.status_indikasi || "AMAN"]);
+
+    const exportCSV = () => {
+        const header = "Timestamp,Gas,Smoke,Temp,Flame,Status\n";
+        const csvRows = filteredRaw.map(i => `${i.created_at},${i.gas_value},${i.smoke_value},${i.temperature},${i.flame_value},${i.status_indikasi}`).join("\n");
+        const blob = new Blob([header + csvRows], { type: "text/csv" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url; a.download = "sensor_data.csv"; a.click();
+        URL.revokeObjectURL(url);
+    };
 
     return (
         <div className="pb-4 sm:pb-5 space-y-3 sm:space-y-4">
@@ -85,8 +119,12 @@ export default function SensorData({ activeRoom, iot }) {
                 <div className="flex flex-wrap items-center justify-between gap-2 sm:gap-3 mb-3 sm:mb-4">
                     <div><h2 className="text-xs sm:text-sm font-normal tracking-tight">Raw Readings</h2><p className="text-[10px] sm:text-[11px] text-[#7d8187]">{rows.length} entries</p></div>
                     <div className="flex items-center gap-1.5 sm:gap-2">
-                        <div className="h-7 sm:h-8 rounded-[9999px] border border-[rgba(33,35,39,0.8)] bg-[rgba(10,10,10,0.6)] px-2 sm:px-2.5 flex items-center gap-1 sm:gap-1.5 text-[10px] sm:text-xs text-[#7d8187]"><Filter className="w-3 h-3 sm:w-3.5 sm:h-3.5" />Filter</div>
-                        <button className="h-7 sm:h-8 rounded-[9999px] bg-white text-[#0a0a0a] px-2 sm:px-3 font-normal text-[10px] sm:text-xs inline-flex items-center gap-1 sm:gap-1.5"><Download className="w-3 h-3 sm:w-3.5 sm:h-3.5" />Export</button>
+                        <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)} className="h-7 sm:h-8 rounded-[9999px] border border-[rgba(33,35,39,0.8)] bg-[rgba(10,10,10,0.6)] px-2 sm:px-2.5 text-[10px] sm:text-xs text-[#7d8187] outline-none cursor-pointer">
+                            <option value="all">All</option>
+                            <option value="danger">Danger</option>
+                            <option value="safe">Safe</option>
+                        </select>
+                        <button onClick={exportCSV} className="h-7 sm:h-8 rounded-[9999px] bg-white text-[#0a0a0a] px-2 sm:px-3 font-normal text-[10px] sm:text-xs inline-flex items-center gap-1 sm:gap-1.5 hover:bg-[#fafaf7] transition-all duration-150"><Download className="w-3 h-3 sm:w-3.5 sm:h-3.5" />Export</button>
                     </div>
                 </div>
                 <div className="overflow-auto thin-scroll">
