@@ -13,7 +13,7 @@ import MagicBentoGrid from "../components/MagicBentoGrid";
 function rt(d) { if (!d) return "Updated just now"; const s = Math.max(0, Math.floor((Date.now() - new Date(d).getTime()) / 1000)); if (s < 60) return `Updated ${s}s ago`; if (s < 3600) return `Updated ${Math.floor(s / 60)}m ago`; return `Updated ${Math.floor(s / 3600)}h ago`; }
 
 export default function Dashboard({ activeRoom, deviceId, iot }) {
-    const latest = iot.latestReading, feed = iot.data?.sensor_data || [], logs = iot.data?.activity_logs || [], workerOnline = Boolean(iot.data?.worker_online), latestCmd = iot.data?.latest_command, emergency = iot.data?.emergency_status || "AMAN";
+    const latest = iot.latestReading, feed = iot.data?.sensor_data || [], logs = iot.data?.activity_logs || [], workerOnline = Boolean(iot.data?.worker_online), latestCmd = iot.data?.latest_command, emergency = iot.data?.emergency_status || "AMAN", settings = iot.data?.settings || {};
     const isDanger = emergency === "BAHAYA";
     const dangerCount = logs.filter(l => l.status === "BAHAYA").length;
 
@@ -23,10 +23,13 @@ export default function Dashboard({ activeRoom, deviceId, iot }) {
         { title: "Events Today", value: `${logs.length}`, sub: `${dangerCount} danger events`, icon: Bell },
         { title: "Fan Speed", value: latestCmd?.target_device === "exhaust_fan" && latestCmd?.action === "START" ? "ON" : "OFF", sub: "Exhaust Fan Status", icon: Fan },
     ];
+    const gasTh = Number(settings.gas_threshold) || 2500;
+    const flameTh = Number(settings.flame_threshold) || 500;
+    const tempTh = Number(settings.temperature_threshold) || 45;
     const sensors = [
-        { name: "MQ-2 Gas Sensor", type: "Gas / Smoke", value: `${Math.round(Number(latest?.gas_value || 0))} ppm`, status: emergency === "BAHAYA" ? "Alert" : "Normal", icon: Wind },
-        { name: "KY-026 Flame Sensor", type: "Flame detector", value: `${Math.round(Number(latest?.flame_value || 0))}`, status: Number(latest?.flame_value || 9999) < 500 ? "Alert" : "Normal", icon: Flame },
-        { name: "DHT22 Temp & Humidity", type: "Temperature", value: `${Math.round(Number(latest?.temperature || 0))}°C`, status: Number(latest?.temperature || 0) > 40 ? "Alert" : "Normal", icon: Thermometer },
+        { name: "MQ-2 Gas Sensor", type: "Gas / Smoke", value: `${Math.round(Number(latest?.gas_value || 0))} ppm`, status: Number(latest?.gas_value || 0) > gasTh ? "Alert" : "Normal", icon: Wind },
+        { name: "KY-026 Flame Sensor", type: "Flame detector", value: `${Math.round(Number(latest?.flame_value || 0))}`, status: Number(latest?.flame_value || 9999) < flameTh ? "Alert" : "Normal", icon: Flame },
+        { name: "DHT22 Temp & Humidity", type: "Temperature", value: `${Math.round(Number(latest?.temperature || 0))}°C`, status: Number(latest?.temperature || 0) > tempTh ? "Alert" : "Normal", icon: Thermometer },
     ];
     const actuators = [
         { name: "Exhaust Fan", subtitle: latestCmd?.target_device === "exhaust_fan" ? `${latestCmd.action} (${latestCmd.status})` : "No recent command", value: latestCmd?.target_device === "exhaust_fan" && latestCmd.action === "START" ? "ON" : "", enabled: latestCmd?.target_device === "exhaust_fan" && latestCmd.action === "START", icon: Fan },
