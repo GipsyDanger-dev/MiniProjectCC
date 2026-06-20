@@ -46,7 +46,7 @@ export default function ThresholdSettings({ settings, onSave }) {
                 <SliderRow label="Smoke (Raw ADC)" value={smoke} min={0} max={4095} unit="" onChange={setSmoke} />
                 <SliderRow label="Humidity (%)" value={humidity} min={0} max={100} unit="%" onChange={setHumidity} />
                 <SliderRow label="Temperature (°C)" value={temp} min={0} max={80} unit="°C" onChange={setTemp} />
-                <SliderRow label="Flame (Analog)" value={flame} min={100} max={4095} unit="" onChange={setFlame} />
+                <SliderRow label="Flame (Analog)" value={flame} min={0} max={4095} unit="" onChange={setFlame} />
             </div>
             <div className="px-3 py-2">
                 <button
