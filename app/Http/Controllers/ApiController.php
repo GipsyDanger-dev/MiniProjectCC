@@ -164,18 +164,22 @@ class ApiController extends Controller
     private function syncActuatorCommands(int $deviceId, array $decision): void
     {
         $settings = SystemSettings::firstOrCreate(['id' => 1]);
-        if ($settings->mode === 'manual') {
-            if ($decision['profile'] === 'FLAME_OVERRIDE') {
+
+        // Flame override ALWAYS executes regardless of mode
+        if ($decision['profile'] === 'FLAME_OVERRIDE') {
+            if ($settings->mode === 'manual') {
+                $settings->update(['mode' => 'auto', 'last_manual_command' => null]);
                 ActivityLog::create([
                     'device_id' => $deviceId,
                     'action_type' => 'EMERGENCY_OVERRIDE',
                     'status' => 'BAHAYA',
-                    'description' => 'Flame detected in manual mode — emergency override activated',
+                    'description' => 'Flame detected — emergency override, switched to AUTO mode',
                     'message' => 'Emergency override: flame detected'
                 ]);
-            } else {
-                return;
             }
+        } elseif ($settings->mode === 'manual') {
+            // In manual mode (no flame), skip auto commands
+            return;
         }
 
         $fanStatus = $decision['fan_status'];
@@ -195,6 +199,20 @@ class ApiController extends Controller
             ->where('status', 'processing')
             ->where('updated_at', '<', now()->subSeconds(10))
             ->update(['status' => 'failed']);
+
+        // When turning OFF, cancel all pending commands first to ensure clean state
+        if ($fanStatus === 'OFF') {
+            Command::where('device_id', $deviceId)
+                ->where('target_device', 'exhaust_fan')
+                ->where('status', 'pending')
+                ->update(['status' => 'cancelled']);
+        }
+        if ($decision['buzzer_action'] === 'STOP') {
+            Command::where('device_id', $deviceId)
+                ->where('target_device', 'buzzer')
+                ->where('status', 'pending')
+                ->update(['status' => 'cancelled']);
+        }
 
         $lastFan = Command::where('device_id', $deviceId)
             ->where('target_device', 'exhaust_fan')
