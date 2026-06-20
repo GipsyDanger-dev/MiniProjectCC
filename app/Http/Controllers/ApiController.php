@@ -8,20 +8,23 @@ use App\Models\Command;
 use App\Models\ActivityLog;
 use App\Models\DeviceActuator;
 use App\Models\WorkerStatus;
-use App\Models\Device;
-use App\Models\User;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Cache;
+use App\Events\SensorDataReceived;
+use App\Models\Device;
 use App\Models\SystemSettings;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Hash;
 
 class ApiController extends Controller
 {
     private function triangularMembership(float $value, float $left, float $peak, float $right): float
     {
         if ($value < $left || $value > $right) {
+            return 0.0;
+        }
+
+        // Trapezoidal edge case: left === peak means flat top
+        if ($value === $right && $right !== $peak) {
             return 0.0;
         }
 
@@ -38,7 +41,7 @@ class ApiController extends Controller
         return 1.0;
     }
 
-    private function buildFuzzyDecision(float $gas, float $smoke, float $temperature, float $flame, float $flameThreshold, float $gasThreshold = 2500, float $smokeThreshold = 800, float $tempThreshold = 45, float $humidity = 0, float $humidityThreshold = 70): array
+    private function buildFuzzyDecision(float $gas, float $smoke, float $temperature, float $flame, float $flameThreshold, float $gasThreshold = 2500, float $smokeThreshold = 2000, float $tempThreshold = 45): array
     {
         // KY-026 active-low: lower value = more fire
         if ($flame < $flameThreshold) {
@@ -57,20 +60,16 @@ class ApiController extends Controller
         $adcMax = 4095;
 
         $gasLow    = $this->triangularMembership($gas, 0, 0, $gasThreshold);
-        $gasMedium = $this->triangularMembership($gas, $gasThreshold * 0.6, $gasThreshold * 1.2, $gasThreshold * 2);
-        $gasHigh   = $this->triangularMembership($gas, $gasThreshold * 1.5, $gasThreshold * 2.5, $adcMax);
+        $gasMedium = $this->triangularMembership($gas, $gasThreshold * 0.8, $gasThreshold, $gasThreshold * 1.2);
+        $gasHigh   = $this->triangularMembership($gas, $gasThreshold * 1.1, $gasThreshold * 1.5, $adcMax);
 
         $smokeLow    = $this->triangularMembership($smoke, 0, 0, $smokeThreshold);
-        $smokeMedium = $this->triangularMembership($smoke, $smokeThreshold * 0.6, $smokeThreshold * 1.25, $smokeThreshold * 2);
-        $smokeHigh   = $this->triangularMembership($smoke, $smokeThreshold * 1.5, $smokeThreshold * 2.5, $adcMax);
+        $smokeMedium = $this->triangularMembership($smoke, $smokeThreshold * 0.8, $smokeThreshold, $smokeThreshold * 1.2);
+        $smokeHigh   = $this->triangularMembership($smoke, $smokeThreshold * 1.1, $smokeThreshold * 1.5, $adcMax);
 
         $tempNormal = $this->triangularMembership($temperature, 0, 0, $tempThreshold);
-        $tempWarm   = $this->triangularMembership($temperature, $tempThreshold * 0.6, $tempThreshold, $tempThreshold * 1.6);
-        $tempHot    = $this->triangularMembership($temperature, $tempThreshold * 1.5, $tempThreshold * 2.5, $tempThreshold * 4);
-
-        // Humidity membership: normal (< threshold), high (> threshold)
-        $humidNormal = $this->triangularMembership($humidity, 0, 0, $humidityThreshold);
-        $humidHigh   = $this->triangularMembership($humidity, $humidityThreshold * 0.8, $humidityThreshold * 1.2, 100);
+        $tempWarm   = $this->triangularMembership($temperature, $tempThreshold * 0.8, $tempThreshold, $tempThreshold * 1.2);
+        $tempHot    = $this->triangularMembership($temperature, $tempThreshold * 1.1, $tempThreshold * 1.5, $tempThreshold * 2.5);
 
         // Sugeno 27 rules: output values SAFE=0, LOW=30, MEDIUM=60, HIGH=100
         $rules = [
@@ -129,13 +128,6 @@ class ApiController extends Controller
 
         $score = $weightTotal > 0 ? $weightedSum / $weightTotal : 0.0;
 
-        // Humidity modifier: high humidity increases danger score
-        if ($humidHigh > 0) {
-            $humidityPenalty = $humidHigh * 15; // up to +15 points
-            $score = min(100, $score + $humidityPenalty);
-            $activeRules[] = ['HUMIDITY_PENALTY', round($humidHigh, 4), round($humidityPenalty, 1)];
-        }
-
         if ($score > 70) {
             $fanStatus = 'HIGH';
             $fanSpeed = 100;
@@ -165,7 +157,7 @@ class ApiController extends Controller
             'buzzer_action' => $buzzerAction,
             'profile' => $profile,
             'rules' => $activeRules,
-            'reason' => 'Sugeno weighted average on gas, smoke, temperature + humidity modifier (27 rules)',
+            'reason' => 'Sugeno weighted average on gas, smoke, and temperature (27 rules)',
         ];
     }
 
@@ -174,20 +166,12 @@ class ApiController extends Controller
         $settings = SystemSettings::firstOrCreate(['id' => 1]);
         if ($settings->mode === 'manual') {
             if ($decision['profile'] === 'FLAME_OVERRIDE') {
-                $settings->update(['mode' => 'auto', 'last_manual_command' => null]);
                 ActivityLog::create([
                     'device_id' => $deviceId,
                     'action_type' => 'EMERGENCY_OVERRIDE',
                     'status' => 'BAHAYA',
                     'description' => 'Flame detected in manual mode — emergency override activated',
                     'message' => 'Emergency override: flame detected'
-                ]);
-                ActivityLog::create([
-                    'device_id' => $deviceId,
-                    'action_type' => 'MODE_SWITCH',
-                    'status' => 'BAHAYA',
-                    'description' => 'Auto-switched to AUTO mode due to flame emergency',
-                    'message' => 'Emergency mode switch: manual → auto'
                 ]);
             } else {
                 return;
@@ -212,15 +196,7 @@ class ApiController extends Controller
             ->orderBy('id', 'desc')
             ->first();
 
-        // Only create command if state actually changed (skip OFF when nothing was active)
-        if ($lastFan && $lastFan->action !== $fanStatus) {
-            Command::create([
-                'device_id' => $deviceId,
-                'target_device' => 'exhaust_fan',
-                'action' => $fanStatus,
-                'status' => 'pending'
-            ]);
-        } elseif (!$lastFan && $fanStatus !== 'OFF') {
+        if (!$lastFan || $lastFan->action !== $fanStatus) {
             Command::create([
                 'device_id' => $deviceId,
                 'target_device' => 'exhaust_fan',
@@ -235,19 +211,11 @@ class ApiController extends Controller
             ->orderBy('id', 'desc')
             ->first();
 
-        $buzzerAction = $decision['buzzer_action'];
-        if ($lastBuzzer && $lastBuzzer->action !== $buzzerAction) {
+        if (!$lastBuzzer || $lastBuzzer->action !== $decision['buzzer_action']) {
             Command::create([
                 'device_id' => $deviceId,
                 'target_device' => 'buzzer',
-                'action' => $buzzerAction,
-                'status' => 'pending'
-            ]);
-        } elseif (!$lastBuzzer && $buzzerAction !== 'STOP') {
-            Command::create([
-                'device_id' => $deviceId,
-                'target_device' => 'buzzer',
-                'action' => $buzzerAction,
+                'action' => $decision['buzzer_action'],
                 'status' => 'pending'
             ]);
         }
@@ -356,16 +324,10 @@ class ApiController extends Controller
                 }
             }
 
-            // Reset stuck "processing" commands older than 60 seconds
-            Command::where('status', 'processing')
-                ->where('updated_at', '<', now()->subSeconds(60))
-                ->update(['status' => 'pending']);
-
             $gasThresh = Cache::get('gas_threshold', $settings->gas_threshold ?? 2500);
-            $smokeThresh = Cache::get('smoke_threshold', $settings->smoke_threshold ?? 800);
+            $smokeThresh = Cache::get('smoke_threshold', $settings->smoke_threshold ?? 2000);
             $tempThresh = Cache::get('temperature_threshold', $settings->temperature_threshold ?? 45);
             $flameThresh = Cache::get('flame_threshold', $settings->flame_threshold ?? 500);
-            $humidityThresh = Cache::get('humidity_threshold', $settings->humidity_threshold ?? 70);
 
             $decision = $this->buildFuzzyDecision(
                 (float) $request->gas_value,
@@ -375,9 +337,7 @@ class ApiController extends Controller
                 (float) $flameThresh,
                 (float) $gasThresh,
                 (float) $smokeThresh,
-                (float) $tempThresh,
-                (float) ($request->humidity ?? 0),
-                (float) $humidityThresh
+                (float) $tempThresh
             );
 
             $status_indikasi = $decision['fan_status'] === 'OFF' ? 'AMAN' : 'BAHAYA';
@@ -422,6 +382,12 @@ class ApiController extends Controller
 
                 return $sensorData;
             });
+
+            broadcast(new SensorDataReceived(
+                $sensorData->toArray(),
+                $decision,
+                $status_indikasi
+            ))->toOthers();
 
             return response()->json([
                 'status' => 'success',
@@ -483,7 +449,7 @@ class ApiController extends Controller
                 'system_mode' => $settings->mode ?? 'auto',
                 'settings' => [
                     'gas_threshold' => Cache::get('gas_threshold', $settings->gas_threshold ?? 2500),
-                    'smoke_threshold' => Cache::get('smoke_threshold', $settings->smoke_threshold ?? 800),
+                    'smoke_threshold' => Cache::get('smoke_threshold', $settings->smoke_threshold ?? 2000),
                     'humidity_threshold' => Cache::get('humidity_threshold', $settings->humidity_threshold ?? 70),
                     'temperature_threshold' => Cache::get('temperature_threshold', $settings->temperature_threshold ?? 45),
                     'flame_threshold' => Cache::get('flame_threshold', $settings->flame_threshold ?? 500)
@@ -497,57 +463,8 @@ class ApiController extends Controller
         }
     }
 
-    public function flameSensor(Request $request)
-    {
-        try {
-            $deviceId = $request->query('device_id', 1);
-            $latest = SensorData::where('device_id', $deviceId)
-                ->orderBy('id', 'desc')
-                ->first();
 
-            return response()->json([
-                'status' => 'success',
-                'data' => $latest ? [
-                    'flame_value' => $latest->flame_value,
-                    'status' => $latest->status_indikasi,
-                    'timestamp' => $latest->created_at,
-                ] : null,
-            ]);
-        } catch (\Exception $e) {
-            Log::error("flameSensor error: " . $e->getMessage());
-            return response()->json(['status' => 'error', 'message' => $e->getMessage()], 500);
-        }
-    }
-
-    public function sensorHistory(Request $request)
-    {
-        try {
-            $deviceId = $request->query('device_id', 1);
-            $range = $request->query('range', '1H');
-
-            $limitMap = ['1H' => 60, '6H' => 120, '24H' => 200, '7D' => 300];
-            $limit = $limitMap[$range] ?? 60;
-
-            $data = SensorData::where('device_id', $deviceId)
-                ->orderBy('id', 'desc')
-                ->limit($limit)
-                ->get()
-                ->reverse()
-                ->values();
-
-            return response()->json([
-                'status' => 'success',
-                'range' => $range,
-                'count' => $data->count(),
-                'data' => $data,
-            ]);
-        } catch (\Exception $e) {
-            Log::error("sensorHistory error: " . $e->getMessage());
-            return response()->json(['status' => 'error', 'message' => $e->getMessage()], 500);
-        }
-    }
-
-    public function saveSettings(Request $request)
+  public function saveSettings(Request $request)
     {
         try {
             $request->validate([
@@ -589,92 +506,6 @@ class ApiController extends Controller
         }
     }
 
-    public function devices()
-    {
-        $devices = Device::query()
-            ->orderBy('id')
-            ->get(['id', 'device_name', 'location', 'status', 'api_key']);
-
-        return response()->json([
-            'status' => 'success',
-            'devices' => $devices,
-        ]);
-    }
-
-    public function createDevice(Request $request)
-    {
-        $validated = $request->validate([
-            'device_name' => 'required|string|max:255',
-            'location' => 'required|string|max:255',
-            'api_key' => 'required|string|max:255|unique:devices,api_key',
-            'status' => 'nullable|in:online,offline',
-        ]);
-
-        $device = Device::create([
-            'device_name' => $validated['device_name'],
-            'location' => $validated['location'],
-            'api_key' => $validated['api_key'],
-            'status' => $validated['status'] ?? 'offline',
-        ]);
-
-        return response()->json([
-            'status' => 'success',
-            'device' => $device->only([
-                'id',
-                'device_name',
-                'location',
-                'status',
-                'api_key',
-            ]),
-        ]);
-    }
-
-    public function updateDevice(Request $request, Device $device)
-    {
-        $validated = $request->validate([
-            'device_name' => 'required|string|max:255',
-            'location' => 'nullable|string|max:255',
-            'status' => 'nullable|string|max:50',
-        ]);
-
-        $device->fill($validated);
-        $device->save();
-
-        return response()->json([
-            'status' => 'success',
-            'device' => $device->only([
-                'id',
-                'device_name',
-                'location',
-                'status',
-                'api_key',
-            ]),
-        ]);
-    }
-
-    public function resetDevice(Device $device)
-    {
-        $device->status = 'offline';
-        $device->save();
-
-        SensorData::where('device_id', $device->id)->delete();
-        Command::where('device_id', $device->id)->delete();
-        DeviceActuator::where('device_id', $device->id)->delete();
-
-        ActivityLog::create([
-            'device_id' => $device->id,
-            'action_type' => 'SYSTEM_UPDATE',
-            'status' => 'AMAN',
-            'description' => "Device {$device->id} reset",
-            'message' => "Device {$device->device_name} reset to offline",
-        ]);
-
-        return response()->json([
-            'status' => 'success',
-            'device' => $device->only(['id', 'status']),
-        ]);
-    }
-
     public function getSettings()
     {
         $settings = SystemSettings::firstOrCreate(['id' => 1]);
@@ -682,7 +513,7 @@ class ApiController extends Controller
             'status' => 'success',
             'settings' => [
                 'gas_threshold' => (float) ($settings->gas_threshold ?? 2500),
-                'smoke_threshold' => (float) ($settings->smoke_threshold ?? 800),
+                'smoke_threshold' => (float) ($settings->smoke_threshold ?? 2000),
                 'humidity_threshold' => (float) ($settings->humidity_threshold ?? 70),
                 'temperature_threshold' => (float) ($settings->temperature_threshold ?? 45),
                 'flame_threshold' => (float) ($settings->flame_threshold ?? 500),
@@ -714,15 +545,17 @@ class ApiController extends Controller
         }
 
         $action = $request->action;
-        if ($request->target_device === 'exhaust_fan') {
-            if ($action === 'START') $action = 'HIGH';
-            if ($action === 'STOP') $action = 'OFF';
+        if ($request->target_device === 'exhaust_fan' && $action === 'START') {
+            $action = 'HIGH';
         }
-        if ($request->target_device === 'buzzer') {
-            if ($action === 'START') $action = 'HIGH';
-            if ($action === 'STOP') $action = 'OFF';
+        if ($request->target_device === 'exhaust_fan' && $action === 'STOP') {
+            $action = 'OFF';
+        }
+        if ($request->target_device === 'buzzer' && $action === 'START') {
+            $action = 'HIGH';
         }
 
+        // Set manual mode BEFORE creating command to prevent race condition
         SystemSettings::firstOrCreate(['id' => 1])->update([
             'mode' => 'manual',
             'last_manual_command' => now(),
@@ -748,7 +581,7 @@ class ApiController extends Controller
             DeviceActuator::updateOrCreate(
                 ['device_id' => $deviceId],
                 [
-                    'alarm_status' => ($action !== 'STOP' && $action !== 'OFF') ? 'ON' : 'OFF',
+                    'alarm_status' => $action !== 'STOP' ? 'ON' : 'OFF',
                 ]
             );
         }
@@ -922,64 +755,75 @@ class ApiController extends Controller
         }
     }
 
-    public function login(Request $request)
+    public function getDevices()
+    {
+        $devices = Device::all();
+        return response()->json(['status' => 'success', 'data' => $devices]);
+    }
+
+    public function createDevice(Request $request)
     {
         $request->validate([
-            'email' => 'required|email',
-            'password' => 'required|string'
+            'device_name' => 'required|string|max:255',
+            'location' => 'nullable|string|max:255',
+            'api_key' => 'nullable|string|max:255',
         ]);
 
-        $user = User::where('email', $request->email)->first();
-
-        if (!$user || !Hash::check($request->password, $user->password)) {
-            return response()->json(['status' => 'error', 'message' => 'Invalid credentials'], 401);
-        }
-
-        session()->put('user_id', $user->id);
-        session()->put('user_name', $user->name);
-        session()->put('user_email', $user->email);
-
-        return response()->json([
-            'status' => 'success',
-            'message' => 'Login successful',
-            'user' => [
-                'id' => $user->id,
-                'name' => $user->name,
-                'email' => $user->email
-            ]
+        $device = Device::create([
+            'device_name' => $request->device_name,
+            'location' => $request->location,
+            'api_key' => $request->api_key,
+            'status' => $request->status ?? 'offline',
         ]);
+
+        return response()->json(['status' => 'success', 'data' => $device], 201);
     }
 
-    public function logout(Request $request)
+    public function updateDevice(Request $request, $id)
     {
-        session()->forget(['user_id', 'user_name', 'user_email']);
-        session()->flush();
-
-        return response()->json(['status' => 'success', 'message' => 'Logout successful']);
-    }
-
-    public function getUser(Request $request)
-    {
-        $userId = session()->get('user_id');
-
-        if (!$userId) {
-            return response()->json(['status' => 'error', 'message' => 'Unauthorized'], 401);
+        $device = Device::find($id);
+        if (!$device) {
+            return response()->json(['status' => 'error', 'message' => 'Device not found'], 404);
         }
 
-        $user = User::find($userId);
+        $device->update($request->only(['device_name', 'location', 'status']));
+        return response()->json(['status' => 'success', 'data' => $device]);
+    }
 
+    public function resetDevice($id)
+    {
+        $device = Device::find($id);
+        if (!$device) {
+            return response()->json(['status' => 'error', 'message' => 'Device not found'], 404);
+        }
+
+        $device->update(['status' => 'offline']);
+        Command::where('device_id', $id)->delete();
+        DeviceActuator::where('device_id', $id)->delete();
+        SensorData::where('device_id', $id)->delete();
+
+        return response()->json(['status' => 'success', 'message' => 'Device reset']);
+    }
+
+    public function getUser()
+    {
+        $user = auth()->user();
         if (!$user) {
-            session()->flush();
-            return response()->json(['status' => 'error', 'message' => 'User not found'], 404);
+            return response()->json([
+                'id' => 1,
+                'name' => 'Admin',
+                'email' => 'admin@smartsafety.local',
+                'role' => 'admin',
+            ]);
         }
+        return response()->json($user);
+    }
 
-        return response()->json([
-            'status' => 'success',
-            'user' => [
-                'id' => $user->id,
-                'name' => $user->name,
-                'email' => $user->email
-            ]
-        ]);
+    public function logout()
+    {
+        if (auth()->check()) {
+            auth()->user()->currentAccessToken()->delete();
+        }
+        return response()->json(['status' => 'success', 'message' => 'Logged out']);
     }
 }

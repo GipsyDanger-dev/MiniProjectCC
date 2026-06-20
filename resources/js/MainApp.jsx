@@ -12,6 +12,7 @@ import DeviceStatus from "./pages/DeviceStatus";
 import Settings from "./pages/Settings";
 import PlaceholderPage from "./pages/PlaceholderPage";
 import NewDevice from "./pages/NewDevice";
+import LoginPage from "./pages/LoginPage";
 
 export default function MainApp() {
     const { theme, toggleTheme } = useTheme();
@@ -25,100 +26,176 @@ export default function MainApp() {
     const [user, setUser] = useState(null);
     const [authLoading, setAuthLoading] = useState(true);
 
-    const rooms = useMemo(() => devices.map((d) => ({ id: d.id, label: d.location || d.device_name })), [devices]);
-    const activeDevice = useMemo(() => devices.find((d) => d.id === activeDeviceId) || null, [devices, activeDeviceId]);
-    const activeRoom = activeDevice?.location || activeDevice?.device_name || "Unknown";
+    const rooms = useMemo(
+        () =>
+            devices.map((device) => ({
+                id: device.id,
+                label: device.location || device.device_name,
+            })),
+        [devices],
+    );
+    const activeDevice = useMemo(
+        () => devices.find((device) => device.id === activeDeviceId) || null,
+        [devices, activeDeviceId],
+    );
+    const activeRoom =
+        activeDevice?.location || activeDevice?.device_name || "Unknown";
     const iot = useRealtimeIoT(activeDeviceId, pollingInterval);
 
     const loadDevices = useCallback(async () => {
         setDevicesLoading(true);
         try {
-            const res = await fetch("/api/devices", { headers: { Accept: "application/json" } });
+            const res = await fetch("/api/devices", {
+                headers: { Accept: "application/json" },
+            });
             const payload = await res.json();
-            if (payload.status === "success") setDevices(payload.data || payload.devices || []);
-            else setDevices([]);
-        } catch { setDevices([]); } finally { setDevicesLoading(false); }
+            if (payload.status === "success") {
+                setDevices(payload.data || payload.devices || []);
+            } else {
+                setDevices([]);
+            }
+        } catch (_error) {
+            setDevices([]);
+        } finally {
+            setDevicesLoading(false);
+        }
     }, []);
 
     useEffect(() => {
-        fetch("/api/user", { headers: { Accept: "application/json" } })
+        fetch("/api/auth/user", { headers: { Accept: "application/json" } })
             .then((res) => res.json())
-            .then((data) => { if (data.status === "success") setUser(data.user); })
+            .then((data) => {
+                if (data.status === "success") setUser(data.user);
+            })
             .catch(() => {})
             .finally(() => setAuthLoading(false));
     }, []);
 
-    useEffect(() => { if (user) loadDevices(); }, [loadDevices, user]);
-    useEffect(() => { if (devices.length && !devices.some((d) => d.id === activeDeviceId)) setActiveDeviceId(devices[0].id); }, [devices, activeDeviceId]);
+    useEffect(() => {
+        if (!user) return;
+        loadDevices();
+    }, [loadDevices, user]);
+
+    useEffect(() => {
+        if (!devices.length) return;
+        const hasActive = devices.some((device) => device.id === activeDeviceId);
+        if (!hasActive) {
+            setActiveDeviceId(devices[0].id);
+        }
+    }, [devices, activeDeviceId]);
 
     const handleLogout = async () => {
-        await fetch("/api/logout", { method: "POST", headers: { Accept: "application/json", "X-CSRF-TOKEN": document.querySelector('meta[name="csrf-token"]')?.getAttribute("content") || "" } });
+        await fetch("/api/logout", {
+            method: "POST",
+            headers: {
+                Accept: "application/json",
+                "X-CSRF-TOKEN": document.querySelector('meta[name="csrf-token"]')?.getAttribute("content") || "",
+            },
+        });
         setUser(null);
     };
 
     if (authLoading) {
         return (
-            <div className="min-h-screen flex items-center justify-center" style={{ background: "#0a0a0a" }}>
-                <div className="ambient-grid" />
-                <div className="relative z-10 flex flex-col items-center gap-3">
-                    <div className="w-8 h-8 border-2 border-[rgba(124,58,237,0.3)] border-t-[#c4b5fd] rounded-full animate-spin" />
-                    <span className="text-xs text-[#7d8187]" style={{ fontFamily: "'JetBrains Mono', monospace", letterSpacing: "1px" }}>LOADING</span>
-                </div>
+            <div className="min-h-screen bg-[#0a0a0f] flex items-center justify-center">
+                <div className="w-6 h-6 border-2 border-red-500/30 border-t-red-500 rounded-full animate-spin" />
             </div>
         );
     }
 
     if (!user) {
-        window.location.href = "/login";
-        return null;
+        return <LoginPage onLogin={setUser} />;
     }
 
     const pages = {
-        dashboard: <Dashboard activeRoom={activeRoom} deviceId={activeDeviceId} iot={iot} setCurrentPage={setCurrentPage} />,
-        sensors: <SensorData activeRoom={activeRoom} iot={iot} />,
-        devices: <DeviceStatus activeRoom={activeRoom} iot={iot} />,
-        logs: <ActivityLogs activeRoom={activeRoom} iot={iot} />,
-        settings: <Settings iot={iot} pollingInterval={pollingInterval} setPollingInterval={setPollingInterval} />,
-        "new-device": <NewDevice onCreated={(d) => { setDevices((p) => { const e = p.some((i) => i.id === d.id); return e ? p.map((i) => (i.id === d.id ? d : i)) : [...p, d]; }); setActiveDeviceId(d.id); setCurrentPage("dashboard"); }} onReload={loadDevices} />,
+        dashboard: (
+            <Dashboard
+                activeRoom={activeRoom}
+                deviceId={activeDeviceId}
+                iot={iot}
+                setCurrentPage={setCurrentPage}
+            />
+        ),
+        sensors: (
+            <SensorData
+                activeRoom={activeRoom}
+                iot={iot}
+            />
+        ),
+        devices: (
+            <DeviceStatus
+                activeRoom={activeRoom}
+                iot={iot}
+            />
+        ),
+        logs: (
+            <ActivityLogs
+                activeRoom={activeRoom}
+                iot={iot}
+            />
+        ),
+        settings: (
+            <Settings
+                iot={iot}
+                pollingInterval={pollingInterval}
+                setPollingInterval={setPollingInterval}
+            />
+        ),
+        "new-device": (
+            <NewDevice
+                onCreated={(device) => {
+                    setDevices((prev) => {
+                        const exists = prev.some((item) => item.id === device.id);
+                        if (exists) {
+                            return prev.map((item) =>
+                                item.id === device.id ? device : item,
+                            );
+                        }
+                        return [...prev, device];
+                    });
+                    setActiveDeviceId(device.id);
+                    setCurrentPage("dashboard");
+                }}
+                onReload={loadDevices}
+            />
+        ),
     };
     const currentContent = pages[currentPage] || pages.dashboard;
 
     return (
-        <div className="min-h-screen relative" style={{ color: "#ffffff" }}>
-            <div className="ambient-grid" />
-
-            <div className="flex min-h-screen relative z-10">
-                <Sidebar
-                    collapsed={collapsed}
-                    setCollapsed={setCollapsed}
-                    currentPage={currentPage}
-                    setCurrentPage={setCurrentPage}
-                    theme={theme}
-                    toggleTheme={toggleTheme}
+        <div className="bg-surface text-ink min-h-screen">
+            <Sidebar
+                collapsed={collapsed}
+                setCollapsed={setCollapsed}
+                currentPage={currentPage}
+                setCurrentPage={setCurrentPage}
+                theme={theme}
+                toggleTheme={toggleTheme}
+                mobileOpen={mobileOpen}
+                setMobileOpen={setMobileOpen}
+            />
+            <div className={cn(
+                "flex flex-col min-h-screen transition-all duration-200",
+                collapsed ? "lg:ml-[56px]" : "lg:ml-[176px]"
+            )}>
+                <Topbar
                     mobileOpen={mobileOpen}
                     setMobileOpen={setMobileOpen}
+                    systemMode={iot.data?.system_mode || "auto"}
+                    user={user}
+                    onLogout={handleLogout}
                 />
-
-                <div className={cn("flex-1 flex flex-col min-h-screen transition-all duration-200", collapsed ? "lg:ml-[60px]" : "lg:ml-[200px]")}>
-                    <Topbar
-                        mobileOpen={mobileOpen}
-                        setMobileOpen={setMobileOpen}
-                        systemMode={iot.data?.system_mode || "auto"}
-                        user={user}
-                        onLogout={handleLogout}
-                    />
-                    <main className="flex-1 px-3 pb-6 sm:px-4 sm:pb-8 md:px-5 lg:px-6">
-                        <div className="max-w-[1400px] mx-auto">
-                            <RoomSelectionBanner
-                                rooms={rooms}
-                                activeRoomId={activeDeviceId}
-                                loading={devicesLoading}
-                                onChange={setActiveDeviceId}
-                            />
-                            {currentContent}
-                        </div>
-                    </main>
-                </div>
+                <main className="flex-1 px-3 pb-4 md:px-5 md:pb-6">
+                    <div className="relative z-10">
+                        <RoomSelectionBanner
+                            rooms={rooms}
+                            activeRoomId={activeDeviceId}
+                            loading={devicesLoading}
+                            onChange={setActiveDeviceId}
+                        />
+                        {currentContent}
+                    </div>
+                </main>
             </div>
         </div>
     );

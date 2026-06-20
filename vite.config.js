@@ -11,15 +11,11 @@ export default defineConfig({
         react(),
     ],
     optimizeDeps: {
-        include: ["recharts"],
+        include: ["chart.js"],
     },
     server: {
         watch: {
             ignored: ["**/storage/framework/views/**"],
-        },
-        proxy: {
-            "/api": "http://127.0.0.1:8000",
-            "/sanctum": "http://127.0.0.1:8000",
         },
     },
 });

@@ -38,6 +38,8 @@ class IngestDataTest extends TestCase
         ]);
     }
 
+    // ── Flame Override ──────────────────────────────────────────
+
     public function test_flame_below_threshold_triggers_override(): void
     {
         $this->seedDevice();
@@ -71,6 +73,8 @@ class IngestDataTest extends TestCase
         ]);
     }
 
+    // ── Safe Zone ───────────────────────────────────────────────
+
     public function test_low_values_produce_safe_status(): void
     {
         $this->seedDevice();
@@ -94,6 +98,8 @@ class IngestDataTest extends TestCase
             'status_indikasi' => 'AMAN',
         ]);
     }
+
+    // ── Validation ──────────────────────────────────────────────
 
     public function test_ingest_requires_all_fields(): void
     {
@@ -138,6 +144,8 @@ class IngestDataTest extends TestCase
         $response->assertStatus(401);
     }
 
+    // ── Humidity ────────────────────────────────────────────────
+
     public function test_ingest_accepts_optional_humidity(): void
     {
         $this->seedDevice();
@@ -160,6 +168,8 @@ class IngestDataTest extends TestCase
         ]);
     }
 
+    // ── Activity Log ────────────────────────────────────────────
+
     public function test_ingest_creates_activity_log(): void
     {
         $this->seedDevice();
@@ -178,6 +188,8 @@ class IngestDataTest extends TestCase
             'action_type' => 'SENSOR_DATA',
         ]);
     }
+
+    // ── Commands Created ────────────────────────────────────────
 
     public function test_ingest_creates_fan_command_on_danger(): void
     {

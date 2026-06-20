@@ -1,17 +1,11 @@
 """
 ESP32 Serial Bridge — kirim data sensor ke Laravel API via USB Serial.
 
-This is the REAL hardware bridge. It reads sensor data from ESP32 via USB serial
-and sends it to the Laravel API. It also polls for commands and forwards them to ESP32.
-
-DO NOT run simultaneously with worker.py — both poll the same command queue.
-worker.py is a simulator for testing without real hardware.
-
 Usage:
     python serial_bridge.py COM3          # Windows
     python serial_bridge.py /dev/ttyUSB0  # Linux
 
-Install:
+Install dulu:
     pip install pyserial requests
 """
 
@@ -31,6 +25,7 @@ def connect_serial():
     while True:
         try:
             ser = serial.Serial(SERIAL_PORT, BAUD_RATE, timeout=1)
+            # Disable DTR/RTS supaya ESP32 tidak reset saat bridge connect
             ser.dtr = False
             ser.rts = False
             time.sleep(0.5)
@@ -180,7 +175,7 @@ def main():
                 last_heartbeat = now
                 kirim_heartbeat()
 
-            time.sleep(0.1)
+            time.sleep(0.1)  # 100ms delay supaya tidak busy loop
 
     except KeyboardInterrupt:
         print("\n[BRIDGE] Dihentikan")

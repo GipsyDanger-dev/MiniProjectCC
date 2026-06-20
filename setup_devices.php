@@ -38,9 +38,11 @@ $devices = [
     ]
 ];
 
+// Delete existing devices
 DB::table('devices')->truncate();
 echo "✓ Cleared existing devices\n";
 
+// Insert new devices
 foreach ($devices as $device) {
     DB::table('devices')->insert([
         'id' => $device['id'],
@@ -57,6 +59,7 @@ foreach ($devices as $device) {
 echo "\n=== Device Setup Complete ===\n";
 echo "Total devices: " . count($devices) . "\n\n";
 
+// Verify
 echo "=== Verification ===\n";
 $all = DB::table('devices')->get();
 foreach ($all as $d) {

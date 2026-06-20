@@ -19,6 +19,8 @@ class ActuatorControlTest extends TestCase
         ]);
     }
 
+    // ── Fan Control ─────────────────────────────────────────────
+
     public function test_activate_fan_creates_command(): void
     {
         $this->seedDevice();
@@ -109,6 +111,8 @@ class ActuatorControlTest extends TestCase
         ]);
     }
 
+    // ── Buzzer Control ──────────────────────────────────────────
+
     public function test_start_buzzer(): void
     {
         $this->seedDevice();
@@ -147,6 +151,8 @@ class ActuatorControlTest extends TestCase
         ]);
     }
 
+    // ── Mode Switch ─────────────────────────────────────────────
+
     public function test_manual_control_sets_manual_mode(): void
     {
         $this->seedDevice();
@@ -164,6 +170,8 @@ class ActuatorControlTest extends TestCase
             'mode' => 'manual',
         ]);
     }
+
+    // ── Validation ──────────────────────────────────────────────
 
     public function test_invalid_target_device_rejected(): void
     {
@@ -195,6 +203,8 @@ class ActuatorControlTest extends TestCase
         $response->assertStatus(422);
     }
 
+    // ── Activity Log ────────────────────────────────────────────
+
     public function test_manual_command_creates_activity_log(): void
     {
         $this->seedDevice();
@@ -208,6 +218,8 @@ class ActuatorControlTest extends TestCase
             'action_type' => 'MANUAL_COMMAND',
         ]);
     }
+
+    // ── Custom Device ID ────────────────────────────────────────
 
     public function test_manual_command_with_custom_device_id(): void
     {

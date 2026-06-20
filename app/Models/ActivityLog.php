@@ -15,9 +15,4 @@ class ActivityLog extends Model
         'description',
         'message'
     ];
-
-    public function device()
-    {
-        return $this->belongsTo(Device::class);
-    }
 }

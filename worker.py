@@ -1,16 +1,3 @@
-"""
-WORKER.PY — Hardware Simulator
-
-This script SIMULATES hardware actuator execution for testing purposes.
-It polls commands from the server and prints what WOULD happen on real hardware.
-
-DO NOT run simultaneously with serial_bridge.py — both poll the same command queue.
-For real ESP32 hardware, use serial_bridge.py instead.
-
-Usage:
-    python worker.py
-"""
-
 import requests
 import time
 import json

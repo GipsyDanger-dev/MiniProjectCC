@@ -70,6 +70,7 @@ class SettingsTest extends TestCase
 
     public function test_save_settings_overwrites_existing(): void
     {
+        // First save
         $this->postJson('/api/settings', [
             'gas_threshold' => 250,
             'smoke_threshold' => 120,
@@ -77,6 +78,7 @@ class SettingsTest extends TestCase
             'flame_threshold' => 500,
         ]);
 
+        // Second save
         $this->postJson('/api/settings', [
             'gas_threshold' => 400,
             'smoke_threshold' => 200,

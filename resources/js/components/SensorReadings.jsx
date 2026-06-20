@@ -50,21 +50,21 @@ export default function SensorReadings({ readings = [] }) {
     const units = { Gas: "PPM", Api: "Analog", Kelembapan: "%", Suhu: "°C" };
 
     return (
-        <div className="bg-surface2 border border-edge rounded-lg shadow-card">
-            <div className="flex items-center justify-between px-4 py-3 border-b border-edge">
-                <p className="text-[12px] font-medium text-ink2">
+        <div className="bg-surface2 border border-edge">
+            <div className="flex items-center justify-between px-3 py-2 border-b border-edge">
+                <p className="text-[10px] font-medium uppercase tracking-[0.10em] text-ink2">
                     Sensor Trend
                 </p>
-                <div className="flex gap-1">
+                <div className="flex">
                     {metrics.map((metric) => (
                         <button
                             key={metric}
                             type="button"
                             onClick={() => setActive(metric)}
-                            className={`px-2.5 py-1 text-[11px] rounded-md transition-smooth ${
+                            className={`px-2.5 py-1 text-[10px] uppercase tracking-[0.08em] border border-r-0 last:border-r transition-smooth ${
                                 active === metric
-                                    ? "bg-accent/10 text-accent font-medium"
-                                    : "text-ink3 hover:text-ink2 hover:bg-surface3"
+                                    ? "bg-surface text-accent border-accent"
+                                    : "bg-surface3 text-ink3 border-edge"
                             }`}
                         >
                             {metric}
@@ -76,6 +76,7 @@ export default function SensorReadings({ readings = [] }) {
                 <div className="h-20 flex items-end gap-1 px-1 relative">
                     {series.map((value, idx) => {
                         const pct = Math.max(4, (value / Math.max(max, threshold * 1.2)) * 100);
+                        // Flame (Api) is active-low: lower value = more dangerous
                         const isFlame = active === "Api";
                         const isDanger = isFlame ? value < threshold : value > threshold;
                         const isLow = isFlame ? value > threshold * 1.5 : value < threshold * 0.2;
@@ -89,7 +90,7 @@ export default function SensorReadings({ readings = [] }) {
                             >
                                 {hovered === idx && (
                                     <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 z-10 pointer-events-none">
-                                        <div className="bg-ink text-surface text-[10px] px-2 py-1 whitespace-nowrap shadow-lg rounded-md">
+                                        <div className="bg-ink text-surface text-[10px] px-2 py-1 whitespace-nowrap shadow-lg">
                                             <div className="font-medium">{value} {units[active]}</div>
                                             <div className="text-ink3">{values.timestamps[idx]}</div>
                                         </div>

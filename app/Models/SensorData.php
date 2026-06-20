@@ -34,9 +34,4 @@ class SensorData extends Model
         'fuzzy_score' => 'float',
         'fan_speed' => 'integer',
     ];
-
-    public function device()
-    {
-        return $this->belongsTo(Device::class);
-    }
 }
